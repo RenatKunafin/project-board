@@ -1,6 +1,40 @@
 # Project Board
 
-PWA-дашборд для управления проектами: платформа виджетов (вкладки, тайлинг/каскад) и модули Гантта и чек-листа. Проект на стадии проектирования — продуктового кода пока нет.
+PWA-дашборд для управления проектами: платформа виджетов (вкладки, тайлинг/каскад) и модули Гантта и чек-листа. Проект на ранней стадии: работает каркас монорепо с пустой оболочкой.
+
+## Запуск
+
+Требуется Node.js ≥ 22 (в разработке используется v22.12.0, npm 11.2.0).
+
+```bash
+npm install     # установка зависимостей по lockfile (или npm ci)
+npm run dev     # dev-сервер: http://localhost:5173
+npm run build   # production-сборка в apps/project-board/dist
+npm run preview # отдача собранной страницы: http://localhost:4173
+npm run typecheck  # tsc --noEmit по всем пакетам
+```
+
+## Структура
+
+```text
+apps/project-board      # Сборка PWA: Vite + React + TS, оболочка приложения
+packages/dashboard      # Универсальная платформа дашборда
+packages/widget-sdk     # Публичный контракт платформы и модулей
+packages/gantt          # Модуль Гантта (зависит от widget-sdk)
+packages/checklist      # Модуль чек-листа (зависит от widget-sdk)
+```
+
+Направления зависимостей — [ADR PBT-002](.docs/adr/PBT-002.md): модули используют `widget-sdk`; платформа не импортирует предметные модули; точка регистрации типов виджетов — `apps/project-board/src/widgets.ts`.
+
+## Инструментарий
+
+Node.js 22.12.0 · npm 11.2.0 · Vite 6.4.4 · React 18.3.1 · TypeScript 5.9.3
+
+Проверка артефактов OpenSpec:
+
+```bash
+openspec validate --all --strict --no-interactive
+```
 
 ## Документация
 
@@ -8,13 +42,6 @@ PWA-дашборд для управления проектами: платфо�
 - [Бэклог](.context/tasks/README.md) — задачи PBT-001–PBT-065 и статусы
 - [Процесс работы](.context/openspec-workflow.md) — «одна задача PBT = один OpenSpec change = один PR»
 - [Настройка OpenSpec](.context/openspec-setup.md) — версии и установка с нуля
-
-## Инструментарий
-
-Node.js 22, OpenSpec CLI 1.11.0. Проверка артефактов:
-
-```bash
-openspec validate --all --strict --no-interactive
-```
+- [ADR](.docs/adr/) — архитектурные решения
 
 Для AI-агентов — [AGENTS.md](AGENTS.md).
