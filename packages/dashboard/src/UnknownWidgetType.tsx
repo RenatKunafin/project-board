@@ -1,4 +1,4 @@
-import type { WidgetTypeLookup } from './widget-registry.js';
+import type { WidgetTypeLookup } from './widget-registry';
 
 export function UnknownWidgetType({ lookup }: { lookup: WidgetTypeLookup }) {
   if (!('kind' in lookup)) {

@@ -1,9 +1,9 @@
-export { createWidgetRegistry } from './widget-registry.js';
+export { createWidgetRegistry } from './widget-registry';
 export type {
   WidgetRegistry,
   WidgetTypeLookup,
   UnknownWidgetType as UnknownWidgetTypeData,
-} from './widget-registry.js';
-export { UnknownWidgetType } from './UnknownWidgetType.js';
+} from './widget-registry';
+export { UnknownWidgetType } from './UnknownWidgetType';
 
 export const DASHBOARD_PACKAGE = '@project-board/dashboard' as const;

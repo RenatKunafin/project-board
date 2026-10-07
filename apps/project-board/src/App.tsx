@@ -1,6 +1,6 @@
 import type { WidgetRegistry } from '@project-board/dashboard';
 import { UnknownWidgetType } from '@project-board/dashboard';
-import DemoWidget from './widgets/demo-widget.js';
+import DemoWidget from './widgets/demo-widget';
 
 interface AppProps {
   widgetRegistry: WidgetRegistry;

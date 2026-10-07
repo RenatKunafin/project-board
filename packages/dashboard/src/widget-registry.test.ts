@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WidgetRegistryError, type WidgetTypeDefinition } from '@project-board/widget-sdk';
-import { createWidgetRegistry } from './widget-registry.js';
+import { createWidgetRegistry } from './widget-registry';
 
 const demo: WidgetTypeDefinition = {
   id: 'demo',

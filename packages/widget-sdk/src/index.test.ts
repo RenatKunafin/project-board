@@ -3,7 +3,7 @@ import {
   WidgetRegistryError,
   defineWidgetType,
   type WidgetTypeDefinition,
-} from '../src/index.js';
+} from '../src/index';
 
 const definition: WidgetTypeDefinition = defineWidgetType({
   id: 'demo',

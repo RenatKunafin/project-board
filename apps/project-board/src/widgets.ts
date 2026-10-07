@@ -1,5 +1,5 @@
 import { defineWidgetType, type WidgetTypeDefinition } from '@project-board/widget-sdk';
-import DemoWidget from './widgets/demo-widget.js';
+import DemoWidget from './widgets/demo-widget';
 
 // Единственная точка регистрации типов виджетов.
 // Приложение собирает комплектацию: подключение новых модулей — только здесь.
