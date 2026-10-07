@@ -1,25 +1,40 @@
-import { DASHBOARD_PACKAGE } from '@project-board/dashboard';
-import { GANTT_PACKAGE } from '@project-board/gantt';
-import { CHECKLIST_PACKAGE } from '@project-board/checklist';
-import { SDK_PACKAGE } from '@project-board/widget-sdk';
+import type { WidgetRegistry } from '@project-board/dashboard';
+import { UnknownWidgetType } from '@project-board/dashboard';
+import DemoWidget from './widgets/demo-widget.js';
 
-const registeredPackages = [
-  DASHBOARD_PACKAGE,
-  GANTT_PACKAGE,
-  CHECKLIST_PACKAGE,
-  SDK_PACKAGE,
-] as const;
+interface AppProps {
+  widgetRegistry: WidgetRegistry;
+}
 
-export default function App() {
+export default function App({ widgetRegistry }: AppProps) {
+  const catalog = widgetRegistry.list();
+  const demoType = widgetRegistry.get('demo');
+  const checklistType = widgetRegistry.get('checklist');
+
   return (
     <main className="shell">
       <h1 className="shell__title">Project Board</h1>
       <p className="shell__hint">
-        Рабочее пространство пусто: типы виджетов ещё не подключены.
+        Каталог типов виджетов: {catalog.length}. Модули подключаются при сборке.
       </p>
-      <p className="shell__meta">
-        Каркас собран; подключено пакетов: {registeredPackages.length}
-      </p>
+
+      <section className="catalog" aria-label="Каталог типов виджетов">
+        {catalog.map((type) => (
+          <article key={type.id} className="catalog__item">
+            <span className="catalog__id">{type.id}</span>
+            <span className="catalog__title">{type.title}</span>
+          </article>
+        ))}
+      </section>
+
+      <section className="instances" aria-label="Экземпляры виджетов">
+        {'kind' in demoType ? (
+          <UnknownWidgetType lookup={demoType} />
+        ) : (
+          <DemoWidget widgetInstanceId="w-demo-1" settings={demoType.startSettings} />
+        )}
+        <UnknownWidgetType lookup={checklistType} />
+      </section>
     </main>
   );
 }
