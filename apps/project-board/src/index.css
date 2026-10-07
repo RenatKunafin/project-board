@@ -1,3 +1,10 @@
+:root {
+  --color-bg: #f5f6f8;
+  --color-text: #1c2733;
+  --color-text-muted: #5a6b7b;
+  --color-text-faint: #8a99a8;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -10,8 +17,8 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
-  background: #f5f6f8;
-  color: #1c2733;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .shell {
@@ -30,11 +37,11 @@ body {
 
 .shell__hint {
   margin: 0;
-  color: #5a6b7b;
+  color: var(--color-text-muted);
 }
 
 .shell__meta {
   margin: 0;
   font-size: 12px;
-  color: #8a99a8;
+  color: var(--color-text-faint);
 }
