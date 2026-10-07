@@ -8,6 +8,10 @@ dist-ssr/
 .cache/
 *.tsbuildinfo
 
+# Playwright
+test-results/
+playwright-report/
+
 # Логи
 logs/
 *.log
