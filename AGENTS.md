@@ -4,10 +4,10 @@ Project Board — PWA-дашборд для управления проекта�
 
 ## Документация
 
-- `.docs/intent.md` — исходное описание продукта.
-- `.docs/project-decisions.md` — согласованные решения, стек-кандидаты, глоссарий.
-- `.docs/tasks/README.md` — реестр задач PBT-001–PBT-065 и статусов.
-- `.docs/openspec-workflow.md` — процесс работы (полная версия).
+- `.context/intent.md` — исходное описание продукта.
+- `.context/project-decisions.md` — согласованные решения, стек-кандидаты, глоссарий.
+- `.context/tasks/README.md` — реестр задач PBT-001–PBT-065 и статусов.
+- `.context/openspec-workflow.md` — процесс работы (полная версия).
 - `openspec/` — артефакты OpenSpec (changes, specs).
 
 ## Процесс

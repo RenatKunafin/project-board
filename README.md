@@ -4,10 +4,10 @@ PWA-дашборд для управления проектами: платфо�
 
 ## Документация
 
-- [Решения по проекту](.docs/project-decisions.md) — согласованные решения и открытые вопросы
-- [Бэклог](.docs/tasks/README.md) — задачи PBT-001–PBT-065 и статусы
-- [Процесс работы](.docs/openspec-workflow.md) — «одна задача PBT = один OpenSpec change = один PR»
-- [Настройка OpenSpec](.docs/openspec-setup.md) — версии и установка с нуля
+- [Решения по проекту](.context/project-decisions.md) — согласованные решения и открытые вопросы
+- [Бэклог](.context/tasks/README.md) — задачи PBT-001–PBT-065 и статусы
+- [Процесс работы](.context/openspec-workflow.md) — «одна задача PBT = один OpenSpec change = один PR»
+- [Настройка OpenSpec](.context/openspec-setup.md) — версии и установка с нуля
 
 ## Инструментарий
 
