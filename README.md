@@ -7,12 +7,17 @@ PWA-дашборд для управления проектами: платфо�
 Требуется Node.js ≥ 22 (в разработке используется v22.12.0, npm 11.2.0).
 
 ```bash
-npm install     # установка зависимостей по lockfile (или npm ci)
-npm run dev     # dev-сервер: http://localhost:5173
-npm run build   # production-сборка в apps/project-board/dist
-npm run preview # отдача собранной страницы: http://localhost:4173
+npm install        # установка зависимостей по lockfile (или npm ci)
+npm run dev        # dev-сервер: http://localhost:5173
+npm run build      # production-сборка в apps/project-board/dist
+npm run preview    # отдача собранной страницы: http://localhost:4173
 npm run typecheck  # tsc --noEmit по всем пакетам
+npm run lint       # ESLint: код + границы импортов (ADR-002)
+npm test           # unit-тесты (Vitest)
+npm run test:browser  # UI-проверки (Playwright; локально: npx playwright install chromium)
 ```
+
+CI (GitHub Actions) на каждый PR в `develop`: lint → typecheck → unit → build → `openspec validate --all --strict`.
 
 ## Структура
 
