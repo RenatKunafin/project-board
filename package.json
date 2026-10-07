@@ -1,0 +1,19 @@
+{
+  "name": "project-board-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/project-board",
+    "build": "npm run build -w apps/project-board",
+    "preview": "npm run preview -w apps/project-board",
+    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist"
+  }
+}
