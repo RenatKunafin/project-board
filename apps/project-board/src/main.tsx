@@ -10,6 +10,14 @@ import App from './App';
 import { widgetTypes } from './widgets';
 import './index.css';
 
+const store = createIndexedDbDocumentStore('project-board');
+const documentService = createDocumentService({ store });
+
+// Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
+window.addEventListener('pagehide', () => {
+  void documentService.flushAll();
+});
+
 // Технический маршрут самопроверки локального хранилища (не продуктовый UI):
 // открывается только по явному #storage-selftest, используется e2e и вручную.
 if (window.location.hash === '#storage-selftest') {
@@ -23,13 +31,14 @@ if (window.location.hash === '#storage-selftest') {
 }
 
 async function bootstrap(): Promise<void> {
-  const store = createIndexedDbDocumentStore('project-board');
-  const documentService = createDocumentService({ store });
   const restored = await documentService.restoreAll();
 
   // Вертикальный срез PBT-011: гарантировать два документа чек-листа.
   // Сортировка стабильна между перезагрузками (порядок IDB не гарантирован).
-  const byCreation = (a: { createdAt: string; id: string }, b: { createdAt: string; id: string }): number =>
+  const byCreation = (
+    a: { createdAt: string; id: string },
+    b: { createdAt: string; id: string },
+  ): number =>
     a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : 1;
   const checklistIds = restored
     .filter(

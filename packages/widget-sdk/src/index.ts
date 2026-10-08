@@ -19,12 +19,24 @@ export interface WidgetSizeConstraints {
   readonly maxHeight?: number;
 }
 
+/** Документная поддержка: модуль описывает, как создавать содержимое нового документа. */
+export interface WidgetDocumentSupport {
+  readonly moduleId: string;
+  readonly documentType: string;
+  readonly schemaVersion: number;
+  readonly createContent: (title: string) => Record<string, unknown>;
+}
+
 export interface WidgetTypeDefinition {
   readonly id: string;
   readonly title: string;
+  /** Текстовый символ иконки (emoji) до появления набора иконок темы. */
+  readonly icon?: string;
   readonly component: ComponentType<WidgetProps>;
   readonly startSettings: WidgetTypeSettings;
   readonly sizeConstraints: WidgetSizeConstraints;
+  /** Наличие — тип работает с документом; платформа предложит создать/открыть. */
+  readonly documentSupport?: WidgetDocumentSupport;
 }
 
 export class WidgetRegistryError extends Error {

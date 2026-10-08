@@ -5,6 +5,8 @@ export interface ChecklistItem {
 }
 
 export interface ChecklistContent {
+  /** Название списка (задаётся при создании через каталог). */
+  readonly title?: string;
   readonly items: readonly ChecklistItem[];
 }
 
@@ -22,6 +24,11 @@ export function parseChecklistContent(value: unknown): ChecklistContent {
   return isChecklistContent(value) ? value : emptyChecklistContent;
 }
 
+export function checklistTitle(value: unknown): string {
+  const content = parseChecklistContent(value);
+  return content.title ?? 'Без названия';
+}
+
 export function addItem(
   content: ChecklistContent,
   text: string,
@@ -31,6 +38,7 @@ export function addItem(
     return content;
   }
   return {
+    ...content,
     items: [
       ...content.items,
       { id: crypto.randomUUID(), text: trimmed, done: false },
@@ -48,6 +56,7 @@ export function renameItem(
     return content;
   }
   return {
+    ...content,
     items: content.items.map((item) =>
       item.id === itemId ? { ...item, text: trimmed } : item,
     ),
@@ -60,6 +69,7 @@ export function setItemDone(
   done: boolean,
 ): ChecklistContent {
   return {
+    ...content,
     items: content.items.map((item) =>
       item.id === itemId ? { ...item, done } : item,
     ),
@@ -70,5 +80,8 @@ export function removeItem(
   content: ChecklistContent,
   itemId: string,
 ): ChecklistContent {
-  return { items: content.items.filter((item) => item.id !== itemId) };
+  return {
+    ...content,
+    items: content.items.filter((item) => item.id !== itemId),
+  };
 }
