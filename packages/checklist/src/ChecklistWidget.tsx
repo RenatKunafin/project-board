@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WidgetProps } from '@project-board/widget-sdk';
 import {
   addItem,
@@ -14,11 +14,15 @@ export default function ChecklistWidget({
   documentId,
   documentService,
 }: WidgetProps) {
-  const [content, setContent] = useState<ChecklistContent>(() =>
-    emptyState(),
-  );
+  const [content, setContent] = useState<ChecklistContent>(() => ({
+    items: [],
+  }));
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hideDone, setHideDone] = useState(
+    () =>
+      documentService?.getViewSettings(widgetInstanceId)?.hideDone === true,
+  );
 
   useEffect(() => {
     if (!documentId || !documentService) {
@@ -33,6 +37,11 @@ export default function ChecklistWidget({
     });
     return unsubscribe;
   }, [documentId, documentService]);
+
+  const visibleItems = useMemo(
+    () => (hideDone ? content.items.filter((item) => !item.done) : content.items),
+    [content, hideDone],
+  );
 
   if (!documentId || !documentService) {
     return (
@@ -50,20 +59,32 @@ export default function ChecklistWidget({
     documentService.update(documentId, document.revision, nextContent);
   };
 
-  const handleAdd = () => {
-    commit(addItem(content, draft));
-    setDraft('');
+  const toggleHideDone = () => {
+    const next = !hideDone;
+    setHideDone(next);
+    // Локальная настройка представления: в документ не попадает (PBT-007).
+    documentService.setViewSettings(widgetInstanceId, {
+      ...documentService.getViewSettings(widgetInstanceId),
+      hideDone: next,
+    });
   };
 
   return (
     <div className="checklist" data-instance={widgetInstanceId}>
+      <label className="checklist__setting">
+        <input type="checkbox" checked={hideDone} onChange={toggleHideDone} />
+        Скрывать выполненные
+      </label>
+
       {content.items.length === 0 ? (
         <p className="checklist__hint">
           Список пуст — добавьте первый пункт ниже.
         </p>
+      ) : visibleItems.length === 0 ? (
+        <p className="checklist__hint">Все пункты выполнены.</p>
       ) : (
         <ul className="checklist__items">
-          {content.items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.id} className="checklist__item">
               <label className="checklist__label">
                 <input
@@ -116,7 +137,8 @@ export default function ChecklistWidget({
         className="checklist__form"
         onSubmit={(event) => {
           event.preventDefault();
-          handleAdd();
+          commit(addItem(content, draft));
+          setDraft('');
         }}
       >
         <input
@@ -131,8 +153,4 @@ export default function ChecklistWidget({
       </form>
     </div>
   );
-}
-
-function emptyState(): ChecklistContent {
-  return { items: [] };
 }

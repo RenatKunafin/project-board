@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react';
 interface AppProps {
   widgetRegistry: WidgetRegistry;
   documentService: AutosavingDocumentService;
-  documentId: string;
+  list1Id: string;
+  list2Id: string;
 }
 
 const SAVE_STATE_LABELS: Record<string, string> = {
@@ -19,22 +20,47 @@ const SAVE_STATE_LABELS: Record<string, string> = {
   conflict: 'Обновлено из другого окна',
 };
 
+interface PaneDefinition {
+  readonly instanceId: string;
+  readonly label: string;
+  readonly documentId: string;
+}
+
 export default function App({
   widgetRegistry,
   documentService,
-  documentId,
+  list1Id,
+  list2Id,
 }: AppProps) {
   const catalog = widgetRegistry.list();
   const checklistType = widgetRegistry.get('checklist');
   const unknownType = widgetRegistry.get('demo');
 
   const [saveState, setSaveState] = useState(
-    documentService.getSaveState(documentId),
+    documentService.getSaveState(list1Id),
   );
   useEffect(
-    () => documentService.subscribeSaveState(documentId, setSaveState),
-    [documentService, documentId],
+    () => documentService.subscribeSaveState(list1Id, setSaveState),
+    [documentService, list1Id],
   );
+
+  const panes: readonly PaneDefinition[] = [
+    { instanceId: 'w-1', label: 'Экземпляр 1 · Список 1', documentId: list1Id },
+    { instanceId: 'w-2', label: 'Экземпляр 2 · Список 1', documentId: list1Id },
+    { instanceId: 'w-3', label: 'Экземпляр 3 · Список 2', documentId: list2Id },
+  ];
+  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
+  const togglePane = (instanceId: string) => {
+    setClosed((previous) => {
+      const next = new Set(previous);
+      if (next.has(instanceId)) {
+        next.delete(instanceId);
+      } else {
+        next.add(instanceId);
+      }
+      return next;
+    });
+  };
 
   return (
     <main className="shell">
@@ -49,7 +75,7 @@ export default function App({
         </p>
       )}
       <p className="shell__hint">
-        Каталог типов виджетов: {catalog.length}. Модули подключаются при сборке.
+        Вертикальный срез: экземпляры 1–2 — один документ, экземпляр 3 — другой.
       </p>
 
       <section className="catalog" aria-label="Каталог типов виджетов">
@@ -63,31 +89,51 @@ export default function App({
 
       <section className="instances" aria-label="Экземпляры виджетов">
         <div className="instances__pair">
-          {'kind' in checklistType ? (
-            <UnknownWidgetType lookup={checklistType} />
-          ) : (
-            <>
-              <div className="instances__pane" role="group" aria-label="Экземпляр 1">
-                <p className="instances__label">Экземпляр 1</p>
-                <ChecklistWidget
-                  widgetInstanceId="w-1"
-                  settings={checklistType.startSettings}
-                  documentId={documentId}
-                  documentService={documentService}
-                />
-              </div>
-              <div className="instances__pane" role="group" aria-label="Экземпляр 2">
-                <p className="instances__label">Экземпляр 2</p>
-                <ChecklistWidget
-                  widgetInstanceId="w-2"
-                  settings={checklistType.startSettings}
-                  documentId={documentId}
-                  documentService={documentService}
-                />
-              </div>
-            </>
-          )}
+          {'kind' in checklistType
+            ? <UnknownWidgetType lookup={checklistType} />
+            : panes.map((pane) =>
+                closed.has(pane.instanceId) ? null : (
+                  <div
+                    key={pane.instanceId}
+                    className="instances__pane"
+                    role="group"
+                    aria-label={pane.label}
+                  >
+                    <div className="instances__head">
+                      <p className="instances__label">{pane.label}</p>
+                      <button
+                        type="button"
+                        className="instances__close"
+                        aria-label={`Закрыть ${pane.label}`}
+                        onClick={() => togglePane(pane.instanceId)}
+                      >
+                        Закрыть
+                      </button>
+                    </div>
+                    <ChecklistWidget
+                      widgetInstanceId={pane.instanceId}
+                      settings={checklistType.startSettings}
+                      documentId={pane.documentId}
+                      documentService={documentService}
+                    />
+                  </div>
+                ),
+              )}
         </div>
+
+        <div className="reopen">
+          {[...closed].map((instanceId) => (
+            <button
+              key={instanceId}
+              type="button"
+              className="reopen__button"
+              onClick={() => togglePane(instanceId)}
+            >
+              Открыть {instanceId}
+            </button>
+          ))}
+        </div>
+
         <UnknownWidgetType lookup={unknownType} />
       </section>
     </main>
