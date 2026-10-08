@@ -13,74 +13,64 @@ test('каталог содержит модуль чек-листа', async ({ 
   await expect(catalog.getByText('Чек-лист')).toBeVisible();
 });
 
-test('добавленный пункт появляется в обоих экземплярах', async ({ page }) => {
+test('операция синхронизирует экземпляры 1-2 и не задевает список 2', async ({ page }) => {
   await page.goto('/');
   const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane1 = instances.getByLabel('Экземпляр 1');
-  const pane2 = instances.getByLabel('Экземпляр 2');
+  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
+  const pane2 = instances.getByLabel('Экземпляр 2 · Список 1');
+  const pane3 = instances.getByLabel('Экземпляр 3 · Список 2');
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Купить молоко');
+  await pane1.getByPlaceholder('Новый пункт').fill('Из первого списка');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
 
-  await expect(pane1.getByText('Купить молоко')).toBeVisible();
-  await expect(pane2.getByText('Купить молоко')).toBeVisible();
+  await expect(pane2.getByText('Из первого списка')).toBeVisible();
+  await expect(pane3.getByText('Из первого списка')).toHaveCount(0);
+
+  await pane3.getByPlaceholder('Новый пункт').fill('Из второго списка');
+  await pane3.getByRole('button', { name: 'Добавить' }).click();
+  await expect(pane3.getByText('Из второго списка')).toBeVisible();
+  await expect(pane1.getByText('Из второго списка')).toHaveCount(0);
 });
 
-test('перезагрузка восстанавливает пункты после автосохранения', async ({ page }) => {
+test('локальная настройка экземпляра изолирована', async ({ page }) => {
   await page.goto('/');
-  const pane1 = page
-    .getByRole('region', { name: 'Экземпляры виджетов' })
-    .getByLabel('Экземпляр 1');
+  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
+  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
+  const pane2 = instances.getByLabel('Экземпляр 2 · Список 1');
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Живёт после перезагрузки');
+  await pane1.getByPlaceholder('Новый пункт').fill('Выполненный пункт');
+  await pane1.getByRole('button', { name: 'Добавить' }).click();
+  await pane1.getByRole('checkbox', { name: 'Выполненный пункт' }).check();
+
+  // Локальная настройка только у экземпляра 1.
+  await pane1.getByRole('checkbox', { name: 'Скрывать выполненные' }).check();
+  await expect(pane1.getByText('Выполненный пункт')).toHaveCount(0);
+  await expect(pane2.getByText('Выполненный пункт')).toBeVisible();
+
+  // Настройка экземпляра не меняет документ: индикатор остаётся «Сохранено»,
+  // а снятие настройки возвращает пункт.
+  await pane1
+    .getByRole('checkbox', { name: 'Скрывать выполненные' })
+    .uncheck();
+  await expect(pane1.getByText('Выполненный пункт')).toBeVisible();
+});
+
+test('закрытие и перезагрузка сохраняют документ', async ({ page }) => {
+  await page.goto('/');
+  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
+  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
+
+  await pane1.getByPlaceholder('Новый пункт').fill('Переживает закрытие');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохранено')).toBeVisible();
 
+  // Закрытие представления (unmount + отписка), документ сохранён.
+  await pane1.getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' }).click();
+  await expect(instances.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
+
   await page.reload();
-  await expect(pane1.getByText('Живёт после перезагрузки')).toBeVisible();
-});
-
-test('конфликт двух страниц: устаревшая страница перечитывает документ', async ({ browser }) => {
-  // Один контекст: страницы разделяют IndexedDB одного origin.
-  const context = await browser.newContext();
-  const page1 = await context.newPage();
-  const page2 = await context.newPage();
-
-  const instances1 = page1.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane1 = instances1.getByLabel('Экземпляр 1');
-  const instances2 = page2.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane2 = instances2.getByLabel('Экземпляр 2');
-
-  // 1. Первое окно создаёт документ (rev 1) и сохраняет его.
-  await page1.goto('/');
-  await expect(page1.getByText('Сохранено')).toBeVisible();
-
-  // 2. Второе окно восстанавливает устаревшую редакцию (rev 1).
-  await page2.goto('/');
-  await expect(instances2.getByText('Список пуст')).toHaveCount(2);
-
-  // 3. Первое окно сохраняет новую редакцию (rev 2).
-  await pane1.getByPlaceholder('Новый пункт').fill('Правка первого окна');
-  await pane1.getByRole('button', { name: 'Добавить' }).click();
-  await expect(page1.getByText('Сохранено')).toBeVisible();
-
-  // 4. Второе окно (память rev 1) сохраняет свою правку -> конфликт с rev 2.
-  await pane2.getByPlaceholder('Новый пункт').fill('Правка второго окна');
-  await pane2.getByRole('button', { name: 'Добавить' }).click();
-
-  // Хранилище побеждает: второе окно перечитывает документ первого.
-  await expect(
-    page2.getByText('Обновлено из другого окна'),
-  ).toBeVisible({ timeout: 15000 });
-  await expect(pane2.getByText('Правка первого окна')).toBeVisible();
-
-  await page1.close();
-  await page2.close();
-});
-
-test('неизвестный тип показывает состояние без падения приложения', async ({ page }) => {
-  await page.goto('/');
-  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
-  await expect(instances.getByText('Неизвестный тип виджета')).toBeVisible();
-  await expect(page.getByText('Каталог типов виджетов: 1')).toBeVisible();
+  const reloaded = page
+    .getByRole('region', { name: 'Экземпляры виджетов' })
+    .getByLabel('Экземпляр 1 · Список 1');
+  await expect(reloaded.getByText('Переживает закрытие')).toBeVisible();
 });

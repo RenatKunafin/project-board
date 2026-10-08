@@ -25,19 +25,26 @@ if (window.location.hash === '#storage-selftest') {
 async function bootstrap(): Promise<void> {
   const store = createIndexedDbDocumentStore('project-board');
   const documentService = createDocumentService({ store });
-  await documentService.restoreAll();
+  const restored = await documentService.restoreAll();
 
-  const existing = (await store.listAll()).find(
-    (document) => document.moduleId === 'checklist' && document.documentType === 'list',
-  );
-  const checklistDocument =
-    existing ??
-    documentService.create({
-      moduleId: 'checklist',
-      documentType: 'list',
-      schemaVersion: 1,
-      content: { items: [] },
-    });
+  // Вертикальный срез PBT-011: гарантировать два документа чек-листа.
+  const checklistIds = restored
+    .filter(
+      (document) =>
+        document.moduleId === 'checklist' && document.documentType === 'list',
+    )
+    .map((document) => document.id);
+  while (checklistIds.length < 2) {
+    checklistIds.push(
+      documentService.create({
+        moduleId: 'checklist',
+        documentType: 'list',
+        schemaVersion: 1,
+        content: { items: [] },
+      }).id,
+    );
+  }
+  const [list1Id, list2Id] = checklistIds;
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
 
@@ -46,7 +53,8 @@ async function bootstrap(): Promise<void> {
       <App
         widgetRegistry={widgetRegistry}
         documentService={documentService}
-        documentId={checklistDocument.id}
+        list1Id={list1Id}
+        list2Id={list2Id}
       />
     </React.StrictMode>,
   );
