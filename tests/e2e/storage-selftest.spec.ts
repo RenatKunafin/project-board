@@ -14,7 +14,7 @@ test('самопроверка хранилища проходит в брауз
   }
 
   await page.screenshot({
-    path: 'openspec/changes/pbt-009-indexeddb-documents/screenshots/storage-selftest.png',
+    path: 'openspec/changes/archive/2026-10-07-pbt-009-indexeddb-documents/screenshots/storage-selftest.png',
     fullPage: true,
   });
 });
