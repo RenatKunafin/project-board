@@ -37,3 +37,12 @@ export const SDK_PACKAGE = '@project-board/widget-sdk' as const;
 export function defineWidgetType(definition: WidgetTypeDefinition): WidgetTypeDefinition {
   return definition;
 }
+
+export type {
+  DocumentContent,
+  DocumentCreateInput,
+  DocumentChangeHandler,
+  ManagedDocument,
+  Unsubscribe,
+} from './documents';
+export { DocumentConflictError } from './documents';
