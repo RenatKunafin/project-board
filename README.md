@@ -33,13 +33,15 @@ packages/checklist      # Модуль чек-листа (зависит от wi
 
 ## Инструментарий
 
-Node.js 22.12.0 · npm 11.2.0 · Vite 6.4.4 · React 18.3.1 · TypeScript 5.9.3
+Node.js 22.12.0 · npm 11.2.0 · Vite 6.4.4 · React 18.3.1 · TypeScript 5.9.3 · Dexie 4.4.6 (IndexedDB)
 
 Проверка артефактов OpenSpec:
 
 ```bash
 openspec validate --all --strict --no-interactive
 ```
+
+Техническая самопроверка локального хранилища: `/#storage-selftest` в запущенном приложении.
 
 ## Документация
 
