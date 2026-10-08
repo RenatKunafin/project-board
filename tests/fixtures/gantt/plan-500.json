@@ -1,0 +1,9334 @@
+{
+  "meta": {
+    "title": "Нагрузочный план (500 задач, seed 42)",
+    "calendar": {
+      "workingDays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "holidays": []
+    }
+  },
+  "workTypes": [
+    {
+      "id": "dev",
+      "title": "Разработка",
+      "parallel": false
+    },
+    {
+      "id": "psi",
+      "title": "ПСИ",
+      "parallel": true
+    }
+  ],
+  "resources": [
+    {
+      "id": "r-1",
+      "name": "Ресурс 1",
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "r-2",
+      "name": "Ресурс 2",
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "r-3",
+      "name": "Ресурс 3",
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "r-4",
+      "name": "Ресурс 4",
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "r-5",
+      "name": "Ресурс 5",
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "r-6",
+      "name": "Ресурс 6",
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "r-7",
+      "name": "Ресурс 7",
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "r-8",
+      "name": "Ресурс 8",
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "r-9",
+      "name": "Ресурс 9",
+      "workTypeIds": [
+        "dev"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "g-root-1",
+      "title": "Направление 1"
+    },
+    {
+      "id": "g-root-2",
+      "title": "Направление 2"
+    },
+    {
+      "id": "g-root-3",
+      "title": "Направление 3"
+    },
+    {
+      "id": "g-root-4",
+      "title": "Направление 4"
+    },
+    {
+      "id": "g-root-5",
+      "title": "Направление 5"
+    },
+    {
+      "id": "g-root-6",
+      "title": "Направление 6"
+    },
+    {
+      "id": "g-root-7",
+      "title": "Направление 7"
+    },
+    {
+      "id": "g-root-8",
+      "title": "Направление 8"
+    },
+    {
+      "id": "g-root-9",
+      "title": "Направление 9"
+    },
+    {
+      "id": "g-root-10",
+      "title": "Направление 10"
+    },
+    {
+      "id": "g-root-11",
+      "title": "Направление 11"
+    },
+    {
+      "id": "g-root-12",
+      "title": "Направление 12"
+    },
+    {
+      "id": "g-root-13",
+      "title": "Направление 13"
+    },
+    {
+      "id": "g-root-14",
+      "title": "Направление 14"
+    },
+    {
+      "id": "g-root-15",
+      "title": "Направление 15"
+    },
+    {
+      "id": "g-root-16",
+      "title": "Направление 16"
+    },
+    {
+      "id": "g-root-17",
+      "title": "Направление 17"
+    },
+    {
+      "id": "g-root-18",
+      "title": "Направление 18"
+    },
+    {
+      "id": "g-root-19",
+      "title": "Направление 19"
+    },
+    {
+      "id": "g-root-20",
+      "title": "Направление 20"
+    },
+    {
+      "id": "g-root-21",
+      "title": "Направление 21"
+    },
+    {
+      "id": "g-root-22",
+      "title": "Направление 22"
+    },
+    {
+      "id": "g-root-23",
+      "title": "Направление 23"
+    },
+    {
+      "id": "g-root-24",
+      "title": "Направление 24"
+    },
+    {
+      "id": "g-root-25",
+      "title": "Направление 25"
+    },
+    {
+      "id": "g-sub-1",
+      "title": "Подгруппа 1",
+      "parentId": "g-root-16"
+    },
+    {
+      "id": "g-sub-2",
+      "title": "Подгруппа 2",
+      "parentId": "g-root-12"
+    },
+    {
+      "id": "g-sub-3",
+      "title": "Подгруппа 3",
+      "parentId": "g-root-22"
+    },
+    {
+      "id": "g-sub-4",
+      "title": "Подгруппа 4",
+      "parentId": "g-root-17"
+    },
+    {
+      "id": "g-sub-5",
+      "title": "Подгруппа 5",
+      "parentId": "g-root-5"
+    },
+    {
+      "id": "g-sub-6",
+      "title": "Подгруппа 6",
+      "parentId": "g-root-14"
+    },
+    {
+      "id": "g-sub-7",
+      "title": "Подгруппа 7",
+      "parentId": "g-root-7"
+    },
+    {
+      "id": "g-sub-8",
+      "title": "Подгруппа 8",
+      "parentId": "g-root-16"
+    },
+    {
+      "id": "g-sub-9",
+      "title": "Подгруппа 9",
+      "parentId": "g-root-22"
+    },
+    {
+      "id": "g-sub-10",
+      "title": "Подгруппа 10",
+      "parentId": "g-root-12"
+    },
+    {
+      "id": "g-sub-11",
+      "title": "Подгруппа 11",
+      "parentId": "g-root-7"
+    },
+    {
+      "id": "g-sub-12",
+      "title": "Подгруппа 12",
+      "parentId": "g-root-23"
+    },
+    {
+      "id": "g-sub-13",
+      "title": "Подгруппа 13",
+      "parentId": "g-root-19"
+    },
+    {
+      "id": "g-sub-14",
+      "title": "Подгруппа 14",
+      "parentId": "g-root-8"
+    },
+    {
+      "id": "g-sub-15",
+      "title": "Подгруппа 15",
+      "parentId": "g-root-5"
+    },
+    {
+      "id": "g-sub-16",
+      "title": "Подгруппа 16",
+      "parentId": "g-root-13"
+    },
+    {
+      "id": "g-sub-17",
+      "title": "Подгруппа 17",
+      "parentId": "g-root-18"
+    },
+    {
+      "id": "g-sub-18",
+      "title": "Подгруппа 18",
+      "parentId": "g-root-16"
+    },
+    {
+      "id": "g-sub-19",
+      "title": "Подгруппа 19",
+      "parentId": "g-root-1"
+    },
+    {
+      "id": "g-sub-20",
+      "title": "Подгруппа 20",
+      "parentId": "g-root-12"
+    },
+    {
+      "id": "g-sub-21",
+      "title": "Подгруппа 21",
+      "parentId": "g-root-21"
+    },
+    {
+      "id": "g-sub-22",
+      "title": "Подгруппа 22",
+      "parentId": "g-root-2"
+    },
+    {
+      "id": "g-sub-23",
+      "title": "Подгруппа 23",
+      "parentId": "g-root-15"
+    },
+    {
+      "id": "g-sub-24",
+      "title": "Подгруппа 24",
+      "parentId": "g-root-1"
+    },
+    {
+      "id": "g-sub-25",
+      "title": "Подгруппа 25",
+      "parentId": "g-root-7"
+    },
+    {
+      "id": "g-sub-26",
+      "title": "Подгруппа 26",
+      "parentId": "g-root-2"
+    },
+    {
+      "id": "g-sub-27",
+      "title": "Подгруппа 27",
+      "parentId": "g-root-5"
+    },
+    {
+      "id": "g-sub-28",
+      "title": "Подгруппа 28",
+      "parentId": "g-root-20"
+    },
+    {
+      "id": "g-sub-29",
+      "title": "Подгруппа 29",
+      "parentId": "g-root-14"
+    },
+    {
+      "id": "g-sub-30",
+      "title": "Подгруппа 30",
+      "parentId": "g-root-1"
+    },
+    {
+      "id": "g-sub-31",
+      "title": "Подгруппа 31",
+      "parentId": "g-root-5"
+    },
+    {
+      "id": "g-sub-32",
+      "title": "Подгруппа 32",
+      "parentId": "g-root-22"
+    },
+    {
+      "id": "g-sub-33",
+      "title": "Подгруппа 33",
+      "parentId": "g-root-13"
+    },
+    {
+      "id": "g-sub-34",
+      "title": "Подгруппа 34",
+      "parentId": "g-root-21"
+    },
+    {
+      "id": "g-sub-35",
+      "title": "Подгруппа 35",
+      "parentId": "g-root-8"
+    },
+    {
+      "id": "g-sub-36",
+      "title": "Подгруппа 36",
+      "parentId": "g-root-12"
+    },
+    {
+      "id": "g-sub-37",
+      "title": "Подгруппа 37",
+      "parentId": "g-root-1"
+    },
+    {
+      "id": "g-sub-38",
+      "title": "Подгруппа 38",
+      "parentId": "g-root-2"
+    },
+    {
+      "id": "g-sub-39",
+      "title": "Подгруппа 39",
+      "parentId": "g-root-14"
+    },
+    {
+      "id": "g-sub-40",
+      "title": "Подгруппа 40",
+      "parentId": "g-root-15"
+    },
+    {
+      "id": "g-sub-41",
+      "title": "Подгруппа 41",
+      "parentId": "g-root-7"
+    },
+    {
+      "id": "g-sub-42",
+      "title": "Подгруппа 42",
+      "parentId": "g-root-17"
+    },
+    {
+      "id": "g-sub-43",
+      "title": "Подгруппа 43",
+      "parentId": "g-root-6"
+    },
+    {
+      "id": "g-sub-44",
+      "title": "Подгруппа 44",
+      "parentId": "g-root-8"
+    },
+    {
+      "id": "g-sub-45",
+      "title": "Подгруппа 45",
+      "parentId": "g-root-19"
+    },
+    {
+      "id": "g-sub-46",
+      "title": "Подгруппа 46",
+      "parentId": "g-root-22"
+    },
+    {
+      "id": "g-sub-47",
+      "title": "Подгруппа 47",
+      "parentId": "g-root-13"
+    },
+    {
+      "id": "g-sub-48",
+      "title": "Подгруппа 48",
+      "parentId": "g-root-6"
+    },
+    {
+      "id": "g-sub-49",
+      "title": "Подгруппа 49",
+      "parentId": "g-root-8"
+    },
+    {
+      "id": "g-sub-50",
+      "title": "Подгруппа 50",
+      "parentId": "g-root-8"
+    },
+    {
+      "id": "g-sub-51",
+      "title": "Подгруппа 51",
+      "parentId": "g-root-2"
+    },
+    {
+      "id": "g-sub-52",
+      "title": "Подгруппа 52",
+      "parentId": "g-root-17"
+    },
+    {
+      "id": "g-sub-53",
+      "title": "Подгруппа 53",
+      "parentId": "g-root-18"
+    },
+    {
+      "id": "g-sub-54",
+      "title": "Подгруппа 54",
+      "parentId": "g-root-18"
+    },
+    {
+      "id": "g-sub-55",
+      "title": "Подгруппа 55",
+      "parentId": "g-root-24"
+    },
+    {
+      "id": "g-sub-56",
+      "title": "Подгруппа 56",
+      "parentId": "g-root-3"
+    },
+    {
+      "id": "g-sub-57",
+      "title": "Подгруппа 57",
+      "parentId": "g-root-24"
+    },
+    {
+      "id": "g-sub-58",
+      "title": "Подгруппа 58",
+      "parentId": "g-root-11"
+    },
+    {
+      "id": "g-sub-59",
+      "title": "Подгруппа 59",
+      "parentId": "g-root-24"
+    },
+    {
+      "id": "g-sub-60",
+      "title": "Подгруппа 60",
+      "parentId": "g-root-4"
+    },
+    {
+      "id": "g-sub-61",
+      "title": "Подгруппа 61",
+      "parentId": "g-root-3"
+    },
+    {
+      "id": "g-sub-62",
+      "title": "Подгруппа 62",
+      "parentId": "g-root-1"
+    },
+    {
+      "id": "g-sub-63",
+      "title": "Подгруппа 63",
+      "parentId": "g-root-10"
+    },
+    {
+      "id": "g-sub-64",
+      "title": "Подгруппа 64",
+      "parentId": "g-root-13"
+    },
+    {
+      "id": "g-sub-65",
+      "title": "Подгруппа 65",
+      "parentId": "g-root-16"
+    },
+    {
+      "id": "g-sub-66",
+      "title": "Подгруппа 66",
+      "parentId": "g-root-23"
+    },
+    {
+      "id": "g-sub-67",
+      "title": "Подгруппа 67",
+      "parentId": "g-root-2"
+    },
+    {
+      "id": "g-sub-68",
+      "title": "Подгруппа 68",
+      "parentId": "g-root-18"
+    },
+    {
+      "id": "g-sub-69",
+      "title": "Подгруппа 69",
+      "parentId": "g-root-24"
+    },
+    {
+      "id": "g-sub-70",
+      "title": "Подгруппа 70",
+      "parentId": "g-root-7"
+    },
+    {
+      "id": "g-sub-71",
+      "title": "Подгруппа 71",
+      "parentId": "g-root-18"
+    },
+    {
+      "id": "g-sub-72",
+      "title": "Подгруппа 72",
+      "parentId": "g-root-5"
+    },
+    {
+      "id": "g-sub-73",
+      "title": "Подгруппа 73",
+      "parentId": "g-root-14"
+    },
+    {
+      "id": "g-sub-74",
+      "title": "Подгруппа 74",
+      "parentId": "g-root-21"
+    },
+    {
+      "id": "g-sub-75",
+      "title": "Подгруппа 75",
+      "parentId": "g-root-4"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t-1",
+      "title": "Задача 1",
+      "groupId": "g-sub-75",
+      "start": "2026-10-12",
+      "end": "2026-10-15",
+      "assigneeIds": [
+        "r-4",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-2",
+      "title": "Задача 2",
+      "groupId": "g-sub-45",
+      "start": "2026-10-16",
+      "end": "2026-10-22",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-3",
+      "title": "Задача 3",
+      "groupId": "g-sub-64",
+      "start": "2026-10-23",
+      "end": "2026-10-30",
+      "assigneeIds": [
+        "r-9",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-4",
+      "title": "Задача 4",
+      "groupId": "g-sub-23",
+      "start": "2026-11-02",
+      "end": "2026-11-11",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-5",
+      "title": "Задача 5",
+      "groupId": "g-sub-68",
+      "start": "2026-11-12",
+      "end": "2026-11-13",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-6",
+      "title": "Задача 6",
+      "groupId": "g-sub-73",
+      "start": "2026-11-16",
+      "end": "2026-11-18",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-7",
+      "title": "Задача 7",
+      "groupId": "g-sub-31",
+      "start": "2026-11-19",
+      "end": "2026-11-23",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-8",
+      "title": "Задача 8",
+      "groupId": "g-sub-48",
+      "start": "2026-11-24",
+      "end": "2026-11-27",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-9",
+      "title": "Задача 9",
+      "groupId": "g-sub-10",
+      "start": "2026-11-30",
+      "end": "2026-12-09",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-10",
+      "title": "Задача 10",
+      "groupId": "g-sub-48",
+      "start": "2026-12-10",
+      "end": "2026-12-16",
+      "assigneeIds": [
+        "r-2",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-11",
+      "title": "Задача 11",
+      "groupId": "g-sub-4",
+      "start": "2026-12-17",
+      "end": "2026-12-21",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-12",
+      "title": "Задача 12",
+      "groupId": "g-sub-26",
+      "start": "2026-12-22",
+      "end": "2026-12-29",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-13",
+      "title": "Задача 13",
+      "groupId": "g-sub-75",
+      "start": "2026-12-30",
+      "end": "2027-01-01",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-14",
+      "title": "Задача 14",
+      "groupId": "g-sub-33",
+      "start": "2027-01-04",
+      "end": "2027-01-07",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-15",
+      "title": "Задача 15",
+      "groupId": "g-sub-68",
+      "start": "2027-01-08",
+      "end": "2027-01-15",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-16",
+      "title": "Задача 16",
+      "groupId": "g-sub-18",
+      "start": "2027-01-18",
+      "end": "2027-01-26",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-17",
+      "title": "Задача 17",
+      "groupId": "g-sub-17",
+      "start": "2027-01-27",
+      "end": "2027-01-28",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-18",
+      "title": "Задача 18",
+      "groupId": "g-sub-24",
+      "start": "2027-01-29",
+      "end": "2027-02-04",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-19",
+      "title": "Задача 19",
+      "groupId": "g-sub-29",
+      "start": "2027-02-05",
+      "end": "2027-02-08",
+      "assigneeIds": [
+        "r-8",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-20",
+      "title": "Задача 20",
+      "groupId": "g-sub-66",
+      "start": "2027-02-09",
+      "end": "2027-02-10",
+      "assigneeIds": [
+        "r-9",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-21",
+      "title": "Задача 21",
+      "groupId": "g-sub-47",
+      "start": "2027-02-11",
+      "end": "2027-02-18",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-22",
+      "title": "Задача 22",
+      "groupId": "g-sub-74",
+      "start": "2027-02-19",
+      "end": "2027-02-19",
+      "assigneeIds": [
+        "r-8",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-23",
+      "title": "Задача 23",
+      "groupId": "g-sub-6",
+      "start": "2027-02-22",
+      "end": "2027-03-03",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-24",
+      "title": "Задача 24",
+      "groupId": "g-sub-75",
+      "start": "2027-03-04",
+      "end": "2027-03-16",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-25",
+      "title": "Задача 25",
+      "groupId": "g-sub-27",
+      "start": "2027-03-17",
+      "end": "2027-03-30",
+      "assigneeIds": [
+        "r-7",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-26",
+      "title": "Задача 26",
+      "groupId": "g-sub-47",
+      "start": "2027-03-31",
+      "end": "2027-03-31",
+      "assigneeIds": [
+        "r-2",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-27",
+      "title": "Задача 27",
+      "groupId": "g-sub-49",
+      "start": "2027-04-01",
+      "end": "2027-04-12",
+      "assigneeIds": [
+        "r-8",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-28",
+      "title": "Задача 28",
+      "groupId": "g-sub-11",
+      "start": "2027-04-13",
+      "end": "2027-04-15",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-29",
+      "title": "Задача 29",
+      "groupId": "g-sub-34",
+      "start": "2027-04-16",
+      "end": "2027-04-27",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-30",
+      "title": "Задача 30",
+      "groupId": "g-sub-15",
+      "start": "2027-04-28",
+      "end": "2027-05-04",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-31",
+      "title": "Задача 31",
+      "groupId": "g-sub-35",
+      "start": "2027-05-05",
+      "end": "2027-05-06",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-32",
+      "title": "Задача 32",
+      "groupId": "g-sub-38",
+      "start": "2027-05-07",
+      "end": "2027-05-17",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-33",
+      "title": "Задача 33",
+      "groupId": "g-sub-33",
+      "start": "2027-05-18",
+      "end": "2027-05-31",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-34",
+      "title": "Задача 34",
+      "groupId": "g-sub-66",
+      "start": "2027-06-01",
+      "end": "2027-06-11",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-35",
+      "title": "Задача 35",
+      "groupId": "g-sub-28",
+      "start": "2027-06-14",
+      "end": "2027-06-14",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-36",
+      "title": "Задача 36",
+      "groupId": "g-sub-73",
+      "start": "2027-06-15",
+      "end": "2027-06-22",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-37",
+      "title": "Задача 37",
+      "groupId": "g-sub-40",
+      "start": "2027-06-23",
+      "end": "2027-06-23",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-38",
+      "title": "Задача 38",
+      "groupId": "g-sub-20",
+      "start": "2027-06-24",
+      "end": "2027-07-07",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-39",
+      "title": "Задача 39",
+      "groupId": "g-sub-2",
+      "start": "2027-07-08",
+      "end": "2027-07-20",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-40",
+      "title": "Задача 40",
+      "groupId": "g-sub-41",
+      "start": "2027-07-21",
+      "end": "2027-07-28",
+      "assigneeIds": [
+        "r-9",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-41",
+      "title": "Задача 41",
+      "groupId": "g-sub-65",
+      "start": "2027-07-29",
+      "end": "2027-08-10",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-42",
+      "title": "Задача 42",
+      "groupId": "g-sub-24",
+      "start": "2027-08-11",
+      "end": "2027-08-18",
+      "assigneeIds": [
+        "r-5",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-43",
+      "title": "Задача 43",
+      "groupId": "g-sub-73",
+      "start": "2027-08-19",
+      "end": "2027-08-27",
+      "assigneeIds": [
+        "r-3",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-44",
+      "title": "Задача 44",
+      "groupId": "g-sub-30",
+      "start": "2027-08-30",
+      "end": "2027-09-03",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-45",
+      "title": "Задача 45",
+      "groupId": "g-sub-26",
+      "start": "2027-09-06",
+      "end": "2027-09-14",
+      "assigneeIds": [
+        "r-6",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-46",
+      "title": "Задача 46",
+      "groupId": "g-sub-22",
+      "start": "2027-09-15",
+      "end": "2027-09-23",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-47",
+      "title": "Задача 47",
+      "groupId": "g-sub-58",
+      "start": "2027-09-24",
+      "end": "2027-10-06",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-48",
+      "title": "Задача 48",
+      "groupId": "g-sub-68",
+      "start": "2027-10-07",
+      "end": "2027-10-13",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-49",
+      "title": "Задача 49",
+      "groupId": "g-sub-51",
+      "start": "2027-10-14",
+      "end": "2027-10-25",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-50",
+      "title": "Задача 50",
+      "groupId": "g-sub-39",
+      "start": "2027-10-26",
+      "end": "2027-10-27",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-51",
+      "title": "Задача 51",
+      "groupId": "g-sub-29",
+      "start": "2027-10-28",
+      "end": "2027-10-28",
+      "assigneeIds": [
+        "r-7",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-52",
+      "title": "Задача 52",
+      "groupId": "g-sub-53",
+      "start": "2027-10-29",
+      "end": "2027-11-10",
+      "assigneeIds": [
+        "r-6",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-53",
+      "title": "Задача 53",
+      "groupId": "g-sub-26",
+      "start": "2027-11-11",
+      "end": "2027-11-17",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-54",
+      "title": "Задача 54",
+      "groupId": "g-sub-20",
+      "start": "2027-11-18",
+      "end": "2027-11-25",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-55",
+      "title": "Задача 55",
+      "groupId": "g-sub-59",
+      "start": "2027-11-26",
+      "end": "2027-11-26",
+      "assigneeIds": [
+        "r-2",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-56",
+      "title": "Задача 56",
+      "groupId": "g-sub-26",
+      "start": "2027-11-29",
+      "end": "2027-12-06",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-57",
+      "title": "Задача 57",
+      "groupId": "g-sub-26",
+      "start": "2027-12-07",
+      "end": "2027-12-16",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-58",
+      "title": "Задача 58",
+      "groupId": "g-sub-16",
+      "start": "2027-12-17",
+      "end": "2027-12-17",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-59",
+      "title": "Задача 59",
+      "groupId": "g-sub-58",
+      "start": "2027-12-20",
+      "end": "2027-12-31",
+      "assigneeIds": [
+        "r-8",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-60",
+      "title": "Задача 60",
+      "groupId": "g-sub-11",
+      "start": "2028-01-03",
+      "end": "2028-01-12",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-61",
+      "title": "Задача 61",
+      "groupId": "g-sub-11",
+      "start": "2028-01-13",
+      "end": "2028-01-17",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-62",
+      "title": "Задача 62",
+      "groupId": "g-sub-40",
+      "start": "2028-01-18",
+      "end": "2028-01-25",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-63",
+      "title": "Задача 63",
+      "groupId": "g-sub-4",
+      "start": "2028-01-26",
+      "end": "2028-01-28",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-64",
+      "title": "Задача 64",
+      "groupId": "g-sub-35",
+      "start": "2028-01-31",
+      "end": "2028-02-01",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-65",
+      "title": "Задача 65",
+      "groupId": "g-sub-7",
+      "start": "2028-02-02",
+      "end": "2028-02-09",
+      "assigneeIds": [
+        "r-2",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-66",
+      "title": "Задача 66",
+      "groupId": "g-sub-47",
+      "start": "2028-02-10",
+      "end": "2028-02-23",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-67",
+      "title": "Задача 67",
+      "groupId": "g-sub-26",
+      "start": "2028-02-24",
+      "end": "2028-03-01",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-68",
+      "title": "Задача 68",
+      "groupId": "g-sub-19",
+      "start": "2028-03-02",
+      "end": "2028-03-07",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-69",
+      "title": "Задача 69",
+      "groupId": "g-sub-32",
+      "start": "2028-03-08",
+      "end": "2028-03-16",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-70",
+      "title": "Задача 70",
+      "groupId": "g-sub-5",
+      "start": "2028-03-17",
+      "end": "2028-03-17",
+      "assigneeIds": [
+        "r-6",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-71",
+      "title": "Задача 71",
+      "groupId": "g-sub-45",
+      "start": "2028-03-20",
+      "end": "2028-03-24",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-72",
+      "title": "Задача 72",
+      "groupId": "g-sub-44",
+      "start": "2028-03-27",
+      "end": "2028-04-04",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-73",
+      "title": "Задача 73",
+      "groupId": "g-sub-14",
+      "start": "2028-04-05",
+      "end": "2028-04-07",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-74",
+      "title": "Задача 74",
+      "groupId": "g-sub-47",
+      "start": "2028-04-10",
+      "end": "2028-04-17",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-75",
+      "title": "Задача 75",
+      "groupId": "g-sub-34",
+      "start": "2028-04-18",
+      "end": "2028-04-25",
+      "assigneeIds": [
+        "r-2",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-76",
+      "title": "Задача 76",
+      "groupId": "g-sub-63",
+      "start": "2028-04-26",
+      "end": "2028-04-26",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-77",
+      "title": "Задача 77",
+      "groupId": "g-sub-39",
+      "start": "2028-04-27",
+      "end": "2028-05-05",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-78",
+      "title": "Задача 78",
+      "groupId": "g-sub-50",
+      "start": "2028-05-08",
+      "end": "2028-05-19",
+      "assigneeIds": [
+        "r-9",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-79",
+      "title": "Задача 79",
+      "groupId": "g-sub-61",
+      "start": "2028-05-22",
+      "end": "2028-05-22",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-80",
+      "title": "Задача 80",
+      "groupId": "g-sub-37",
+      "start": "2028-05-23",
+      "end": "2028-05-26",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-81",
+      "title": "Задача 81",
+      "groupId": "g-sub-64",
+      "start": "2028-05-29",
+      "end": "2028-05-30",
+      "assigneeIds": [
+        "r-6",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-82",
+      "title": "Задача 82",
+      "groupId": "g-sub-55",
+      "start": "2028-05-31",
+      "end": "2028-06-08",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-83",
+      "title": "Задача 83",
+      "groupId": "g-sub-29",
+      "start": "2028-06-09",
+      "end": "2028-06-20",
+      "assigneeIds": [
+        "r-4",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-84",
+      "title": "Задача 84",
+      "groupId": "g-sub-52",
+      "start": "2028-06-21",
+      "end": "2028-07-03",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-85",
+      "title": "Задача 85",
+      "groupId": "g-sub-36",
+      "start": "2028-07-04",
+      "end": "2028-07-10",
+      "assigneeIds": [
+        "r-6",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-86",
+      "title": "Задача 86",
+      "groupId": "g-sub-40",
+      "start": "2028-07-11",
+      "end": "2028-07-11",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-87",
+      "title": "Задача 87",
+      "groupId": "g-sub-60",
+      "start": "2028-07-12",
+      "end": "2028-07-17",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-88",
+      "title": "Задача 88",
+      "groupId": "g-sub-45",
+      "start": "2028-07-18",
+      "end": "2028-07-27",
+      "assigneeIds": [
+        "r-2",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-89",
+      "title": "Задача 89",
+      "groupId": "g-sub-41",
+      "start": "2028-07-28",
+      "end": "2028-07-28",
+      "assigneeIds": [
+        "r-7",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-90",
+      "title": "Задача 90",
+      "groupId": "g-sub-69",
+      "start": "2028-07-31",
+      "end": "2028-07-31",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-91",
+      "title": "Задача 91",
+      "groupId": "g-sub-56",
+      "start": "2028-08-01",
+      "end": "2028-08-11",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-92",
+      "title": "Задача 92",
+      "groupId": "g-sub-26",
+      "start": "2028-08-14",
+      "end": "2028-08-14",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-93",
+      "title": "Задача 93",
+      "groupId": "g-sub-45",
+      "start": "2028-08-15",
+      "end": "2028-08-22",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-94",
+      "title": "Задача 94",
+      "groupId": "g-sub-45",
+      "start": "2028-08-23",
+      "end": "2028-09-01",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-95",
+      "title": "Задача 95",
+      "groupId": "g-sub-70",
+      "start": "2028-09-04",
+      "end": "2028-09-07",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-96",
+      "title": "Задача 96",
+      "groupId": "g-sub-50",
+      "start": "2028-09-08",
+      "end": "2028-09-21",
+      "assigneeIds": [
+        "r-7",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-97",
+      "title": "Задача 97",
+      "groupId": "g-sub-69",
+      "start": "2028-09-22",
+      "end": "2028-10-05",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-98",
+      "title": "Задача 98",
+      "groupId": "g-sub-74",
+      "start": "2028-10-06",
+      "end": "2028-10-19",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-99",
+      "title": "Задача 99",
+      "groupId": "g-sub-73",
+      "start": "2028-10-20",
+      "end": "2028-10-25",
+      "assigneeIds": [
+        "r-3",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-100",
+      "title": "Задача 100",
+      "groupId": "g-sub-22",
+      "start": "2028-10-26",
+      "end": "2028-11-02",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-101",
+      "title": "Задача 101",
+      "groupId": "g-sub-34",
+      "start": "2028-11-03",
+      "end": "2028-11-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-102",
+      "title": "Задача 102",
+      "groupId": "g-sub-67",
+      "start": "2028-11-14",
+      "end": "2028-11-20",
+      "assigneeIds": [
+        "r-4",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-103",
+      "title": "Задача 103",
+      "groupId": "g-sub-45",
+      "start": "2028-11-21",
+      "end": "2028-11-22",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-104",
+      "title": "Задача 104",
+      "groupId": "g-sub-54",
+      "start": "2028-11-23",
+      "end": "2028-11-24",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-105",
+      "title": "Задача 105",
+      "groupId": "g-sub-49",
+      "start": "2028-11-27",
+      "end": "2028-12-05",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-106",
+      "title": "Задача 106",
+      "groupId": "g-sub-54",
+      "start": "2028-12-06",
+      "end": "2028-12-11",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-107",
+      "title": "Задача 107",
+      "groupId": "g-sub-47",
+      "start": "2028-12-12",
+      "end": "2028-12-15",
+      "assigneeIds": [
+        "r-1",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-108",
+      "title": "Задача 108",
+      "groupId": "g-sub-65",
+      "start": "2028-12-18",
+      "end": "2028-12-26",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-109",
+      "title": "Задача 109",
+      "groupId": "g-sub-57",
+      "start": "2028-12-27",
+      "end": "2028-12-28",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-110",
+      "title": "Задача 110",
+      "groupId": "g-sub-68",
+      "start": "2028-12-29",
+      "end": "2029-01-10",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-111",
+      "title": "Задача 111",
+      "groupId": "g-sub-41",
+      "start": "2029-01-11",
+      "end": "2029-01-18",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-112",
+      "title": "Задача 112",
+      "groupId": "g-sub-40",
+      "start": "2029-01-19",
+      "end": "2029-02-01",
+      "assigneeIds": [
+        "r-1",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-113",
+      "title": "Задача 113",
+      "groupId": "g-sub-53",
+      "start": "2029-02-02",
+      "end": "2029-02-07",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-114",
+      "title": "Задача 114",
+      "groupId": "g-sub-49",
+      "start": "2029-02-08",
+      "end": "2029-02-14",
+      "assigneeIds": [
+        "r-3",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-115",
+      "title": "Задача 115",
+      "groupId": "g-sub-55",
+      "start": "2029-02-15",
+      "end": "2029-02-19",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-116",
+      "title": "Задача 116",
+      "groupId": "g-sub-4",
+      "start": "2029-02-20",
+      "end": "2029-02-23",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-117",
+      "title": "Задача 117",
+      "groupId": "g-sub-40",
+      "start": "2029-02-26",
+      "end": "2029-03-07",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-118",
+      "title": "Задача 118",
+      "groupId": "g-sub-27",
+      "start": "2029-03-08",
+      "end": "2029-03-12",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-119",
+      "title": "Задача 119",
+      "groupId": "g-sub-64",
+      "start": "2029-03-13",
+      "end": "2029-03-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-120",
+      "title": "Задача 120",
+      "groupId": "g-sub-44",
+      "start": "2029-03-14",
+      "end": "2029-03-15",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-121",
+      "title": "Задача 121",
+      "groupId": "g-sub-17",
+      "start": "2029-03-16",
+      "end": "2029-03-16",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-122",
+      "title": "Задача 122",
+      "groupId": "g-sub-4",
+      "start": "2029-03-19",
+      "end": "2029-03-19",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-123",
+      "title": "Задача 123",
+      "groupId": "g-sub-58",
+      "start": "2029-03-20",
+      "end": "2029-03-28",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-124",
+      "title": "Задача 124",
+      "groupId": "g-sub-74",
+      "start": "2029-03-29",
+      "end": "2029-04-05",
+      "assigneeIds": [
+        "r-3",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-125",
+      "title": "Задача 125",
+      "groupId": "g-sub-16",
+      "start": "2029-04-06",
+      "end": "2029-04-09",
+      "assigneeIds": [
+        "r-9",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-126",
+      "title": "Задача 126",
+      "groupId": "g-sub-72",
+      "start": "2029-04-10",
+      "end": "2029-04-18",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-127",
+      "title": "Задача 127",
+      "groupId": "g-sub-52",
+      "start": "2029-04-19",
+      "end": "2029-04-23",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-128",
+      "title": "Задача 128",
+      "groupId": "g-sub-28",
+      "start": "2029-04-24",
+      "end": "2029-05-07",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-129",
+      "title": "Задача 129",
+      "groupId": "g-sub-16",
+      "start": "2029-05-08",
+      "end": "2029-05-11",
+      "assigneeIds": [
+        "r-1",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-130",
+      "title": "Задача 130",
+      "groupId": "g-sub-72",
+      "start": "2029-05-14",
+      "end": "2029-05-16",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-131",
+      "title": "Задача 131",
+      "groupId": "g-sub-48",
+      "start": "2029-05-17",
+      "end": "2029-05-24",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-132",
+      "title": "Задача 132",
+      "groupId": "g-sub-67",
+      "start": "2029-05-25",
+      "end": "2029-06-06",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-133",
+      "title": "Задача 133",
+      "groupId": "g-sub-32",
+      "start": "2029-06-07",
+      "end": "2029-06-15",
+      "assigneeIds": [
+        "r-2",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-134",
+      "title": "Задача 134",
+      "groupId": "g-sub-42",
+      "start": "2029-06-18",
+      "end": "2029-06-22",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-135",
+      "title": "Задача 135",
+      "groupId": "g-sub-55",
+      "start": "2029-06-25",
+      "end": "2029-07-03",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-136",
+      "title": "Задача 136",
+      "groupId": "g-sub-65",
+      "start": "2029-07-04",
+      "end": "2029-07-12",
+      "assigneeIds": [
+        "r-2",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-137",
+      "title": "Задача 137",
+      "groupId": "g-sub-15",
+      "start": "2029-07-13",
+      "end": "2029-07-26",
+      "assigneeIds": [
+        "r-4",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-138",
+      "title": "Задача 138",
+      "groupId": "g-sub-38",
+      "start": "2029-07-27",
+      "end": "2029-08-07",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-139",
+      "title": "Задача 139",
+      "groupId": "g-sub-55",
+      "start": "2029-08-08",
+      "end": "2029-08-17",
+      "assigneeIds": [
+        "r-1",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-140",
+      "title": "Задача 140",
+      "groupId": "g-sub-23",
+      "start": "2029-08-20",
+      "end": "2029-08-22",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-141",
+      "title": "Задача 141",
+      "groupId": "g-sub-54",
+      "start": "2029-08-23",
+      "end": "2029-09-03",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-142",
+      "title": "Задача 142",
+      "groupId": "g-sub-56",
+      "start": "2029-09-04",
+      "end": "2029-09-12",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-143",
+      "title": "Задача 143",
+      "groupId": "g-sub-23",
+      "start": "2029-09-13",
+      "end": "2029-09-19",
+      "assigneeIds": [
+        "r-7",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-144",
+      "title": "Задача 144",
+      "groupId": "g-sub-45",
+      "start": "2029-09-20",
+      "end": "2029-09-26",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-145",
+      "title": "Задача 145",
+      "groupId": "g-sub-51",
+      "start": "2029-09-27",
+      "end": "2029-10-08",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-146",
+      "title": "Задача 146",
+      "groupId": "g-sub-75",
+      "start": "2029-10-09",
+      "end": "2029-10-12",
+      "assigneeIds": [
+        "r-6",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-147",
+      "title": "Задача 147",
+      "groupId": "g-sub-19",
+      "start": "2029-10-15",
+      "end": "2029-10-16",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-148",
+      "title": "Задача 148",
+      "groupId": "g-sub-13",
+      "start": "2029-10-17",
+      "end": "2029-10-30",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-149",
+      "title": "Задача 149",
+      "groupId": "g-sub-37",
+      "start": "2029-10-31",
+      "end": "2029-11-12",
+      "assigneeIds": [
+        "r-8",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-150",
+      "title": "Задача 150",
+      "groupId": "g-sub-20",
+      "start": "2029-11-13",
+      "end": "2029-11-23",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-151",
+      "title": "Задача 151",
+      "groupId": "g-sub-19",
+      "start": "2029-11-26",
+      "end": "2029-12-06",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-152",
+      "title": "Задача 152",
+      "groupId": "g-sub-48",
+      "start": "2029-12-07",
+      "end": "2029-12-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-153",
+      "title": "Задача 153",
+      "groupId": "g-sub-62",
+      "start": "2029-12-14",
+      "end": "2029-12-18",
+      "assigneeIds": [
+        "r-7",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-154",
+      "title": "Задача 154",
+      "groupId": "g-sub-9",
+      "start": "2029-12-19",
+      "end": "2029-12-31",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-155",
+      "title": "Задача 155",
+      "groupId": "g-sub-31",
+      "start": "2030-01-01",
+      "end": "2030-01-03",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-156",
+      "title": "Задача 156",
+      "groupId": "g-sub-73",
+      "start": "2030-01-04",
+      "end": "2030-01-04",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-157",
+      "title": "Задача 157",
+      "groupId": "g-sub-22",
+      "start": "2030-01-07",
+      "end": "2030-01-10",
+      "assigneeIds": [
+        "r-6",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-158",
+      "title": "Задача 158",
+      "groupId": "g-sub-17",
+      "start": "2030-01-11",
+      "end": "2030-01-22",
+      "assigneeIds": [
+        "r-6",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-159",
+      "title": "Задача 159",
+      "groupId": "g-sub-44",
+      "start": "2030-01-23",
+      "end": "2030-01-29",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-160",
+      "title": "Задача 160",
+      "groupId": "g-sub-37",
+      "start": "2030-01-30",
+      "end": "2030-02-11",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-161",
+      "title": "Задача 161",
+      "groupId": "g-sub-11",
+      "start": "2030-02-12",
+      "end": "2030-02-12",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-162",
+      "title": "Задача 162",
+      "groupId": "g-sub-57",
+      "start": "2030-02-13",
+      "end": "2030-02-13",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-163",
+      "title": "Задача 163",
+      "groupId": "g-sub-36",
+      "start": "2030-02-14",
+      "end": "2030-02-21",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-164",
+      "title": "Задача 164",
+      "groupId": "g-sub-74",
+      "start": "2030-02-22",
+      "end": "2030-03-05",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-165",
+      "title": "Задача 165",
+      "groupId": "g-sub-7",
+      "start": "2030-03-06",
+      "end": "2030-03-12",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-166",
+      "title": "Задача 166",
+      "groupId": "g-sub-22",
+      "start": "2030-03-13",
+      "end": "2030-03-26",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-167",
+      "title": "Задача 167",
+      "groupId": "g-sub-65",
+      "start": "2030-03-27",
+      "end": "2030-04-01",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-168",
+      "title": "Задача 168",
+      "groupId": "g-sub-5",
+      "start": "2030-04-02",
+      "end": "2030-04-15",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-169",
+      "title": "Задача 169",
+      "groupId": "g-sub-55",
+      "start": "2030-04-16",
+      "end": "2030-04-16",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-170",
+      "title": "Задача 170",
+      "groupId": "g-sub-39",
+      "start": "2030-04-17",
+      "end": "2030-04-30",
+      "assigneeIds": [
+        "r-7",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-171",
+      "title": "Задача 171",
+      "groupId": "g-sub-65",
+      "start": "2030-05-01",
+      "end": "2030-05-01",
+      "assigneeIds": [
+        "r-4",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-172",
+      "title": "Задача 172",
+      "groupId": "g-sub-16",
+      "start": "2030-05-02",
+      "end": "2030-05-06",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-173",
+      "title": "Задача 173",
+      "groupId": "g-sub-23",
+      "start": "2030-05-07",
+      "end": "2030-05-20",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-174",
+      "title": "Задача 174",
+      "groupId": "g-sub-26",
+      "start": "2030-05-21",
+      "end": "2030-05-24",
+      "assigneeIds": [
+        "r-7",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-175",
+      "title": "Задача 175",
+      "groupId": "g-sub-44",
+      "start": "2030-05-27",
+      "end": "2030-06-06",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-176",
+      "title": "Задача 176",
+      "groupId": "g-sub-54",
+      "start": "2030-06-07",
+      "end": "2030-06-11",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-177",
+      "title": "Задача 177",
+      "groupId": "g-sub-12",
+      "start": "2030-06-12",
+      "end": "2030-06-25",
+      "assigneeIds": [
+        "r-4",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-178",
+      "title": "Задача 178",
+      "groupId": "g-sub-54",
+      "start": "2030-06-26",
+      "end": "2030-07-08",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-179",
+      "title": "Задача 179",
+      "groupId": "g-sub-63",
+      "start": "2030-07-09",
+      "end": "2030-07-12",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-180",
+      "title": "Задача 180",
+      "groupId": "g-sub-48",
+      "start": "2030-07-15",
+      "end": "2030-07-15",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-181",
+      "title": "Задача 181",
+      "groupId": "g-sub-19",
+      "start": "2030-07-16",
+      "end": "2030-07-19",
+      "assigneeIds": [
+        "r-4",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-182",
+      "title": "Задача 182",
+      "groupId": "g-sub-18",
+      "start": "2030-07-22",
+      "end": "2030-07-26",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-183",
+      "title": "Задача 183",
+      "groupId": "g-sub-41",
+      "start": "2030-07-29",
+      "end": "2030-07-30",
+      "assigneeIds": [
+        "r-5",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-184",
+      "title": "Задача 184",
+      "groupId": "g-sub-42",
+      "start": "2030-07-31",
+      "end": "2030-08-02",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-185",
+      "title": "Задача 185",
+      "groupId": "g-sub-31",
+      "start": "2030-08-05",
+      "end": "2030-08-05",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-186",
+      "title": "Задача 186",
+      "groupId": "g-sub-56",
+      "start": "2030-08-06",
+      "end": "2030-08-08",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-187",
+      "title": "Задача 187",
+      "groupId": "g-sub-70",
+      "start": "2030-08-09",
+      "end": "2030-08-19",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-188",
+      "title": "Задача 188",
+      "groupId": "g-sub-69",
+      "start": "2030-08-20",
+      "end": "2030-08-27",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-189",
+      "title": "Задача 189",
+      "groupId": "g-sub-26",
+      "start": "2030-08-28",
+      "end": "2030-09-03",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-190",
+      "title": "Задача 190",
+      "groupId": "g-sub-28",
+      "start": "2030-09-04",
+      "end": "2030-09-09",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-191",
+      "title": "Задача 191",
+      "groupId": "g-sub-28",
+      "start": "2030-09-10",
+      "end": "2030-09-10",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-192",
+      "title": "Задача 192",
+      "groupId": "g-sub-62",
+      "start": "2030-09-11",
+      "end": "2030-09-18",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-193",
+      "title": "Задача 193",
+      "groupId": "g-sub-14",
+      "start": "2030-09-19",
+      "end": "2030-09-25",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-194",
+      "title": "Задача 194",
+      "groupId": "g-sub-43",
+      "start": "2030-09-26",
+      "end": "2030-09-30",
+      "assigneeIds": [
+        "r-6",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-195",
+      "title": "Задача 195",
+      "groupId": "g-sub-52",
+      "start": "2030-10-01",
+      "end": "2030-10-09",
+      "assigneeIds": [
+        "r-7",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-196",
+      "title": "Задача 196",
+      "groupId": "g-sub-14",
+      "start": "2030-10-10",
+      "end": "2030-10-17",
+      "assigneeIds": [
+        "r-7",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-197",
+      "title": "Задача 197",
+      "groupId": "g-sub-46",
+      "start": "2030-10-18",
+      "end": "2030-10-31",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-198",
+      "title": "Задача 198",
+      "groupId": "g-sub-66",
+      "start": "2030-11-01",
+      "end": "2030-11-14",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-199",
+      "title": "Задача 199",
+      "groupId": "g-sub-8",
+      "start": "2030-11-15",
+      "end": "2030-11-27",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-200",
+      "title": "Задача 200",
+      "groupId": "g-sub-65",
+      "start": "2030-11-28",
+      "end": "2030-12-03",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-201",
+      "title": "Задача 201",
+      "groupId": "g-sub-25",
+      "start": "2030-12-04",
+      "end": "2030-12-09",
+      "assigneeIds": [
+        "r-7",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-202",
+      "title": "Задача 202",
+      "groupId": "g-sub-14",
+      "start": "2030-12-10",
+      "end": "2030-12-19",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-203",
+      "title": "Задача 203",
+      "groupId": "g-sub-46",
+      "start": "2030-12-20",
+      "end": "2030-12-24",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-204",
+      "title": "Задача 204",
+      "groupId": "g-sub-5",
+      "start": "2030-12-25",
+      "end": "2030-12-31",
+      "assigneeIds": [
+        "r-1",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-205",
+      "title": "Задача 205",
+      "groupId": "g-sub-8",
+      "start": "2031-01-01",
+      "end": "2031-01-01",
+      "assigneeIds": [
+        "r-5",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-206",
+      "title": "Задача 206",
+      "groupId": "g-sub-44",
+      "start": "2031-01-02",
+      "end": "2031-01-02",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-207",
+      "title": "Задача 207",
+      "groupId": "g-sub-55",
+      "start": "2031-01-03",
+      "end": "2031-01-09",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-208",
+      "title": "Задача 208",
+      "groupId": "g-sub-9",
+      "start": "2031-01-10",
+      "end": "2031-01-16",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-209",
+      "title": "Задача 209",
+      "groupId": "g-sub-8",
+      "start": "2031-01-17",
+      "end": "2031-01-23",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-210",
+      "title": "Задача 210",
+      "groupId": "g-sub-32",
+      "start": "2031-01-24",
+      "end": "2031-02-06",
+      "assigneeIds": [
+        "r-7",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-211",
+      "title": "Задача 211",
+      "groupId": "g-sub-46",
+      "start": "2031-02-07",
+      "end": "2031-02-11",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-212",
+      "title": "Задача 212",
+      "groupId": "g-sub-50",
+      "start": "2031-02-12",
+      "end": "2031-02-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-213",
+      "title": "Задача 213",
+      "groupId": "g-sub-28",
+      "start": "2031-02-14",
+      "end": "2031-02-21",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-214",
+      "title": "Задача 214",
+      "groupId": "g-sub-58",
+      "start": "2031-02-24",
+      "end": "2031-02-24",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-215",
+      "title": "Задача 215",
+      "groupId": "g-sub-39",
+      "start": "2031-02-25",
+      "end": "2031-03-05",
+      "assigneeIds": [
+        "r-7",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-216",
+      "title": "Задача 216",
+      "groupId": "g-sub-67",
+      "start": "2031-03-06",
+      "end": "2031-03-19",
+      "assigneeIds": [
+        "r-4",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-217",
+      "title": "Задача 217",
+      "groupId": "g-sub-43",
+      "start": "2031-03-20",
+      "end": "2031-04-01",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-218",
+      "title": "Задача 218",
+      "groupId": "g-sub-43",
+      "start": "2031-04-02",
+      "end": "2031-04-11",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-219",
+      "title": "Задача 219",
+      "groupId": "g-sub-8",
+      "start": "2031-04-14",
+      "end": "2031-04-25",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-220",
+      "title": "Задача 220",
+      "groupId": "g-sub-41",
+      "start": "2031-04-28",
+      "end": "2031-04-30",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-221",
+      "title": "Задача 221",
+      "groupId": "g-sub-23",
+      "start": "2031-05-01",
+      "end": "2031-05-01",
+      "assigneeIds": [
+        "r-2",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-222",
+      "title": "Задача 222",
+      "groupId": "g-sub-70",
+      "start": "2031-05-02",
+      "end": "2031-05-15",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-223",
+      "title": "Задача 223",
+      "groupId": "g-sub-56",
+      "start": "2031-05-16",
+      "end": "2031-05-20",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-224",
+      "title": "Задача 224",
+      "groupId": "g-sub-70",
+      "start": "2031-05-21",
+      "end": "2031-05-26",
+      "assigneeIds": [
+        "r-5",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-225",
+      "title": "Задача 225",
+      "groupId": "g-sub-57",
+      "start": "2031-05-27",
+      "end": "2031-05-30",
+      "assigneeIds": [
+        "r-9",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-226",
+      "title": "Задача 226",
+      "groupId": "g-sub-41",
+      "start": "2031-06-02",
+      "end": "2031-06-13",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-227",
+      "title": "Задача 227",
+      "groupId": "g-sub-14",
+      "start": "2031-06-16",
+      "end": "2031-06-18",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-228",
+      "title": "Задача 228",
+      "groupId": "g-sub-8",
+      "start": "2031-06-19",
+      "end": "2031-06-20",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-229",
+      "title": "Задача 229",
+      "groupId": "g-sub-73",
+      "start": "2031-06-23",
+      "end": "2031-06-25",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-230",
+      "title": "Задача 230",
+      "groupId": "g-sub-40",
+      "start": "2031-06-26",
+      "end": "2031-07-03",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-231",
+      "title": "Задача 231",
+      "groupId": "g-sub-60",
+      "start": "2031-07-04",
+      "end": "2031-07-04",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-232",
+      "title": "Задача 232",
+      "groupId": "g-sub-53",
+      "start": "2031-07-07",
+      "end": "2031-07-10",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-233",
+      "title": "Задача 233",
+      "groupId": "g-sub-63",
+      "start": "2031-07-11",
+      "end": "2031-07-17",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-234",
+      "title": "Задача 234",
+      "groupId": "g-sub-10",
+      "start": "2031-07-18",
+      "end": "2031-07-29",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-235",
+      "title": "Задача 235",
+      "groupId": "g-sub-25",
+      "start": "2031-07-30",
+      "end": "2031-08-11",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-236",
+      "title": "Задача 236",
+      "groupId": "g-sub-58",
+      "start": "2031-08-12",
+      "end": "2031-08-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-237",
+      "title": "Задача 237",
+      "groupId": "g-sub-55",
+      "start": "2031-08-14",
+      "end": "2031-08-14",
+      "assigneeIds": [
+        "r-8",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-238",
+      "title": "Задача 238",
+      "groupId": "g-sub-65",
+      "start": "2031-08-15",
+      "end": "2031-08-21",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-239",
+      "title": "Задача 239",
+      "groupId": "g-sub-50",
+      "start": "2031-08-22",
+      "end": "2031-09-04",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-240",
+      "title": "Задача 240",
+      "groupId": "g-sub-3",
+      "start": "2031-09-05",
+      "end": "2031-09-16",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-241",
+      "title": "Задача 241",
+      "groupId": "g-sub-71",
+      "start": "2031-09-17",
+      "end": "2031-09-30",
+      "assigneeIds": [
+        "r-2",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-242",
+      "title": "Задача 242",
+      "groupId": "g-sub-55",
+      "start": "2031-10-01",
+      "end": "2031-10-08",
+      "assigneeIds": [
+        "r-9",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-243",
+      "title": "Задача 243",
+      "groupId": "g-sub-8",
+      "start": "2031-10-09",
+      "end": "2031-10-17",
+      "assigneeIds": [
+        "r-1",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-244",
+      "title": "Задача 244",
+      "groupId": "g-sub-51",
+      "start": "2031-10-20",
+      "end": "2031-10-28",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-245",
+      "title": "Задача 245",
+      "groupId": "g-sub-8",
+      "start": "2031-10-29",
+      "end": "2031-11-03",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-246",
+      "title": "Задача 246",
+      "groupId": "g-sub-9",
+      "start": "2031-11-04",
+      "end": "2031-11-17",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-247",
+      "title": "Задача 247",
+      "groupId": "g-sub-59",
+      "start": "2031-11-18",
+      "end": "2031-11-25",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-248",
+      "title": "Задача 248",
+      "groupId": "g-sub-75",
+      "start": "2031-11-26",
+      "end": "2031-12-04",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-249",
+      "title": "Задача 249",
+      "groupId": "g-sub-6",
+      "start": "2031-12-05",
+      "end": "2031-12-18",
+      "assigneeIds": [
+        "r-2",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-250",
+      "title": "Задача 250",
+      "groupId": "g-sub-18",
+      "start": "2031-12-19",
+      "end": "2031-12-25",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-251",
+      "title": "Задача 251",
+      "groupId": "g-sub-6",
+      "start": "2031-12-26",
+      "end": "2032-01-08",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-252",
+      "title": "Задача 252",
+      "groupId": "g-sub-52",
+      "start": "2032-01-09",
+      "end": "2032-01-09",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-253",
+      "title": "Задача 253",
+      "groupId": "g-sub-61",
+      "start": "2032-01-12",
+      "end": "2032-01-20",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-254",
+      "title": "Задача 254",
+      "groupId": "g-sub-67",
+      "start": "2032-01-21",
+      "end": "2032-02-02",
+      "assigneeIds": [
+        "r-7",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-255",
+      "title": "Задача 255",
+      "groupId": "g-sub-3",
+      "start": "2032-02-03",
+      "end": "2032-02-05",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-256",
+      "title": "Задача 256",
+      "groupId": "g-sub-25",
+      "start": "2032-02-06",
+      "end": "2032-02-13",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-257",
+      "title": "Задача 257",
+      "groupId": "g-sub-10",
+      "start": "2032-02-16",
+      "end": "2032-02-20",
+      "assigneeIds": [
+        "r-2",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-258",
+      "title": "Задача 258",
+      "groupId": "g-sub-5",
+      "start": "2032-02-23",
+      "end": "2032-02-24",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-259",
+      "title": "Задача 259",
+      "groupId": "g-sub-61",
+      "start": "2032-02-25",
+      "end": "2032-03-01",
+      "assigneeIds": [
+        "r-1",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-260",
+      "title": "Задача 260",
+      "groupId": "g-sub-24",
+      "start": "2032-03-02",
+      "end": "2032-03-11",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-261",
+      "title": "Задача 261",
+      "groupId": "g-sub-74",
+      "start": "2032-03-12",
+      "end": "2032-03-22",
+      "assigneeIds": [
+        "r-5",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-262",
+      "title": "Задача 262",
+      "groupId": "g-sub-67",
+      "start": "2032-03-23",
+      "end": "2032-04-05",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-263",
+      "title": "Задача 263",
+      "groupId": "g-sub-41",
+      "start": "2032-04-06",
+      "end": "2032-04-09",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-264",
+      "title": "Задача 264",
+      "groupId": "g-sub-21",
+      "start": "2032-04-12",
+      "end": "2032-04-21",
+      "assigneeIds": [
+        "r-5",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-265",
+      "title": "Задача 265",
+      "groupId": "g-sub-25",
+      "start": "2032-04-22",
+      "end": "2032-04-28",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-266",
+      "title": "Задача 266",
+      "groupId": "g-sub-28",
+      "start": "2032-04-29",
+      "end": "2032-05-05",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-267",
+      "title": "Задача 267",
+      "groupId": "g-sub-20",
+      "start": "2032-05-06",
+      "end": "2032-05-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-268",
+      "title": "Задача 268",
+      "groupId": "g-sub-62",
+      "start": "2032-05-14",
+      "end": "2032-05-19",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-269",
+      "title": "Задача 269",
+      "groupId": "g-sub-65",
+      "start": "2032-05-20",
+      "end": "2032-05-20",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-270",
+      "title": "Задача 270",
+      "groupId": "g-sub-51",
+      "start": "2032-05-21",
+      "end": "2032-05-26",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-271",
+      "title": "Задача 271",
+      "groupId": "g-sub-71",
+      "start": "2032-05-27",
+      "end": "2032-05-27",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-272",
+      "title": "Задача 272",
+      "groupId": "g-sub-55",
+      "start": "2032-05-28",
+      "end": "2032-05-31",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-273",
+      "title": "Задача 273",
+      "groupId": "g-sub-13",
+      "start": "2032-06-01",
+      "end": "2032-06-01",
+      "assigneeIds": [
+        "r-8",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-274",
+      "title": "Задача 274",
+      "groupId": "g-sub-75",
+      "start": "2032-06-02",
+      "end": "2032-06-14",
+      "assigneeIds": [
+        "r-9",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-275",
+      "title": "Задача 275",
+      "groupId": "g-sub-51",
+      "start": "2032-06-15",
+      "end": "2032-06-22",
+      "assigneeIds": [
+        "r-1",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-276",
+      "title": "Задача 276",
+      "groupId": "g-sub-42",
+      "start": "2032-06-23",
+      "end": "2032-07-02",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-277",
+      "title": "Задача 277",
+      "groupId": "g-sub-51",
+      "start": "2032-07-05",
+      "end": "2032-07-12",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-278",
+      "title": "Задача 278",
+      "groupId": "g-sub-8",
+      "start": "2032-07-13",
+      "end": "2032-07-14",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-279",
+      "title": "Задача 279",
+      "groupId": "g-sub-9",
+      "start": "2032-07-15",
+      "end": "2032-07-23",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-280",
+      "title": "Задача 280",
+      "groupId": "g-sub-64",
+      "start": "2032-07-26",
+      "end": "2032-08-06",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-281",
+      "title": "Задача 281",
+      "groupId": "g-sub-15",
+      "start": "2032-08-09",
+      "end": "2032-08-17",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-282",
+      "title": "Задача 282",
+      "groupId": "g-sub-21",
+      "start": "2032-08-18",
+      "end": "2032-08-19",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-283",
+      "title": "Задача 283",
+      "groupId": "g-sub-15",
+      "start": "2032-08-20",
+      "end": "2032-08-25",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-284",
+      "title": "Задача 284",
+      "groupId": "g-sub-44",
+      "start": "2032-08-26",
+      "end": "2032-08-27",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-285",
+      "title": "Задача 285",
+      "groupId": "g-sub-55",
+      "start": "2032-08-30",
+      "end": "2032-08-31",
+      "assigneeIds": [
+        "r-4",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-286",
+      "title": "Задача 286",
+      "groupId": "g-sub-18",
+      "start": "2032-09-01",
+      "end": "2032-09-03",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-287",
+      "title": "Задача 287",
+      "groupId": "g-sub-54",
+      "start": "2032-09-06",
+      "end": "2032-09-08",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-288",
+      "title": "Задача 288",
+      "groupId": "g-sub-28",
+      "start": "2032-09-09",
+      "end": "2032-09-20",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-289",
+      "title": "Задача 289",
+      "groupId": "g-sub-75",
+      "start": "2032-09-21",
+      "end": "2032-09-29",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-290",
+      "title": "Задача 290",
+      "groupId": "g-sub-33",
+      "start": "2032-09-30",
+      "end": "2032-10-08",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-291",
+      "title": "Задача 291",
+      "groupId": "g-sub-75",
+      "start": "2032-10-11",
+      "end": "2032-10-14",
+      "assigneeIds": [
+        "r-3",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-292",
+      "title": "Задача 292",
+      "groupId": "g-sub-18",
+      "start": "2032-10-15",
+      "end": "2032-10-25",
+      "assigneeIds": [
+        "r-5",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-293",
+      "title": "Задача 293",
+      "groupId": "g-sub-16",
+      "start": "2032-10-26",
+      "end": "2032-11-05",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-294",
+      "title": "Задача 294",
+      "groupId": "g-sub-37",
+      "start": "2032-11-08",
+      "end": "2032-11-09",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-295",
+      "title": "Задача 295",
+      "groupId": "g-sub-7",
+      "start": "2032-11-10",
+      "end": "2032-11-18",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-296",
+      "title": "Задача 296",
+      "groupId": "g-sub-10",
+      "start": "2032-11-19",
+      "end": "2032-11-22",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-297",
+      "title": "Задача 297",
+      "groupId": "g-sub-59",
+      "start": "2032-11-23",
+      "end": "2032-12-06",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-298",
+      "title": "Задача 298",
+      "groupId": "g-sub-17",
+      "start": "2032-12-07",
+      "end": "2032-12-07",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-299",
+      "title": "Задача 299",
+      "groupId": "g-sub-31",
+      "start": "2032-12-08",
+      "end": "2032-12-09",
+      "assigneeIds": [
+        "r-1",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-300",
+      "title": "Задача 300",
+      "groupId": "g-sub-49",
+      "start": "2032-12-10",
+      "end": "2032-12-21",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-301",
+      "title": "Задача 301",
+      "groupId": "g-sub-37",
+      "start": "2032-12-22",
+      "end": "2032-12-23",
+      "assigneeIds": [
+        "r-7",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-302",
+      "title": "Задача 302",
+      "groupId": "g-sub-61",
+      "start": "2032-12-24",
+      "end": "2032-12-29",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-303",
+      "title": "Задача 303",
+      "groupId": "g-sub-37",
+      "start": "2032-12-30",
+      "end": "2032-12-30",
+      "assigneeIds": [
+        "r-5",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-304",
+      "title": "Задача 304",
+      "groupId": "g-sub-2",
+      "start": "2032-12-31",
+      "end": "2033-01-05",
+      "assigneeIds": [
+        "r-5",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-305",
+      "title": "Задача 305",
+      "groupId": "g-sub-59",
+      "start": "2033-01-06",
+      "end": "2033-01-18",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-306",
+      "title": "Задача 306",
+      "groupId": "g-sub-2",
+      "start": "2033-01-19",
+      "end": "2033-01-20",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-307",
+      "title": "Задача 307",
+      "groupId": "g-sub-40",
+      "start": "2033-01-21",
+      "end": "2033-01-21",
+      "assigneeIds": [
+        "r-4",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-308",
+      "title": "Задача 308",
+      "groupId": "g-sub-5",
+      "start": "2033-01-24",
+      "end": "2033-02-02",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-309",
+      "title": "Задача 309",
+      "groupId": "g-sub-25",
+      "start": "2033-02-03",
+      "end": "2033-02-10",
+      "assigneeIds": [
+        "r-6",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-310",
+      "title": "Задача 310",
+      "groupId": "g-sub-46",
+      "start": "2033-02-11",
+      "end": "2033-02-11",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-311",
+      "title": "Задача 311",
+      "groupId": "g-sub-73",
+      "start": "2033-02-14",
+      "end": "2033-02-15",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-312",
+      "title": "Задача 312",
+      "groupId": "g-sub-62",
+      "start": "2033-02-16",
+      "end": "2033-02-21",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-313",
+      "title": "Задача 313",
+      "groupId": "g-sub-3",
+      "start": "2033-02-22",
+      "end": "2033-02-22",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-314",
+      "title": "Задача 314",
+      "groupId": "g-sub-42",
+      "start": "2033-02-23",
+      "end": "2033-03-02",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-315",
+      "title": "Задача 315",
+      "groupId": "g-sub-53",
+      "start": "2033-03-03",
+      "end": "2033-03-03",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-316",
+      "title": "Задача 316",
+      "groupId": "g-sub-54",
+      "start": "2033-03-04",
+      "end": "2033-03-17",
+      "assigneeIds": [
+        "r-8",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-317",
+      "title": "Задача 317",
+      "groupId": "g-sub-64",
+      "start": "2033-03-18",
+      "end": "2033-03-25",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-318",
+      "title": "Задача 318",
+      "groupId": "g-sub-35",
+      "start": "2033-03-28",
+      "end": "2033-04-01",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-319",
+      "title": "Задача 319",
+      "groupId": "g-sub-74",
+      "start": "2033-04-04",
+      "end": "2033-04-12",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-320",
+      "title": "Задача 320",
+      "groupId": "g-sub-36",
+      "start": "2033-04-13",
+      "end": "2033-04-20",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-321",
+      "title": "Задача 321",
+      "groupId": "g-sub-4",
+      "start": "2033-04-21",
+      "end": "2033-04-27",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-322",
+      "title": "Задача 322",
+      "groupId": "g-sub-8",
+      "start": "2033-04-28",
+      "end": "2033-04-28",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-323",
+      "title": "Задача 323",
+      "groupId": "g-sub-18",
+      "start": "2033-04-29",
+      "end": "2033-05-11",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-324",
+      "title": "Задача 324",
+      "groupId": "g-sub-66",
+      "start": "2033-05-12",
+      "end": "2033-05-18",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-325",
+      "title": "Задача 325",
+      "groupId": "g-sub-18",
+      "start": "2033-05-19",
+      "end": "2033-05-25",
+      "assigneeIds": [
+        "r-3",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-326",
+      "title": "Задача 326",
+      "groupId": "g-sub-74",
+      "start": "2033-05-26",
+      "end": "2033-06-02",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-327",
+      "title": "Задача 327",
+      "groupId": "g-sub-74",
+      "start": "2033-06-03",
+      "end": "2033-06-16",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-328",
+      "title": "Задача 328",
+      "groupId": "g-sub-52",
+      "start": "2033-06-17",
+      "end": "2033-06-24",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-329",
+      "title": "Задача 329",
+      "groupId": "g-sub-62",
+      "start": "2033-06-27",
+      "end": "2033-06-30",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-330",
+      "title": "Задача 330",
+      "groupId": "g-sub-29",
+      "start": "2033-07-01",
+      "end": "2033-07-06",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-331",
+      "title": "Задача 331",
+      "groupId": "g-sub-24",
+      "start": "2033-07-07",
+      "end": "2033-07-18",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-332",
+      "title": "Задача 332",
+      "groupId": "g-sub-36",
+      "start": "2033-07-19",
+      "end": "2033-07-21",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-333",
+      "title": "Задача 333",
+      "groupId": "g-sub-63",
+      "start": "2033-07-22",
+      "end": "2033-08-04",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-334",
+      "title": "Задача 334",
+      "groupId": "g-sub-1",
+      "start": "2033-08-05",
+      "end": "2033-08-11",
+      "assigneeIds": [
+        "r-6",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-335",
+      "title": "Задача 335",
+      "groupId": "g-sub-43",
+      "start": "2033-08-12",
+      "end": "2033-08-17",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-336",
+      "title": "Задача 336",
+      "groupId": "g-sub-67",
+      "start": "2033-08-18",
+      "end": "2033-08-19",
+      "assigneeIds": [
+        "r-1",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-337",
+      "title": "Задача 337",
+      "groupId": "g-sub-60",
+      "start": "2033-08-22",
+      "end": "2033-08-25",
+      "assigneeIds": [
+        "r-3",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-338",
+      "title": "Задача 338",
+      "groupId": "g-sub-70",
+      "start": "2033-08-26",
+      "end": "2033-09-05",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-339",
+      "title": "Задача 339",
+      "groupId": "g-sub-49",
+      "start": "2033-09-06",
+      "end": "2033-09-14",
+      "assigneeIds": [
+        "r-1",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-340",
+      "title": "Задача 340",
+      "groupId": "g-sub-30",
+      "start": "2033-09-15",
+      "end": "2033-09-28",
+      "assigneeIds": [
+        "r-1",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-341",
+      "title": "Задача 341",
+      "groupId": "g-sub-9",
+      "start": "2033-09-29",
+      "end": "2033-10-06",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-342",
+      "title": "Задача 342",
+      "groupId": "g-sub-44",
+      "start": "2033-10-07",
+      "end": "2033-10-19",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-343",
+      "title": "Задача 343",
+      "groupId": "g-sub-68",
+      "start": "2033-10-20",
+      "end": "2033-11-01",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-344",
+      "title": "Задача 344",
+      "groupId": "g-sub-9",
+      "start": "2033-11-02",
+      "end": "2033-11-04",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-345",
+      "title": "Задача 345",
+      "groupId": "g-sub-7",
+      "start": "2033-11-07",
+      "end": "2033-11-10",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-346",
+      "title": "Задача 346",
+      "groupId": "g-sub-61",
+      "start": "2033-11-11",
+      "end": "2033-11-16",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-347",
+      "title": "Задача 347",
+      "groupId": "g-sub-25",
+      "start": "2033-11-17",
+      "end": "2033-11-30",
+      "assigneeIds": [
+        "r-5",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-348",
+      "title": "Задача 348",
+      "groupId": "g-sub-3",
+      "start": "2033-12-01",
+      "end": "2033-12-02",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-349",
+      "title": "Задача 349",
+      "groupId": "g-sub-32",
+      "start": "2033-12-05",
+      "end": "2033-12-15",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-350",
+      "title": "Задача 350",
+      "groupId": "g-sub-7",
+      "start": "2033-12-16",
+      "end": "2033-12-27",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-351",
+      "title": "Задача 351",
+      "groupId": "g-sub-25",
+      "start": "2033-12-28",
+      "end": "2034-01-09",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-352",
+      "title": "Задача 352",
+      "groupId": "g-sub-53",
+      "start": "2034-01-10",
+      "end": "2034-01-18",
+      "assigneeIds": [
+        "r-7",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-353",
+      "title": "Задача 353",
+      "groupId": "g-sub-7",
+      "start": "2034-01-19",
+      "end": "2034-01-19",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-354",
+      "title": "Задача 354",
+      "groupId": "g-sub-12",
+      "start": "2034-01-20",
+      "end": "2034-01-24",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-355",
+      "title": "Задача 355",
+      "groupId": "g-sub-65",
+      "start": "2034-01-25",
+      "end": "2034-01-27",
+      "assigneeIds": [
+        "r-2",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-356",
+      "title": "Задача 356",
+      "groupId": "g-sub-38",
+      "start": "2034-01-30",
+      "end": "2034-02-08",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-357",
+      "title": "Задача 357",
+      "groupId": "g-sub-49",
+      "start": "2034-02-09",
+      "end": "2034-02-14",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-358",
+      "title": "Задача 358",
+      "groupId": "g-sub-13",
+      "start": "2034-02-15",
+      "end": "2034-02-22",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-359",
+      "title": "Задача 359",
+      "groupId": "g-sub-22",
+      "start": "2034-02-23",
+      "end": "2034-02-23",
+      "assigneeIds": [
+        "r-5",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-360",
+      "title": "Задача 360",
+      "groupId": "g-sub-65",
+      "start": "2034-02-24",
+      "end": "2034-03-01",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-361",
+      "title": "Задача 361",
+      "groupId": "g-sub-44",
+      "start": "2034-03-02",
+      "end": "2034-03-03",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-362",
+      "title": "Задача 362",
+      "groupId": "g-sub-23",
+      "start": "2034-03-06",
+      "end": "2034-03-07",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-363",
+      "title": "Задача 363",
+      "groupId": "g-sub-22",
+      "start": "2034-03-08",
+      "end": "2034-03-09",
+      "assigneeIds": [
+        "r-1",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-364",
+      "title": "Задача 364",
+      "groupId": "g-sub-19",
+      "start": "2034-03-10",
+      "end": "2034-03-22",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-365",
+      "title": "Задача 365",
+      "groupId": "g-sub-67",
+      "start": "2034-03-23",
+      "end": "2034-04-03",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-366",
+      "title": "Задача 366",
+      "groupId": "g-sub-16",
+      "start": "2034-04-04",
+      "end": "2034-04-06",
+      "assigneeIds": [
+        "r-4",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-367",
+      "title": "Задача 367",
+      "groupId": "g-sub-54",
+      "start": "2034-04-07",
+      "end": "2034-04-19",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-368",
+      "title": "Задача 368",
+      "groupId": "g-sub-17",
+      "start": "2034-04-20",
+      "end": "2034-04-27",
+      "assigneeIds": [
+        "r-4",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-369",
+      "title": "Задача 369",
+      "groupId": "g-sub-63",
+      "start": "2034-04-28",
+      "end": "2034-05-09",
+      "assigneeIds": [
+        "r-1",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-370",
+      "title": "Задача 370",
+      "groupId": "g-sub-46",
+      "start": "2034-05-10",
+      "end": "2034-05-15",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-371",
+      "title": "Задача 371",
+      "groupId": "g-sub-9",
+      "start": "2034-05-16",
+      "end": "2034-05-16",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-372",
+      "title": "Задача 372",
+      "groupId": "g-sub-31",
+      "start": "2034-05-17",
+      "end": "2034-05-22",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-373",
+      "title": "Задача 373",
+      "groupId": "g-sub-7",
+      "start": "2034-05-23",
+      "end": "2034-05-30",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-374",
+      "title": "Задача 374",
+      "groupId": "g-sub-56",
+      "start": "2034-05-31",
+      "end": "2034-05-31",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-375",
+      "title": "Задача 375",
+      "groupId": "g-sub-49",
+      "start": "2034-06-01",
+      "end": "2034-06-05",
+      "assigneeIds": [
+        "r-7",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-376",
+      "title": "Задача 376",
+      "groupId": "g-sub-10",
+      "start": "2034-06-06",
+      "end": "2034-06-14",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-377",
+      "title": "Задача 377",
+      "groupId": "g-sub-53",
+      "start": "2034-06-15",
+      "end": "2034-06-27",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-378",
+      "title": "Задача 378",
+      "groupId": "g-sub-65",
+      "start": "2034-06-28",
+      "end": "2034-07-05",
+      "assigneeIds": [
+        "r-2",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-379",
+      "title": "Задача 379",
+      "groupId": "g-sub-14",
+      "start": "2034-07-06",
+      "end": "2034-07-13",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-380",
+      "title": "Задача 380",
+      "groupId": "g-sub-10",
+      "start": "2034-07-14",
+      "end": "2034-07-19",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-381",
+      "title": "Задача 381",
+      "groupId": "g-sub-22",
+      "start": "2034-07-20",
+      "end": "2034-08-02",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-382",
+      "title": "Задача 382",
+      "groupId": "g-sub-23",
+      "start": "2034-08-03",
+      "end": "2034-08-08",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-383",
+      "title": "Задача 383",
+      "groupId": "g-sub-56",
+      "start": "2034-08-09",
+      "end": "2034-08-09",
+      "assigneeIds": [
+        "r-3",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-384",
+      "title": "Задача 384",
+      "groupId": "g-sub-57",
+      "start": "2034-08-10",
+      "end": "2034-08-22",
+      "assigneeIds": [
+        "r-3",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-385",
+      "title": "Задача 385",
+      "groupId": "g-sub-23",
+      "start": "2034-08-23",
+      "end": "2034-09-04",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-386",
+      "title": "Задача 386",
+      "groupId": "g-sub-19",
+      "start": "2034-09-05",
+      "end": "2034-09-18",
+      "assigneeIds": [
+        "r-4",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-387",
+      "title": "Задача 387",
+      "groupId": "g-sub-31",
+      "start": "2034-09-19",
+      "end": "2034-09-27",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-388",
+      "title": "Задача 388",
+      "groupId": "g-sub-24",
+      "start": "2034-09-28",
+      "end": "2034-10-06",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-389",
+      "title": "Задача 389",
+      "groupId": "g-sub-1",
+      "start": "2034-10-09",
+      "end": "2034-10-19",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-390",
+      "title": "Задача 390",
+      "groupId": "g-sub-45",
+      "start": "2034-10-20",
+      "end": "2034-10-25",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-391",
+      "title": "Задача 391",
+      "groupId": "g-sub-72",
+      "start": "2034-10-26",
+      "end": "2034-11-01",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-392",
+      "title": "Задача 392",
+      "groupId": "g-sub-39",
+      "start": "2034-11-02",
+      "end": "2034-11-14",
+      "assigneeIds": [
+        "r-1",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-393",
+      "title": "Задача 393",
+      "groupId": "g-sub-52",
+      "start": "2034-11-15",
+      "end": "2034-11-28",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-394",
+      "title": "Задача 394",
+      "groupId": "g-sub-21",
+      "start": "2034-11-29",
+      "end": "2034-12-12",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-395",
+      "title": "Задача 395",
+      "groupId": "g-sub-40",
+      "start": "2034-12-13",
+      "end": "2034-12-18",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-396",
+      "title": "Задача 396",
+      "groupId": "g-sub-66",
+      "start": "2034-12-19",
+      "end": "2034-12-26",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-397",
+      "title": "Задача 397",
+      "groupId": "g-sub-14",
+      "start": "2034-12-27",
+      "end": "2034-12-27",
+      "assigneeIds": [
+        "r-4",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-398",
+      "title": "Задача 398",
+      "groupId": "g-sub-49",
+      "start": "2034-12-28",
+      "end": "2034-12-28",
+      "assigneeIds": [
+        "r-8",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-399",
+      "title": "Задача 399",
+      "groupId": "g-sub-63",
+      "start": "2034-12-29",
+      "end": "2035-01-09",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-400",
+      "title": "Задача 400",
+      "groupId": "g-sub-32",
+      "start": "2035-01-10",
+      "end": "2035-01-18",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-401",
+      "title": "Задача 401",
+      "groupId": "g-sub-66",
+      "start": "2035-01-19",
+      "end": "2035-01-26",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-402",
+      "title": "Задача 402",
+      "groupId": "g-sub-12",
+      "start": "2035-01-29",
+      "end": "2035-02-01",
+      "assigneeIds": [
+        "r-2",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-403",
+      "title": "Задача 403",
+      "groupId": "g-sub-62",
+      "start": "2035-02-02",
+      "end": "2035-02-06",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-404",
+      "title": "Задача 404",
+      "groupId": "g-sub-70",
+      "start": "2035-02-07",
+      "end": "2035-02-09",
+      "assigneeIds": [
+        "r-7",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-405",
+      "title": "Задача 405",
+      "groupId": "g-sub-8",
+      "start": "2035-02-12",
+      "end": "2035-02-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-406",
+      "title": "Задача 406",
+      "groupId": "g-sub-63",
+      "start": "2035-02-14",
+      "end": "2035-02-22",
+      "assigneeIds": [
+        "r-5",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-407",
+      "title": "Задача 407",
+      "groupId": "g-sub-68",
+      "start": "2035-02-23",
+      "end": "2035-02-23",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-408",
+      "title": "Задача 408",
+      "groupId": "g-sub-10",
+      "start": "2035-02-26",
+      "end": "2035-02-27",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-409",
+      "title": "Задача 409",
+      "groupId": "g-sub-19",
+      "start": "2035-02-28",
+      "end": "2035-02-28",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-410",
+      "title": "Задача 410",
+      "groupId": "g-sub-4",
+      "start": "2035-03-01",
+      "end": "2035-03-14",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-411",
+      "title": "Задача 411",
+      "groupId": "g-sub-47",
+      "start": "2035-03-15",
+      "end": "2035-03-19",
+      "assigneeIds": [
+        "r-2",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-412",
+      "title": "Задача 412",
+      "groupId": "g-sub-62",
+      "start": "2035-03-20",
+      "end": "2035-03-28",
+      "assigneeIds": [
+        "r-4",
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-413",
+      "title": "Задача 413",
+      "groupId": "g-sub-54",
+      "start": "2035-03-29",
+      "end": "2035-03-30",
+      "assigneeIds": [
+        "r-9",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-414",
+      "title": "Задача 414",
+      "groupId": "g-sub-75",
+      "start": "2035-04-02",
+      "end": "2035-04-03",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-415",
+      "title": "Задача 415",
+      "groupId": "g-sub-16",
+      "start": "2035-04-04",
+      "end": "2035-04-09",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-416",
+      "title": "Задача 416",
+      "groupId": "g-sub-54",
+      "start": "2035-04-10",
+      "end": "2035-04-18",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-417",
+      "title": "Задача 417",
+      "groupId": "g-sub-28",
+      "start": "2035-04-19",
+      "end": "2035-04-30",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-418",
+      "title": "Задача 418",
+      "groupId": "g-sub-8",
+      "start": "2035-05-01",
+      "end": "2035-05-14",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-419",
+      "title": "Задача 419",
+      "groupId": "g-sub-40",
+      "start": "2035-05-15",
+      "end": "2035-05-23",
+      "assigneeIds": [
+        "r-4",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-420",
+      "title": "Задача 420",
+      "groupId": "g-sub-29",
+      "start": "2035-05-24",
+      "end": "2035-06-06",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-421",
+      "title": "Задача 421",
+      "groupId": "g-sub-56",
+      "start": "2035-06-07",
+      "end": "2035-06-12",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-422",
+      "title": "Задача 422",
+      "groupId": "g-sub-4",
+      "start": "2035-06-13",
+      "end": "2035-06-19",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-423",
+      "title": "Задача 423",
+      "groupId": "g-sub-57",
+      "start": "2035-06-20",
+      "end": "2035-07-02",
+      "assigneeIds": [
+        "r-2",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-424",
+      "title": "Задача 424",
+      "groupId": "g-sub-52",
+      "start": "2035-07-03",
+      "end": "2035-07-11",
+      "assigneeIds": [
+        "r-9",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-425",
+      "title": "Задача 425",
+      "groupId": "g-sub-16",
+      "start": "2035-07-12",
+      "end": "2035-07-12",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-426",
+      "title": "Задача 426",
+      "groupId": "g-sub-47",
+      "start": "2035-07-13",
+      "end": "2035-07-17",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-427",
+      "title": "Задача 427",
+      "groupId": "g-sub-9",
+      "start": "2035-07-18",
+      "end": "2035-07-30",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-428",
+      "title": "Задача 428",
+      "groupId": "g-sub-57",
+      "start": "2035-07-31",
+      "end": "2035-08-07",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-429",
+      "title": "Задача 429",
+      "groupId": "g-sub-61",
+      "start": "2035-08-08",
+      "end": "2035-08-10",
+      "assigneeIds": [
+        "r-3",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-430",
+      "title": "Задача 430",
+      "groupId": "g-sub-19",
+      "start": "2035-08-13",
+      "end": "2035-08-23",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-431",
+      "title": "Задача 431",
+      "groupId": "g-sub-69",
+      "start": "2035-08-24",
+      "end": "2035-09-03",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-432",
+      "title": "Задача 432",
+      "groupId": "g-sub-11",
+      "start": "2035-09-04",
+      "end": "2035-09-13",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-433",
+      "title": "Задача 433",
+      "groupId": "g-sub-72",
+      "start": "2035-09-14",
+      "end": "2035-09-14",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-434",
+      "title": "Задача 434",
+      "groupId": "g-sub-28",
+      "start": "2035-09-17",
+      "end": "2035-09-27",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-435",
+      "title": "Задача 435",
+      "groupId": "g-sub-25",
+      "start": "2035-09-28",
+      "end": "2035-10-08",
+      "assigneeIds": [
+        "r-8",
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-436",
+      "title": "Задача 436",
+      "groupId": "g-sub-19",
+      "start": "2035-10-09",
+      "end": "2035-10-18",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-437",
+      "title": "Задача 437",
+      "groupId": "g-sub-43",
+      "start": "2035-10-19",
+      "end": "2035-10-24",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-438",
+      "title": "Задача 438",
+      "groupId": "g-sub-61",
+      "start": "2035-10-25",
+      "end": "2035-11-05",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-439",
+      "title": "Задача 439",
+      "groupId": "g-sub-29",
+      "start": "2035-11-06",
+      "end": "2035-11-12",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-440",
+      "title": "Задача 440",
+      "groupId": "g-sub-12",
+      "start": "2035-11-13",
+      "end": "2035-11-21",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-441",
+      "title": "Задача 441",
+      "groupId": "g-sub-58",
+      "start": "2035-11-22",
+      "end": "2035-11-30",
+      "assigneeIds": [
+        "r-7",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-442",
+      "title": "Задача 442",
+      "groupId": "g-sub-50",
+      "start": "2035-12-03",
+      "end": "2035-12-05",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-443",
+      "title": "Задача 443",
+      "groupId": "g-sub-37",
+      "start": "2035-12-06",
+      "end": "2035-12-11",
+      "assigneeIds": [
+        "r-1",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-444",
+      "title": "Задача 444",
+      "groupId": "g-sub-61",
+      "start": "2035-12-12",
+      "end": "2035-12-20",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-445",
+      "title": "Задача 445",
+      "groupId": "g-sub-69",
+      "start": "2035-12-21",
+      "end": "2035-12-27",
+      "assigneeIds": [
+        "r-2",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-446",
+      "title": "Задача 446",
+      "groupId": "g-sub-32",
+      "start": "2035-12-28",
+      "end": "2035-12-31",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-447",
+      "title": "Задача 447",
+      "groupId": "g-sub-60",
+      "start": "2036-01-01",
+      "end": "2036-01-02",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-448",
+      "title": "Задача 448",
+      "groupId": "g-sub-31",
+      "start": "2036-01-03",
+      "end": "2036-01-14",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-449",
+      "title": "Задача 449",
+      "groupId": "g-sub-73",
+      "start": "2036-01-15",
+      "end": "2036-01-28",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-450",
+      "title": "Задача 450",
+      "groupId": "g-sub-71",
+      "start": "2036-01-29",
+      "end": "2036-01-31",
+      "assigneeIds": [
+        "r-5",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-451",
+      "title": "Задача 451",
+      "groupId": "g-sub-73",
+      "start": "2036-02-01",
+      "end": "2036-02-05",
+      "assigneeIds": [
+        "r-7",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-452",
+      "title": "Задача 452",
+      "groupId": "g-sub-69",
+      "start": "2036-02-06",
+      "end": "2036-02-19",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-453",
+      "title": "Задача 453",
+      "groupId": "g-sub-56",
+      "start": "2036-02-20",
+      "end": "2036-02-29",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-454",
+      "title": "Задача 454",
+      "groupId": "g-sub-53",
+      "start": "2036-03-03",
+      "end": "2036-03-06",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-455",
+      "title": "Задача 455",
+      "groupId": "g-sub-8",
+      "start": "2036-03-07",
+      "end": "2036-03-12",
+      "assigneeIds": [
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-456",
+      "title": "Задача 456",
+      "groupId": "g-sub-17",
+      "start": "2036-03-13",
+      "end": "2036-03-19",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-457",
+      "title": "Задача 457",
+      "groupId": "g-sub-61",
+      "start": "2036-03-20",
+      "end": "2036-03-26",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-458",
+      "title": "Задача 458",
+      "groupId": "g-sub-37",
+      "start": "2036-03-27",
+      "end": "2036-04-01",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-459",
+      "title": "Задача 459",
+      "groupId": "g-sub-60",
+      "start": "2036-04-02",
+      "end": "2036-04-08",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-460",
+      "title": "Задача 460",
+      "groupId": "g-sub-46",
+      "start": "2036-04-09",
+      "end": "2036-04-21",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-461",
+      "title": "Задача 461",
+      "groupId": "g-sub-70",
+      "start": "2036-04-22",
+      "end": "2036-05-01",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-462",
+      "title": "Задача 462",
+      "groupId": "g-sub-49",
+      "start": "2036-05-02",
+      "end": "2036-05-08",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-463",
+      "title": "Задача 463",
+      "groupId": "g-sub-43",
+      "start": "2036-05-09",
+      "end": "2036-05-20",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-464",
+      "title": "Задача 464",
+      "groupId": "g-sub-23",
+      "start": "2036-05-21",
+      "end": "2036-06-02",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-465",
+      "title": "Задача 465",
+      "groupId": "g-sub-73",
+      "start": "2036-06-03",
+      "end": "2036-06-06",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-466",
+      "title": "Задача 466",
+      "groupId": "g-sub-31",
+      "start": "2036-06-09",
+      "end": "2036-06-09",
+      "assigneeIds": [
+        "r-4",
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-467",
+      "title": "Задача 467",
+      "groupId": "g-sub-37",
+      "start": "2036-06-10",
+      "end": "2036-06-18",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-468",
+      "title": "Задача 468",
+      "groupId": "g-sub-48",
+      "start": "2036-06-19",
+      "end": "2036-06-19",
+      "assigneeIds": [
+        "r-2",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-469",
+      "title": "Задача 469",
+      "groupId": "g-sub-70",
+      "start": "2036-06-20",
+      "end": "2036-06-24",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-470",
+      "title": "Задача 470",
+      "groupId": "g-sub-65",
+      "start": "2036-06-25",
+      "end": "2036-06-25",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-471",
+      "title": "Задача 471",
+      "groupId": "g-sub-59",
+      "start": "2036-06-26",
+      "end": "2036-07-02",
+      "assigneeIds": [
+        "r-6",
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-472",
+      "title": "Задача 472",
+      "groupId": "g-sub-20",
+      "start": "2036-07-03",
+      "end": "2036-07-08",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-473",
+      "title": "Задача 473",
+      "groupId": "g-sub-26",
+      "start": "2036-07-09",
+      "end": "2036-07-11",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-474",
+      "title": "Задача 474",
+      "groupId": "g-sub-38",
+      "start": "2036-07-14",
+      "end": "2036-07-15",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-475",
+      "title": "Задача 475",
+      "groupId": "g-sub-10",
+      "start": "2036-07-16",
+      "end": "2036-07-28",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-476",
+      "title": "Задача 476",
+      "groupId": "g-sub-32",
+      "start": "2036-07-29",
+      "end": "2036-07-31",
+      "assigneeIds": [
+        "r-2",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-477",
+      "title": "Задача 477",
+      "groupId": "g-sub-34",
+      "start": "2036-08-01",
+      "end": "2036-08-01",
+      "assigneeIds": [
+        "r-7"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-478",
+      "title": "Задача 478",
+      "groupId": "g-sub-19",
+      "start": "2036-08-04",
+      "end": "2036-08-13",
+      "assigneeIds": [
+        "r-8",
+        "r-3"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-479",
+      "title": "Задача 479",
+      "groupId": "g-sub-6",
+      "start": "2036-08-14",
+      "end": "2036-08-22",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-480",
+      "title": "Задача 480",
+      "groupId": "g-sub-27",
+      "start": "2036-08-25",
+      "end": "2036-09-03",
+      "assigneeIds": [
+        "r-3",
+        "r-6"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-481",
+      "title": "Задача 481",
+      "groupId": "g-sub-29",
+      "start": "2036-09-04",
+      "end": "2036-09-09",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-482",
+      "title": "Задача 482",
+      "groupId": "g-sub-72",
+      "start": "2036-09-10",
+      "end": "2036-09-19",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-483",
+      "title": "Задача 483",
+      "groupId": "g-sub-2",
+      "start": "2036-09-22",
+      "end": "2036-10-01",
+      "assigneeIds": [
+        "r-2",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-484",
+      "title": "Задача 484",
+      "groupId": "g-sub-6",
+      "start": "2036-10-02",
+      "end": "2036-10-06",
+      "assigneeIds": [
+        "r-5",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-485",
+      "title": "Задача 485",
+      "groupId": "g-sub-14",
+      "start": "2036-10-07",
+      "end": "2036-10-17",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-486",
+      "title": "Задача 486",
+      "groupId": "g-sub-26",
+      "start": "2036-10-20",
+      "end": "2036-10-31",
+      "assigneeIds": [
+        "r-4",
+        "r-1"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-487",
+      "title": "Задача 487",
+      "groupId": "g-sub-3",
+      "start": "2036-11-03",
+      "end": "2036-11-13",
+      "assigneeIds": [
+        "r-6",
+        "r-9"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-488",
+      "title": "Задача 488",
+      "groupId": "g-sub-48",
+      "start": "2036-11-14",
+      "end": "2036-11-20",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-489",
+      "title": "Задача 489",
+      "groupId": "g-sub-8",
+      "start": "2036-11-21",
+      "end": "2036-11-28",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-490",
+      "title": "Задача 490",
+      "groupId": "g-sub-41",
+      "start": "2036-12-01",
+      "end": "2036-12-12",
+      "assigneeIds": [
+        "r-2"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-491",
+      "title": "Задача 491",
+      "groupId": "g-sub-56",
+      "start": "2036-12-15",
+      "end": "2036-12-22",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-492",
+      "title": "Задача 492",
+      "groupId": "g-sub-67",
+      "start": "2036-12-23",
+      "end": "2036-12-31",
+      "assigneeIds": [
+        "r-8"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-493",
+      "title": "Задача 493",
+      "groupId": "g-sub-55",
+      "start": "2037-01-01",
+      "end": "2037-01-07",
+      "assigneeIds": [
+        "r-1",
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-494",
+      "title": "Задача 494",
+      "groupId": "g-sub-74",
+      "start": "2037-01-08",
+      "end": "2037-01-13",
+      "assigneeIds": [
+        "r-9"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    },
+    {
+      "id": "t-495",
+      "title": "Задача 495",
+      "groupId": "g-sub-50",
+      "start": "2037-01-14",
+      "end": "2037-01-27",
+      "assigneeIds": [
+        "r-3"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-496",
+      "title": "Задача 496",
+      "groupId": "g-sub-8",
+      "start": "2037-01-28",
+      "end": "2037-02-06",
+      "assigneeIds": [
+        "r-1"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-497",
+      "title": "Задача 497",
+      "groupId": "g-sub-49",
+      "start": "2037-02-09",
+      "end": "2037-02-19",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-498",
+      "title": "Задача 498",
+      "groupId": "g-sub-50",
+      "start": "2037-02-20",
+      "end": "2037-02-24",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-499",
+      "title": "Задача 499",
+      "groupId": "g-sub-49",
+      "start": "2037-02-25",
+      "end": "2037-03-04",
+      "assigneeIds": [
+        "r-5"
+      ],
+      "workTypeIds": [
+        "dev"
+      ]
+    },
+    {
+      "id": "t-500",
+      "title": "Задача 500",
+      "groupId": "g-sub-73",
+      "start": "2037-03-05",
+      "end": "2037-03-18",
+      "assigneeIds": [
+        "r-4"
+      ],
+      "workTypeIds": [
+        "psi"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "fromTaskId": "t-8",
+      "toTaskId": "t-10",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-1",
+      "toTaskId": "t-13",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-5",
+      "toTaskId": "t-15",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-13",
+      "toTaskId": "t-24",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-21",
+      "toTaskId": "t-26",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-14",
+      "toTaskId": "t-33",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-20",
+      "toTaskId": "t-34",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-6",
+      "toTaskId": "t-36",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-18",
+      "toTaskId": "t-42",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-36",
+      "toTaskId": "t-43",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-12",
+      "toTaskId": "t-45",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-15",
+      "toTaskId": "t-48",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-19",
+      "toTaskId": "t-51",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-45",
+      "toTaskId": "t-53",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-38",
+      "toTaskId": "t-54",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-53",
+      "toTaskId": "t-56",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-56",
+      "toTaskId": "t-57",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-47",
+      "toTaskId": "t-59",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-28",
+      "toTaskId": "t-60",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-60",
+      "toTaskId": "t-61",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-37",
+      "toTaskId": "t-62",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-11",
+      "toTaskId": "t-63",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-31",
+      "toTaskId": "t-64",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-26",
+      "toTaskId": "t-66",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-57",
+      "toTaskId": "t-67",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-2",
+      "toTaskId": "t-71",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-66",
+      "toTaskId": "t-74",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-29",
+      "toTaskId": "t-75",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-50",
+      "toTaskId": "t-77",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-3",
+      "toTaskId": "t-81",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-51",
+      "toTaskId": "t-83",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-62",
+      "toTaskId": "t-86",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-71",
+      "toTaskId": "t-88",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-40",
+      "toTaskId": "t-89",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-67",
+      "toTaskId": "t-92",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-88",
+      "toTaskId": "t-93",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-93",
+      "toTaskId": "t-94",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-78",
+      "toTaskId": "t-96",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-90",
+      "toTaskId": "t-97",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-22",
+      "toTaskId": "t-98",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-43",
+      "toTaskId": "t-99",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-46",
+      "toTaskId": "t-100",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-75",
+      "toTaskId": "t-101",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-94",
+      "toTaskId": "t-103",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-27",
+      "toTaskId": "t-105",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-104",
+      "toTaskId": "t-106",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-74",
+      "toTaskId": "t-107",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-41",
+      "toTaskId": "t-108",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-48",
+      "toTaskId": "t-110",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-89",
+      "toTaskId": "t-111",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-86",
+      "toTaskId": "t-112",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-52",
+      "toTaskId": "t-113",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-105",
+      "toTaskId": "t-114",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-82",
+      "toTaskId": "t-115",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-63",
+      "toTaskId": "t-116",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-112",
+      "toTaskId": "t-117",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-25",
+      "toTaskId": "t-118",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-81",
+      "toTaskId": "t-119",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-72",
+      "toTaskId": "t-120",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-17",
+      "toTaskId": "t-121",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-116",
+      "toTaskId": "t-122",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-59",
+      "toTaskId": "t-123",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-98",
+      "toTaskId": "t-124",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-58",
+      "toTaskId": "t-125",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-84",
+      "toTaskId": "t-127",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-35",
+      "toTaskId": "t-128",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-125",
+      "toTaskId": "t-129",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-126",
+      "toTaskId": "t-130",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-10",
+      "toTaskId": "t-131",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-102",
+      "toTaskId": "t-132",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-69",
+      "toTaskId": "t-133",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-115",
+      "toTaskId": "t-135",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-108",
+      "toTaskId": "t-136",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-30",
+      "toTaskId": "t-137",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-32",
+      "toTaskId": "t-138",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-135",
+      "toTaskId": "t-139",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-4",
+      "toTaskId": "t-140",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-106",
+      "toTaskId": "t-141",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-91",
+      "toTaskId": "t-142",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-140",
+      "toTaskId": "t-143",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-103",
+      "toTaskId": "t-144",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-49",
+      "toTaskId": "t-145",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-24",
+      "toTaskId": "t-146",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-68",
+      "toTaskId": "t-147",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-80",
+      "toTaskId": "t-149",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-54",
+      "toTaskId": "t-150",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-147",
+      "toTaskId": "t-151",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-131",
+      "toTaskId": "t-152",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-7",
+      "toTaskId": "t-155",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-99",
+      "toTaskId": "t-156",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-100",
+      "toTaskId": "t-157",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-121",
+      "toTaskId": "t-158",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-120",
+      "toTaskId": "t-159",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-149",
+      "toTaskId": "t-160",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-61",
+      "toTaskId": "t-161",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-109",
+      "toTaskId": "t-162",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-85",
+      "toTaskId": "t-163",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-124",
+      "toTaskId": "t-164",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-65",
+      "toTaskId": "t-165",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-157",
+      "toTaskId": "t-166",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-136",
+      "toTaskId": "t-167",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-70",
+      "toTaskId": "t-168",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-139",
+      "toTaskId": "t-169",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-77",
+      "toTaskId": "t-170",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-167",
+      "toTaskId": "t-171",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-129",
+      "toTaskId": "t-172",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-143",
+      "toTaskId": "t-173",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-92",
+      "toTaskId": "t-174",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-159",
+      "toTaskId": "t-175",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-141",
+      "toTaskId": "t-176",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-176",
+      "toTaskId": "t-178",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-76",
+      "toTaskId": "t-179",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-152",
+      "toTaskId": "t-180",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-151",
+      "toTaskId": "t-181",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-16",
+      "toTaskId": "t-182",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-111",
+      "toTaskId": "t-183",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-134",
+      "toTaskId": "t-184",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-155",
+      "toTaskId": "t-185",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-142",
+      "toTaskId": "t-186",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-95",
+      "toTaskId": "t-187",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-97",
+      "toTaskId": "t-188",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-174",
+      "toTaskId": "t-189",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-128",
+      "toTaskId": "t-190",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-190",
+      "toTaskId": "t-191",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-153",
+      "toTaskId": "t-192",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-73",
+      "toTaskId": "t-193",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-127",
+      "toTaskId": "t-195",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-193",
+      "toTaskId": "t-196",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-34",
+      "toTaskId": "t-198",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-171",
+      "toTaskId": "t-200",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-196",
+      "toTaskId": "t-202",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-197",
+      "toTaskId": "t-203",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-168",
+      "toTaskId": "t-204",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-199",
+      "toTaskId": "t-205",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-175",
+      "toTaskId": "t-206",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-169",
+      "toTaskId": "t-207",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-154",
+      "toTaskId": "t-208",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-205",
+      "toTaskId": "t-209",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-133",
+      "toTaskId": "t-210",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-203",
+      "toTaskId": "t-211",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-96",
+      "toTaskId": "t-212",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-191",
+      "toTaskId": "t-213",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-123",
+      "toTaskId": "t-214",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-170",
+      "toTaskId": "t-215",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-132",
+      "toTaskId": "t-216",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-194",
+      "toTaskId": "t-217",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-217",
+      "toTaskId": "t-218",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-209",
+      "toTaskId": "t-219",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-183",
+      "toTaskId": "t-220",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-173",
+      "toTaskId": "t-221",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-187",
+      "toTaskId": "t-222",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-186",
+      "toTaskId": "t-223",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-222",
+      "toTaskId": "t-224",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-162",
+      "toTaskId": "t-225",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-220",
+      "toTaskId": "t-226",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-202",
+      "toTaskId": "t-227",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-219",
+      "toTaskId": "t-228",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-156",
+      "toTaskId": "t-229",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-117",
+      "toTaskId": "t-230",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-87",
+      "toTaskId": "t-231",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-113",
+      "toTaskId": "t-232",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-179",
+      "toTaskId": "t-233",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-9",
+      "toTaskId": "t-234",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-201",
+      "toTaskId": "t-235",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-214",
+      "toTaskId": "t-236",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-207",
+      "toTaskId": "t-237",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-200",
+      "toTaskId": "t-238",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-212",
+      "toTaskId": "t-239",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-237",
+      "toTaskId": "t-242",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-228",
+      "toTaskId": "t-243",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-145",
+      "toTaskId": "t-244",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-243",
+      "toTaskId": "t-245",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-208",
+      "toTaskId": "t-246",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-55",
+      "toTaskId": "t-247",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-146",
+      "toTaskId": "t-248",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-23",
+      "toTaskId": "t-249",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-182",
+      "toTaskId": "t-250",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-249",
+      "toTaskId": "t-251",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-195",
+      "toTaskId": "t-252",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-79",
+      "toTaskId": "t-253",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-216",
+      "toTaskId": "t-254",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-240",
+      "toTaskId": "t-255",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-235",
+      "toTaskId": "t-256",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-234",
+      "toTaskId": "t-257",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-204",
+      "toTaskId": "t-258",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-253",
+      "toTaskId": "t-259",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-42",
+      "toTaskId": "t-260",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-164",
+      "toTaskId": "t-261",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-254",
+      "toTaskId": "t-262",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-226",
+      "toTaskId": "t-263",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-256",
+      "toTaskId": "t-265",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-213",
+      "toTaskId": "t-266",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-150",
+      "toTaskId": "t-267",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-192",
+      "toTaskId": "t-268",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-238",
+      "toTaskId": "t-269",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-244",
+      "toTaskId": "t-270",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-241",
+      "toTaskId": "t-271",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-242",
+      "toTaskId": "t-272",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-148",
+      "toTaskId": "t-273",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-248",
+      "toTaskId": "t-274",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-270",
+      "toTaskId": "t-275",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-184",
+      "toTaskId": "t-276",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-275",
+      "toTaskId": "t-277",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-245",
+      "toTaskId": "t-278",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-246",
+      "toTaskId": "t-279",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-119",
+      "toTaskId": "t-280",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-137",
+      "toTaskId": "t-281",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-264",
+      "toTaskId": "t-282",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-281",
+      "toTaskId": "t-283",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-206",
+      "toTaskId": "t-284",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-272",
+      "toTaskId": "t-285",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-250",
+      "toTaskId": "t-286",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-178",
+      "toTaskId": "t-287",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-266",
+      "toTaskId": "t-288",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-274",
+      "toTaskId": "t-289",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-33",
+      "toTaskId": "t-290",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-289",
+      "toTaskId": "t-291",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-286",
+      "toTaskId": "t-292",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-172",
+      "toTaskId": "t-293",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-160",
+      "toTaskId": "t-294",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-165",
+      "toTaskId": "t-295",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-257",
+      "toTaskId": "t-296",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-247",
+      "toTaskId": "t-297",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-158",
+      "toTaskId": "t-298",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-185",
+      "toTaskId": "t-299",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-114",
+      "toTaskId": "t-300",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-294",
+      "toTaskId": "t-301",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-259",
+      "toTaskId": "t-302",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-301",
+      "toTaskId": "t-303",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-39",
+      "toTaskId": "t-304",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-297",
+      "toTaskId": "t-305",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-304",
+      "toTaskId": "t-306",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-230",
+      "toTaskId": "t-307",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-258",
+      "toTaskId": "t-308",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-265",
+      "toTaskId": "t-309",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-211",
+      "toTaskId": "t-310",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-229",
+      "toTaskId": "t-311",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-268",
+      "toTaskId": "t-312",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-255",
+      "toTaskId": "t-313",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-276",
+      "toTaskId": "t-314",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-232",
+      "toTaskId": "t-315",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-287",
+      "toTaskId": "t-316",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-280",
+      "toTaskId": "t-317",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-64",
+      "toTaskId": "t-318",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-261",
+      "toTaskId": "t-319",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-163",
+      "toTaskId": "t-320",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-122",
+      "toTaskId": "t-321",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-278",
+      "toTaskId": "t-322",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-292",
+      "toTaskId": "t-323",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-198",
+      "toTaskId": "t-324",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-323",
+      "toTaskId": "t-325",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-319",
+      "toTaskId": "t-326",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-326",
+      "toTaskId": "t-327",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-252",
+      "toTaskId": "t-328",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-312",
+      "toTaskId": "t-329",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-83",
+      "toTaskId": "t-330",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-260",
+      "toTaskId": "t-331",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-320",
+      "toTaskId": "t-332",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-233",
+      "toTaskId": "t-333",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-218",
+      "toTaskId": "t-335",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-262",
+      "toTaskId": "t-336",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-231",
+      "toTaskId": "t-337",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-224",
+      "toTaskId": "t-338",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-300",
+      "toTaskId": "t-339",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-44",
+      "toTaskId": "t-340",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-279",
+      "toTaskId": "t-341",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-284",
+      "toTaskId": "t-342",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-110",
+      "toTaskId": "t-343",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-341",
+      "toTaskId": "t-344",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-295",
+      "toTaskId": "t-345",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-302",
+      "toTaskId": "t-346",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-309",
+      "toTaskId": "t-347",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-313",
+      "toTaskId": "t-348",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-210",
+      "toTaskId": "t-349",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-345",
+      "toTaskId": "t-350",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-347",
+      "toTaskId": "t-351",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-315",
+      "toTaskId": "t-352",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-350",
+      "toTaskId": "t-353",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-177",
+      "toTaskId": "t-354",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-269",
+      "toTaskId": "t-355",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-138",
+      "toTaskId": "t-356",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-339",
+      "toTaskId": "t-357",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-273",
+      "toTaskId": "t-358",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-166",
+      "toTaskId": "t-359",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-355",
+      "toTaskId": "t-360",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-342",
+      "toTaskId": "t-361",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-221",
+      "toTaskId": "t-362",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-359",
+      "toTaskId": "t-363",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-181",
+      "toTaskId": "t-364",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-336",
+      "toTaskId": "t-365",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-293",
+      "toTaskId": "t-366",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-316",
+      "toTaskId": "t-367",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-298",
+      "toTaskId": "t-368",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-333",
+      "toTaskId": "t-369",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-310",
+      "toTaskId": "t-370",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-344",
+      "toTaskId": "t-371",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-299",
+      "toTaskId": "t-372",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-353",
+      "toTaskId": "t-373",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-223",
+      "toTaskId": "t-374",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-357",
+      "toTaskId": "t-375",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-296",
+      "toTaskId": "t-376",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-352",
+      "toTaskId": "t-377",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-360",
+      "toTaskId": "t-378",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-227",
+      "toTaskId": "t-379",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-376",
+      "toTaskId": "t-380",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-363",
+      "toTaskId": "t-381",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-362",
+      "toTaskId": "t-382",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-374",
+      "toTaskId": "t-383",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-225",
+      "toTaskId": "t-384",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-382",
+      "toTaskId": "t-385",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-364",
+      "toTaskId": "t-386",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-372",
+      "toTaskId": "t-387",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-331",
+      "toTaskId": "t-388",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-334",
+      "toTaskId": "t-389",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-144",
+      "toTaskId": "t-390",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-130",
+      "toTaskId": "t-391",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-215",
+      "toTaskId": "t-392",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-328",
+      "toTaskId": "t-393",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-282",
+      "toTaskId": "t-394",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-307",
+      "toTaskId": "t-395",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-324",
+      "toTaskId": "t-396",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-379",
+      "toTaskId": "t-397",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-375",
+      "toTaskId": "t-398",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-369",
+      "toTaskId": "t-399",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-349",
+      "toTaskId": "t-400",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-396",
+      "toTaskId": "t-401",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-354",
+      "toTaskId": "t-402",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-329",
+      "toTaskId": "t-403",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-338",
+      "toTaskId": "t-404",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-322",
+      "toTaskId": "t-405",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-399",
+      "toTaskId": "t-406",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-343",
+      "toTaskId": "t-407",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-380",
+      "toTaskId": "t-408",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-386",
+      "toTaskId": "t-409",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-321",
+      "toTaskId": "t-410",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-107",
+      "toTaskId": "t-411",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-403",
+      "toTaskId": "t-412",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-367",
+      "toTaskId": "t-413",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-291",
+      "toTaskId": "t-414",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-366",
+      "toTaskId": "t-415",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-413",
+      "toTaskId": "t-416",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-288",
+      "toTaskId": "t-417",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-405",
+      "toTaskId": "t-418",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-395",
+      "toTaskId": "t-419",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-330",
+      "toTaskId": "t-420",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-383",
+      "toTaskId": "t-421",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-410",
+      "toTaskId": "t-422",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-384",
+      "toTaskId": "t-423",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-393",
+      "toTaskId": "t-424",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-415",
+      "toTaskId": "t-425",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-411",
+      "toTaskId": "t-426",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-371",
+      "toTaskId": "t-427",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-423",
+      "toTaskId": "t-428",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-346",
+      "toTaskId": "t-429",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-409",
+      "toTaskId": "t-430",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-188",
+      "toTaskId": "t-431",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-161",
+      "toTaskId": "t-432",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-391",
+      "toTaskId": "t-433",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-417",
+      "toTaskId": "t-434",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-351",
+      "toTaskId": "t-435",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-430",
+      "toTaskId": "t-436",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-335",
+      "toTaskId": "t-437",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-429",
+      "toTaskId": "t-438",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-420",
+      "toTaskId": "t-439",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-402",
+      "toTaskId": "t-440",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-236",
+      "toTaskId": "t-441",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-239",
+      "toTaskId": "t-442",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-303",
+      "toTaskId": "t-443",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-438",
+      "toTaskId": "t-444",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-431",
+      "toTaskId": "t-445",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-400",
+      "toTaskId": "t-446",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-337",
+      "toTaskId": "t-447",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-387",
+      "toTaskId": "t-448",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-311",
+      "toTaskId": "t-449",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-271",
+      "toTaskId": "t-450",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-449",
+      "toTaskId": "t-451",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-445",
+      "toTaskId": "t-452",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-421",
+      "toTaskId": "t-453",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-377",
+      "toTaskId": "t-454",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-418",
+      "toTaskId": "t-455",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-368",
+      "toTaskId": "t-456",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-444",
+      "toTaskId": "t-457",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-443",
+      "toTaskId": "t-458",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-447",
+      "toTaskId": "t-459",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-370",
+      "toTaskId": "t-460",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-404",
+      "toTaskId": "t-461",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-398",
+      "toTaskId": "t-462",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-437",
+      "toTaskId": "t-463",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-385",
+      "toTaskId": "t-464",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-451",
+      "toTaskId": "t-465",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-448",
+      "toTaskId": "t-466",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-458",
+      "toTaskId": "t-467",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-180",
+      "toTaskId": "t-468",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-461",
+      "toTaskId": "t-469",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-378",
+      "toTaskId": "t-470",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-305",
+      "toTaskId": "t-471",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-267",
+      "toTaskId": "t-472",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-189",
+      "toTaskId": "t-473",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-356",
+      "toTaskId": "t-474",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-408",
+      "toTaskId": "t-475",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-446",
+      "toTaskId": "t-476",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-101",
+      "toTaskId": "t-477",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-436",
+      "toTaskId": "t-478",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-251",
+      "toTaskId": "t-479",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-118",
+      "toTaskId": "t-480",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-439",
+      "toTaskId": "t-481",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-433",
+      "toTaskId": "t-482",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-306",
+      "toTaskId": "t-483",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-479",
+      "toTaskId": "t-484",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-397",
+      "toTaskId": "t-485",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-473",
+      "toTaskId": "t-486",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-348",
+      "toTaskId": "t-487",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-468",
+      "toTaskId": "t-488",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-455",
+      "toTaskId": "t-489",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-263",
+      "toTaskId": "t-490",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-453",
+      "toTaskId": "t-491",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-365",
+      "toTaskId": "t-492",
+      "lagDays": 2
+    },
+    {
+      "fromTaskId": "t-285",
+      "toTaskId": "t-493",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-327",
+      "toTaskId": "t-494",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-442",
+      "toTaskId": "t-495",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-489",
+      "toTaskId": "t-496",
+      "lagDays": 1
+    },
+    {
+      "fromTaskId": "t-462",
+      "toTaskId": "t-497",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-495",
+      "toTaskId": "t-498",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-497",
+      "toTaskId": "t-499",
+      "lagDays": 0
+    },
+    {
+      "fromTaskId": "t-465",
+      "toTaskId": "t-500",
+      "lagDays": 2
+    }
+  ],
+  "unavailability": []
+}
