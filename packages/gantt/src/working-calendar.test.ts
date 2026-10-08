@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createWorkingCalendar,
   WorkingCalendarError,
+  type WorkingCalendarDefinition,
 } from './working-calendar.js';
 
 const standard = createWorkingCalendar({
@@ -133,7 +134,7 @@ describe('рабочий календарь — валидация', () => {
   it('несуществующий день недели отклоняется', () => {
     expect(() =>
       createWorkingCalendar({
-        workingDays: [8] as unknown as readonly number[],
+        workingDays: [8] as unknown as WorkingCalendarDefinition['workingDays'],
       }),
     ).toThrowError(WorkingCalendarError);
   });
