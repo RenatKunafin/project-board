@@ -51,4 +51,27 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['**/*.ts?(x)'],
+    ignores: ['packages/dashboard/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'dexie',
+              message: 'Прямой доступ к локальной БД — только в адаптере платформы packages/dashboard (ADR PBT-002, ADR-5).',
+            },
+          ],
+          patterns: [
+            {
+              group: ['dexie/*'],
+              message: 'Прямой доступ к локальной БД — только в адаптере платформы packages/dashboard (ADR PBT-002, ADR-5).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
