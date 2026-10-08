@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   createDocumentService,
+  createIndexedDbDocumentStore,
   createWidgetRegistry,
   StorageSelfTest,
 } from '@project-board/dashboard';
@@ -18,13 +19,25 @@ if (window.location.hash === '#storage-selftest') {
     </React.StrictMode>,
   );
 } else {
-  const documentService = createDocumentService();
-  const checklistDocument = documentService.create({
-    moduleId: 'checklist',
-    documentType: 'list',
-    schemaVersion: 1,
-    content: { items: [] },
-  });
+  bootstrap();
+}
+
+async function bootstrap(): Promise<void> {
+  const store = createIndexedDbDocumentStore('project-board');
+  const documentService = createDocumentService({ store });
+  await documentService.restoreAll();
+
+  const existing = (await store.listAll()).find(
+    (document) => document.moduleId === 'checklist' && document.documentType === 'list',
+  );
+  const checklistDocument =
+    existing ??
+    documentService.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: { items: [] },
+    });
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
 

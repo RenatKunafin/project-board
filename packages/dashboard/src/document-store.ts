@@ -29,6 +29,7 @@ export interface DocumentStore {
   get(documentId: string): Promise<ManagedDocument | undefined>;
   listByModule(moduleId: string): Promise<ManagedDocument[]>;
   listByType(documentType: string): Promise<ManagedDocument[]>;
+  listAll(): Promise<ManagedDocument[]>;
   delete(documentId: string): Promise<void>;
   close(): void;
 }
@@ -121,6 +122,15 @@ export class IndexedDbDocumentStore implements DocumentStore {
         .where('documentType')
         .equals(documentType)
         .toArray();
+    } catch (error) {
+      throw toPersistenceError(error);
+    }
+  }
+
+  async listAll(): Promise<ManagedDocument[]> {
+    try {
+      await this.openOnce();
+      return await this.documents.toArray();
     } catch (error) {
       throw toPersistenceError(error);
     }
