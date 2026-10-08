@@ -28,11 +28,15 @@ async function bootstrap(): Promise<void> {
   const restored = await documentService.restoreAll();
 
   // Вертикальный срез PBT-011: гарантировать два документа чек-листа.
+  // Сортировка стабильна между перезагрузками (порядок IDB не гарантирован).
+  const byCreation = (a: { createdAt: string; id: string }, b: { createdAt: string; id: string }): number =>
+    a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : 1;
   const checklistIds = restored
     .filter(
       (document) =>
         document.moduleId === 'checklist' && document.documentType === 'list',
     )
+    .sort(byCreation)
     .map((document) => document.id);
   while (checklistIds.length < 2) {
     checklistIds.push(

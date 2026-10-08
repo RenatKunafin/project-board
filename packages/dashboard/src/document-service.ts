@@ -105,6 +105,7 @@ export function createDocumentService(
       // порядок планирования между документами.
       return;
     }
+    setSaveState(document.id, 'saving');
     entry.timer = setTimeout(() => {
       entry.timer = null;
       void flushDocument(document.id);

@@ -14,6 +14,13 @@ export type {
   SaveStateHandler,
   DocumentStoreLike,
 } from './document-service';
+export { createWorkspaceState, addTab, renameTab, moveTab, removeTab, setActive } from './workspace';
+export type {
+  WorkspaceState,
+  WorkspaceTab,
+  WorkspaceError,
+} from './workspace';
+export { EmptyWorkspace } from './EmptyWorkspace';
 export {
   createIndexedDbDocumentStore,
   IndexedDbDocumentStore,

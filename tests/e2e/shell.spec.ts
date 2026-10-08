@@ -6,19 +6,23 @@ test('оболочка приложения открывается', async ({ pa
   await expect(page.getByRole('heading', { name: 'Project Board' })).toBeVisible();
 });
 
-test('каталог содержит модуль чек-листа', async ({ page }) => {
+test('вкладка «Чек-листы» активна по умолчанию и содержит срез', async ({ page }) => {
   await page.goto('/');
-  const catalog = page.getByRole('region', { name: 'Каталог типов виджетов' });
-  await expect(catalog.getByText('checklist')).toBeVisible();
-  await expect(catalog.getByText('Чек-лист')).toBeVisible();
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+  await expect(tablist.getByRole('tab', { name: /Чек-листы/ })).toBeVisible();
+  await expect(tablist.getByRole('tab', { selected: true })).toContainText(
+    'Чек-листы',
+  );
+  await expect(page.getByRole('group', { name: 'Экземпляр 1 · Список 1' })).toBeVisible();
 });
 
 test('операция синхронизирует экземпляры 1-2 и не задевает список 2', async ({ page }) => {
   await page.goto('/');
-  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
-  const pane2 = instances.getByLabel('Экземпляр 2 · Список 1');
-  const pane3 = instances.getByLabel('Экземпляр 3 · Список 2');
+  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
+  const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
+  const pane3 = page.getByLabel('Экземпляр 3 · Список 2');
 
   await pane1.getByPlaceholder('Новый пункт').fill('Из первого списка');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
@@ -34,21 +38,17 @@ test('операция синхронизирует экземпляры 1-2 и 
 
 test('локальная настройка экземпляра изолирована', async ({ page }) => {
   await page.goto('/');
-  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
-  const pane2 = instances.getByLabel('Экземпляр 2 · Список 1');
+  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
+  const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
 
   await pane1.getByPlaceholder('Новый пункт').fill('Выполненный пункт');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await pane1.getByRole('checkbox', { name: 'Выполненный пункт' }).check();
 
-  // Локальная настройка только у экземпляра 1.
   await pane1.getByRole('checkbox', { name: 'Скрывать выполненные' }).check();
   await expect(pane1.getByText('Выполненный пункт')).toHaveCount(0);
   await expect(pane2.getByText('Выполненный пункт')).toBeVisible();
 
-  // Настройка экземпляра не меняет документ: индикатор остаётся «Сохранено»,
-  // а снятие настройки возвращает пункт.
   await pane1
     .getByRole('checkbox', { name: 'Скрывать выполненные' })
     .uncheck();
@@ -57,20 +57,124 @@ test('локальная настройка экземпляра изолиро�
 
 test('закрытие и перезагрузка сохраняют документ', async ({ page }) => {
   await page.goto('/');
-  const instances = page.getByRole('region', { name: 'Экземпляры виджетов' });
-  const pane1 = instances.getByLabel('Экземпляр 1 · Список 1');
+  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
 
   await pane1.getByPlaceholder('Новый пункт').fill('Переживает закрытие');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
-  await expect(page.getByText('Сохранено')).toBeVisible();
+  await expect(page.getByText('Сохраняется…')).toBeVisible();
+  await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
 
-  // Закрытие представления (unmount + отписка), документ сохранён.
   await pane1.getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' }).click();
-  await expect(instances.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
+  await expect(page.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
 
   await page.reload();
-  const reloaded = page
-    .getByRole('region', { name: 'Экземпляры виджетов' })
-    .getByLabel('Экземпляр 1 · Список 1');
-  await expect(reloaded.getByText('Переживает закрытие')).toBeVisible();
+  await expect(
+    page.getByLabel('Экземпляр 1 · Список 1').getByText('Переживает закрытие'),
+  ).toBeVisible();
+});
+
+test('новая вкладка активна и пуста; переключение сохраняет наборы', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+
+  await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
+  const newTab = tablist.getByRole('tab', { name: /Новая вкладка/ });
+  await expect(newTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByText('Пространство пусто')).toBeVisible();
+
+  await tablist.getByRole('tab', { name: /Чек-листы/ }).click();
+  await expect(
+    page.getByRole('group', { name: 'Экземпляр 1 · Список 1' }),
+  ).toBeVisible();
+
+  await newTab.click();
+  await expect(page.getByText('Пространство пусто')).toBeVisible();
+});
+
+test('вкладка переименовывается по двойному клику', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+  const tab = tablist.getByRole('tab', { name: /Чек-листы/ });
+
+  await tab.getByText('Чек-листы').dblclick();
+  await page.getByLabel('Название вкладки').fill('План ОКАД');
+  await page.getByLabel('Название вкладки').press('Enter');
+
+  await expect(tablist.getByRole('tab', { name: /План ОКАД/ })).toContainText(
+    'План ОКАД',
+  );
+});
+
+test('порядок вкладок меняется кнопками перемещения', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+
+  await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
+  await tablist
+    .getByRole('button', { name: 'Переместить Новая вкладка влево' })
+    .click();
+
+  const tabs = tablist.getByRole('tab');
+  await expect(tabs.nth(0)).toContainText('Новая вкладка');
+  await expect(tabs.nth(1)).toContainText('Чек-листы');
+});
+
+test('удаление активной вкладки делает активной соседнюю, документ жив', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
+  await pane1.getByPlaceholder('Новый пункт').fill('Документ жив');
+  await pane1.getByRole('button', { name: 'Добавить' }).click();
+  await expect(page.getByText('Сохраняется…')).toBeVisible();
+  await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
+
+  await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
+  await expect(page.getByText('Пространство пусто')).toBeVisible();
+
+  await tablist
+    .getByRole('button', { name: 'Закрыть Чек-листы' })
+    .click({ force: true });
+  await expect(tablist.getByRole('tab', { name: /Чек-листы/ })).toHaveCount(0);
+  await expect(tablist.getByRole('tab', { selected: true })).toContainText(
+    'Новая вкладка',
+  );
+
+  // Документ пережил удаление вкладки: перезагрузка восстанавливает его.
+  await page.reload();
+  await expect(
+    page.getByLabel('Экземпляр 1 · Список 1').getByText('Документ жив'),
+  ).toBeVisible();
+});
+
+test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
+  await page.goto('/');
+  await expect(
+    page.getByRole('button', { name: /Закрыть Чек-листы/ }),
+  ).toBeDisabled();
+  await expect(page.getByRole('tab', { name: /Чек-листы/ })).toBeVisible();
+});
+
+test('клавиатура: стрелка вправо активирует соседнюю вкладку', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', {
+    name: 'Вкладки рабочего пространства',
+  });
+  await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
+  await tablist.getByRole('tab', { name: /Чек-листы/ }).click();
+
+  const firstTab = tablist.getByRole('tab', { name: /Чек-листы/ });
+  await firstTab.focus();
+  await page.keyboard.press('ArrowRight');
+
+  await expect(
+    tablist.getByRole('tab', { name: /Новая вкладка/ }),
+  ).toHaveAttribute('aria-selected', 'true');
 });
