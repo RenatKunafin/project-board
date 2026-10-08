@@ -1,26 +1,17 @@
-import {
-  DocumentConflictError,
-  type DocumentChangeHandler,
-  type DocumentCreateInput,
-  type ManagedDocument,
-  type Unsubscribe,
+import type {
+  DocumentChangeHandler,
+  DocumentCreateInput,
+  DocumentService,
+  ManagedDocument,
+  Unsubscribe,
 } from '@project-board/widget-sdk';
+import { DocumentConflictError } from '@project-board/widget-sdk';
 
-export interface DocumentService {
-  create(input: DocumentCreateInput): ManagedDocument;
-  get(documentId: string): ManagedDocument | undefined;
-  update(
-    documentId: string,
-    expectedRevision: number,
-    nextContent: ManagedDocument['content'],
-  ): ManagedDocument;
-  subscribe(documentId: string, handler: DocumentChangeHandler): Unsubscribe;
-  getViewSettings(viewSettingsKey: string): Record<string, unknown> | undefined;
-  setViewSettings(
-    viewSettingsKey: string,
-    settings: Record<string, unknown>,
-  ): void;
-}
+export type {
+  DocumentChangeHandler,
+  DocumentService,
+  Unsubscribe,
+} from '@project-board/widget-sdk';
 
 interface DocumentRecord {
   document: ManagedDocument;
