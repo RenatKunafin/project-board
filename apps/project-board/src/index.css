@@ -211,3 +211,30 @@ body {
   flex-direction: column;
   gap: 4px;
 }
+
+.save-state {
+  margin: 0;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.save-state.is-saved {
+  color: #1a7f37;
+  background: rgba(26, 127, 55, 0.1);
+}
+
+.save-state.is-saving {
+  color: var(--color-text-muted);
+  background: rgba(90, 107, 123, 0.1);
+}
+
+.save-state.is-error {
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.1);
+}
+
+.save-state.is-conflict {
+  color: #b36b00;
+  background: rgba(179, 107, 0, 0.1);
+}

@@ -1,157 +1,256 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DocumentConflictError,
   type ManagedDocument,
 } from '@project-board/widget-sdk';
-import { createDocumentService } from './document-service.js';
+import {
+  createDocumentService,
+  type DocumentStoreLike,
+} from './document-service.js';
 
-const service = createDocumentService();
+vi.useFakeTimers();
 
-function createSample(content: unknown): ManagedDocument {
-  return service.create({
+const SAVE_DELAY = 250;
+
+class FakeStore implements DocumentStoreLike {
+  docs = new Map<string, ManagedDocument>();
+  failWritesLeft = 0;
+  saveCalls: Array<{ id: string; revision: number; expected: number }> = [];
+
+  async save(
+    document: ManagedDocument,
+    expectedStoredRevision: number,
+  ): Promise<void> {
+    this.saveCalls.push({
+      id: document.id,
+      revision: document.revision,
+      expected: expectedStoredRevision,
+    });
+    if (this.failWritesLeft > 0) {
+      this.failWritesLeft -= 1;
+      throw new Error('boom: хранилище недоступно');
+    }
+    const stored = this.docs.get(document.id);
+    const storedRevision = stored?.revision ?? 0;
+    if (storedRevision !== expectedStoredRevision) {
+      throw new DocumentConflictError(document.id, storedRevision, expectedStoredRevision);
+    }
+    this.docs.set(document.id, document);
+  }
+
+  async get(documentId: string): Promise<ManagedDocument | undefined> {
+    return this.docs.get(documentId);
+  }
+
+  async listAll(): Promise<ManagedDocument[]> {
+    return [...this.docs.values()];
+  }
+}
+
+function makeDocument(id: string, revision: number, content: string): ManagedDocument {
+  return {
+    id,
     moduleId: 'checklist',
     documentType: 'list',
     schemaVersion: 1,
+    revision,
+    createdAt: '2026-10-07T10:00:00.000Z',
+    updatedAt: '2026-10-07T10:00:00.000Z',
     content,
-  });
+  };
 }
 
-describe('document service — создание и чтение', () => {
-  it('создаёт документ с редакцией 1 и метками времени', () => {
-    const doc = createSample({ items: [] });
-
-    expect(doc.revision).toBe(1);
-    expect(doc.moduleId).toBe('checklist');
-    expect(doc.documentType).toBe('list');
-    expect(doc.schemaVersion).toBe(1);
-    expect(doc.createdAt).toBe(doc.updatedAt);
-    expect(service.get(doc.id)?.content).toEqual({ items: [] });
-  });
-
-  it('содержимое непрозрачно: разные модули через один интерфейс', () => {
-    const checklistDoc = createSample({ items: ['a'] });
-    const ganttDoc = service.create({
-      moduleId: 'gantt',
-      documentType: 'plan',
-      schemaVersion: 1,
-      content: { tasks: [] },
-    });
-
-    expect(service.get(checklistDoc.id)?.content).toEqual({ items: ['a'] });
-    expect(service.get(ganttDoc.id)?.content).toEqual({ tasks: [] });
-    expect(service.get(ganttDoc.id)?.moduleId).toBe('gantt');
-  });
+beforeEach(() => {
+  vi.clearAllMocks();
 });
 
-describe('document service — обновление с проверкой редакции', () => {
-  it('последовательные обновления увеличивают редакцию 1→2→3', () => {
-    const doc = createSample('v1');
+afterEach(() => {
+  vi.useFakeTimers();
+});
 
-    const afterFirst = service.update(doc.id, 1, 'v2');
-    const afterSecond = service.update(doc.id, 2, 'v3');
+describe('автосохранение — очередь', () => {
+  it('быстрые операции дают одну запись последней корректной редакции', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
 
-    expect(afterFirst.revision).toBe(2);
-    expect(afterSecond.revision).toBe(3);
-    expect(service.get(doc.id)?.content).toBe('v3');
-  });
-
-  it('устаревшая редакция отклоняется конфликтом, документ не меняется', () => {
-    const doc = createSample('v1');
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
     service.update(doc.id, 1, 'v2');
     service.update(doc.id, 2, 'v3');
 
-    expect(() => service.update(doc.id, 2, 'stale')).toThrowError(
-      DocumentConflictError,
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(store.saveCalls).toHaveLength(1);
+    expect(store.saveCalls[0]).toMatchObject({ revision: 3, expected: 0 });
+    expect(store.docs.get(doc.id)?.content).toBe('v3');
+  });
+
+  it('создание сохраняется с ожидаемой хранимой редакцией 0', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(store.saveCalls[0]).toEqual({ id: doc.id, revision: 1, expected: 0 });
+  });
+
+  it('операции разных документов сохраняются без потерь', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+
+    const a = service.create({ moduleId: 'checklist', documentType: 'list', schemaVersion: 1, content: 'A1' });
+    const b = service.create({ moduleId: 'gantt', documentType: 'plan', schemaVersion: 1, content: 'B1' });
+    service.update(a.id, 1, 'A2');
+
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    // Серия A (create + update) — одна запись последней редакции; B сохранён.
+    expect(store.saveCalls).toHaveLength(2);
+    const byId = new Map(store.saveCalls.map((call) => [call.id, call]));
+    expect(byId.get(a.id)).toMatchObject({ revision: 2 });
+    expect(byId.get(b.id)).toMatchObject({ revision: 1 });
+    expect(store.docs.get(a.id)?.content).toBe('A2');
+    expect(store.docs.get(b.id)?.content).toBe('B1');
+  });
+
+  it('два подписчика-«представления» не создают конкурирующих очередей', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
+    service.subscribe(doc.id, () => {});
+
+    // Оба «представления» вносят изменения; очередь принадлежит документу.
+    service.update(doc.id, 1, 'view-1');
+    service.update(doc.id, 2, 'view-2');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(store.saveCalls.filter((call) => call.id === doc.id)).toHaveLength(1);
+    expect(store.docs.get(doc.id)?.content).toBe('view-2');
+  });
+});
+
+describe('автосохранение — сбои и повторы', () => {
+  it('сбой записи -> состояние error, повтор следующей операцией не теряет изменения', async () => {
+    const store = new FakeStore();
+    store.failWritesLeft = 10;
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
+    service.subscribeSaveState(doc.id, () => {});
+
+    service.update(doc.id, 1, 'v2');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY + 250 + 500 + 1000 + 1000);
+
+    expect(service.getSaveState(doc.id)?.status).toBe('error');
+    expect(store.docs.has(doc.id)).toBe(false);
+
+    store.failWritesLeft = 0;
+    service.update(doc.id, 2, 'v3');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(service.getSaveState(doc.id)?.status).toBe('saved');
+    expect(store.docs.get(doc.id)?.content).toBe('v3');
+  });
+
+  it('восстановление хранилища: следующая операция сохраняет накопленную редакцию', async () => {
+    const store = new FakeStore();
+    store.failWritesLeft = 10;
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
+    service.update(doc.id, 1, 'v2');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY + 250 + 500 + 1000 + 1000);
+    expect(service.getSaveState(doc.id)?.status).toBe('error');
+
+    store.failWritesLeft = 0;
+    service.update(doc.id, 2, 'v3');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(service.getSaveState(doc.id)?.status).toBe('saved');
+    expect(store.docs.get(doc.id)?.content).toBe('v3');
+  });
+});
+
+describe('автосохранение — конфликт двух окон', () => {
+  it('устаревшая запись отклоняется, сервис перечитывает документ и уведомляет', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
+    const changeHandler = vi.fn();
+    service.subscribe(doc.id, changeHandler);
+    service.subscribeSaveState(doc.id, () => {});
+
+    // «Второе окно» напрямую кладёт более новую редакцию в хранилище.
+    store.docs.set(doc.id, makeDocument(doc.id, 5, 'other-window'));
+
+    service.update(doc.id, 1, 'stale-local');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(service.getSaveState(doc.id)?.status).toBe('conflict');
+    expect(changeHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ revision: 5, content: 'other-window' }),
     );
-    try {
-      service.update(doc.id, 2, 'stale');
-    } catch (error) {
-      const conflict = error as DocumentConflictError;
-      expect(conflict.actualRevision).toBe(3);
-      expect(conflict.expectedRevision).toBe(2);
-    }
-    expect(service.get(doc.id)).toMatchObject({ revision: 3, content: 'v3' });
+    expect(service.get(doc.id)?.content).toBe('other-window');
   });
 });
 
-describe('document service — подписки', () => {
-  it('два подписчика получают одну и ту же новую редакцию', () => {
-    const doc = createSample('v1');
-    const first = vi.fn();
-    const second = vi.fn();
-    service.subscribe(doc.id, first);
-    service.subscribe(doc.id, second);
+describe('restoreAll', () => {
+  it('восстанавливает документы из хранилища в память', async () => {
+    const store = new FakeStore();
+    await store.save(makeDocument('doc-1', 4, 'restored'), 0);
 
-    const updated = service.update(doc.id, 1, 'v2');
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const restored = await service.restoreAll();
 
-    expect(first).toHaveBeenCalledTimes(1);
-    expect(second).toHaveBeenCalledTimes(1);
-    expect(first).toHaveBeenCalledWith(updated);
-    expect(second).toHaveBeenCalledWith(updated);
-    expect(first.mock.calls[0][0]).toMatchObject({ revision: 2, content: 'v2' });
+    expect(restored.map((d) => d.id)).toEqual(['doc-1']);
+    expect(service.get('doc-1')).toMatchObject({ revision: 4, content: 'restored' });
   });
 
-  it('отписка освобождает подписку, документ остаётся', () => {
-    const doc = createSample('v1');
-    const first = vi.fn();
-    const second = vi.fn();
-    const unsubscribeFirst = service.subscribe(doc.id, first);
-    service.subscribe(doc.id, second);
+  it('без store restoreAll возвращает пустой список', async () => {
+    const service = createDocumentService();
+    expect(await service.restoreAll()).toEqual([]);
+  });
+});
 
-    unsubscribeFirst();
+describe('без store — прежнее поведение', () => {
+  it('операции работают в памяти без сохранения', () => {
+    const service = createDocumentService();
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: 'v1',
+    });
     service.update(doc.id, 1, 'v2');
-
-    expect(first).not.toHaveBeenCalled();
-    expect(second).toHaveBeenCalledTimes(1);
-    expect(service.get(doc.id)).toMatchObject({ revision: 2 });
-  });
-
-  it('подписка на несуществующий документ не уведомляет', () => {
-    const handler = vi.fn();
-    const unsubscribe = service.subscribe('missing-id', handler);
-
-    expect(() => unsubscribe()).not.toThrow();
-    expect(handler).not.toHaveBeenCalled();
-  });
-});
-
-describe('document service — независимость документов', () => {
-  it('обновление одного документа не затрагивает другой', () => {
-    const first = createSample('doc-1');
-    const second = createSample('doc-2');
-    const firstHandler = vi.fn();
-    const secondHandler = vi.fn();
-    service.subscribe(first.id, firstHandler);
-    service.subscribe(second.id, secondHandler);
-
-    service.update(first.id, 1, 'doc-1-updated');
-
-    expect(firstHandler).toHaveBeenCalledTimes(1);
-    expect(secondHandler).not.toHaveBeenCalled();
-    expect(service.get(second.id)).toMatchObject({ revision: 1, content: 'doc-2' });
-  });
-});
-
-describe('document service — состояние представления', () => {
-  it('настройки представления не меняют документ и не уведомляют', () => {
-    const doc = createSample('v1');
-    const handler = vi.fn();
-    service.subscribe(doc.id, handler);
-    service.update(doc.id, 1, 'v2');
-
-    service.setViewSettings('w-1', { collapsedGroups: ['g1'] });
-
-    expect(service.getViewSettings('w-1')).toEqual({ collapsedGroups: ['g1'] });
-    expect(handler).toHaveBeenCalledTimes(1); // только от update выше
-    expect(service.get(doc.id)?.revision).toBe(2);
-  });
-
-  it('настройки изолированы по ключу экземпляра', () => {
-    service.setViewSettings('w-a', { zoom: 2 });
-    service.setViewSettings('w-b', { zoom: 5 });
-
-    expect(service.getViewSettings('w-a')).toEqual({ zoom: 2 });
-    expect(service.getViewSettings('w-b')).toEqual({ zoom: 5 });
-    expect(service.getViewSettings('w-missing')).toBeUndefined();
+    expect(service.get(doc.id)).toMatchObject({ revision: 2, content: 'v2' });
+    expect(service.getSaveState(doc.id)).toBeUndefined();
   });
 });

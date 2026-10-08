@@ -1,12 +1,23 @@
-import type { DocumentService, WidgetRegistry } from '@project-board/dashboard';
+import type {
+  AutosavingDocumentService,
+  WidgetRegistry,
+} from '@project-board/dashboard';
 import { UnknownWidgetType } from '@project-board/dashboard';
 import { ChecklistWidget } from '@project-board/checklist';
+import { useEffect, useState } from 'react';
 
 interface AppProps {
   widgetRegistry: WidgetRegistry;
-  documentService: DocumentService;
+  documentService: AutosavingDocumentService;
   documentId: string;
 }
+
+const SAVE_STATE_LABELS: Record<string, string> = {
+  saved: 'Сохранено',
+  saving: 'Сохраняется…',
+  error: 'Ошибка сохранения',
+  conflict: 'Обновлено из другого окна',
+};
 
 export default function App({
   widgetRegistry,
@@ -17,9 +28,26 @@ export default function App({
   const checklistType = widgetRegistry.get('checklist');
   const unknownType = widgetRegistry.get('demo');
 
+  const [saveState, setSaveState] = useState(
+    documentService.getSaveState(documentId),
+  );
+  useEffect(
+    () => documentService.subscribeSaveState(documentId, setSaveState),
+    [documentService, documentId],
+  );
+
   return (
     <main className="shell">
       <h1 className="shell__title">Project Board</h1>
+      {saveState && (
+        <p
+          className={`save-state is-${saveState.status}`}
+          role="status"
+          aria-label="Состояние сохранения"
+        >
+          {SAVE_STATE_LABELS[saveState.status] ?? saveState.status}
+        </p>
+      )}
       <p className="shell__hint">
         Каталог типов виджетов: {catalog.length}. Модули подключаются при сборке.
       </p>

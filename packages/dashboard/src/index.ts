@@ -7,7 +7,13 @@ export type {
 export { UnknownWidgetType } from './UnknownWidgetType';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
-export type { DocumentService } from './document-service';
+export type {
+  AutosavingDocumentService,
+  DocumentSaveState,
+  DocumentSaveStatus,
+  SaveStateHandler,
+  DocumentStoreLike,
+} from './document-service';
 export {
   createIndexedDbDocumentStore,
   IndexedDbDocumentStore,
