@@ -10,9 +10,16 @@ export function createChecklistModule() {
       defineWidgetType({
         id: 'checklist',
         title: 'Чек-лист',
+        icon: '☑️',
         component: ChecklistWidget,
         startSettings: {},
         sizeConstraints: { minWidth: 2, minHeight: 2 },
+        documentSupport: {
+          moduleId: 'checklist',
+          documentType: 'list',
+          schemaVersion: 1,
+          createContent: (title: string) => ({ title, items: [] }),
+        },
       }),
     ],
   };

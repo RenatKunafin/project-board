@@ -71,6 +71,9 @@ export default function ChecklistWidget({
 
   return (
     <div className="checklist" data-instance={widgetInstanceId}>
+      {typeof content.title === 'string' && content.title !== '' && (
+        <h2 className="checklist__title">{content.title}</h2>
+      )}
       <label className="checklist__setting">
         <input type="checkbox" checked={hideDone} onChange={toggleHideDone} />
         Скрывать выполненные

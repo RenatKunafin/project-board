@@ -9,6 +9,7 @@ import {
 } from './model.js';
 
 const sample = {
+  title: 'Список',
   items: [
     { id: 'a', text: 'Первая', done: false },
     { id: 'b', text: 'Вторая', done: true },
@@ -31,9 +32,10 @@ describe('checklist model — добавление', () => {
   it('parseChecklistContent возвращает пустой список для мусора', () => {
     expect(parseChecklistContent(undefined)).toEqual(emptyChecklistContent);
     expect(parseChecklistContent('junk')).toEqual(emptyChecklistContent);
-    expect(parseChecklistContent({ items: sample.items })).toEqual(sample);
-  });
-});
+    expect(parseChecklistContent({ items: sample.items })).toEqual({
+      items: sample.items,
+    });
+  });});
 
 describe('checklist model — переименование и отметка', () => {
   it('переименовывает пункт по id', () => {
@@ -66,5 +68,13 @@ describe('checklist model — удаление', () => {
 
   it('удаление несуществующего id возвращает исходный массив ссылок', () => {
     expect(removeItem(sample, 'missing').items).toEqual(sample.items);
+  });
+
+  it('операции сохраняют название списка', () => {
+    const next = addItem(sample, 'Третья');
+    expect(next.title).toBe('Список');
+    expect(renameItem(next, next.items[2].id, 'Переименована').title).toBe(
+      'Список',
+    );
   });
 });

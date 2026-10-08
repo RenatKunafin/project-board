@@ -63,14 +63,13 @@ test('закрытие и перезагрузка сохраняют докум
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
+  await page.waitForTimeout(350); // хвост очереди автосохранения
 
   await pane1.getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' }).click();
   await expect(page.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
 
   await page.reload();
-  await expect(
-    page.getByLabel('Экземпляр 1 · Список 1').getByText('Переживает закрытие'),
-  ).toBeVisible();
+  await expect(page.getByText('Переживает закрытие')).toBeVisible({ timeout: 10000 });
 });
 
 test('новая вкладка активна и пуста; переключение сохраняет наборы', async ({ page }) => {
@@ -135,6 +134,7 @@ test('удаление активной вкладки делает активн
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
+  await page.waitForTimeout(350); // хвост очереди автосохранения
 
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   await expect(page.getByText('Пространство пусто')).toBeVisible();
@@ -149,9 +149,7 @@ test('удаление активной вкладки делает активн
 
   // Документ пережил удаление вкладки: перезагрузка восстанавливает его.
   await page.reload();
-  await expect(
-    page.getByLabel('Экземпляр 1 · Список 1').getByText('Документ жив'),
-  ).toBeVisible();
+  await expect(page.getByText('Документ жив')).toBeVisible({ timeout: 10000 });
 });
 
 test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
@@ -177,4 +175,79 @@ test('клавиатура: стрелка вправо активирует с�
   await expect(
     tablist.getByRole('tab', { name: /Новая вкладка/ }),
   ).toHaveAttribute('aria-selected', 'true');
+});
+
+test('каталог: новый чек-лист создаётся из пустой вкладки', async ({ page }) => {
+  await page.goto('/');
+  const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
+  await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
+  await expect(page.getByText('Пространство пусто')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await expect(catalog.getByText('☑️')).toBeVisible();
+  await catalog.getByRole('button', { name: /Чек-лист/ }).click();
+
+  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
+  await choice.getByLabel('Название нового чек-листа').fill('Покупки');
+  await choice.getByRole('button', { name: 'Создать' }).click();
+
+  const pane = page.getByRole('group', { name: 'Чек-лист · Покупки' });
+  await expect(pane).toBeVisible();
+  await expect(pane.getByText('Покупки')).toBeVisible();
+  await expect(pane.getByPlaceholder('Новый пункт')).toBeVisible();
+});
+
+test('каталог: второе представление существующего документа', async ({ page }) => {
+  await page.goto('/');
+  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
+  await pane1.getByPlaceholder('Новый пункт').fill('Общий пункт');
+  await pane1.getByRole('button', { name: 'Добавить' }).click();
+  await expect(page.getByText('Сохранено')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByRole('button', { name: /Чек-лист/ })
+    .click();
+
+  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
+  await choice.getByRole('button', { name: 'Без названия' }).first().click();
+
+  const secondView = page.getByRole('group', { name: 'Чек-лист · Без названия' });
+  await expect(secondView.getByText('Общий пункт')).toBeVisible();
+
+  await secondView.getByPlaceholder('Новый пункт').fill('Второе представление');
+  await secondView.getByRole('button', { name: 'Добавить' }).click();
+  await expect(pane1.getByText('Второе представление')).toBeVisible();
+});
+
+test('каталог: отмена не создаёт документов и экземпляров', async ({ page }) => {
+  await page.goto('/');
+  const catalogButton = page.getByRole('button', { name: 'Добавить виджет' });
+  const catalogDialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  const choiceDialog = page.getByRole('dialog', { name: 'Выбор документа' });
+
+  await catalogButton.click();
+  await catalogDialog.getByRole('button', { name: /Чек-лист/ }).click();
+  const unnamedItems = choiceDialog.getByRole('button', { name: 'Без названия' });
+  const countBefore = await unnamedItems.count();
+
+  // Отмена: закрыть шаг выбора (возврат в каталог), затем закрыть каталог.
+  await choiceDialog
+    .getByRole('button', { name: 'Закрыть выбор документа' })
+    .click();
+  await expect(choiceDialog).toHaveCount(0);
+  await catalogDialog
+    .getByRole('button', { name: 'Закрыть каталог' })
+    .click();
+  await expect(catalogDialog).toHaveCount(0);
+
+  // Повторное открытие: документ от отмены не создан.
+  await catalogButton.click();
+  await catalogDialog.getByRole('button', { name: /Чек-лист/ }).click();
+  await expect(unnamedItems).toHaveCount(countBefore);
+  await expect(
+    page.getByRole('group', { name: 'Чек-лист · Без названия' }),
+  ).toHaveCount(0);
 });

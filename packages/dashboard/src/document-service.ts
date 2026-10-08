@@ -50,6 +50,12 @@ const RETRY_DELAYS_MS = [250, 500, 1000];
 export interface AutosavingDocumentService extends DocumentService {
   /** Восстанавливает все документы из хранилища в память. */
   restoreAll(): Promise<ManagedDocument[]>;
+/** Немедленно записывает все отложенные правки (закрытие страницы). */
+  flushAll(): Promise<void>;
+  /** Выборка документов из памяти, опционально по модулю и типу. */
+  listDocuments(
+    filter?: { readonly moduleId?: string; readonly documentType?: string },
+  ): ManagedDocument[];
   getSaveState(documentId: string): DocumentSaveState | undefined;
   subscribeSaveState(
     documentId: string,
@@ -278,6 +284,11 @@ export function createDocumentService(
 
   return {
     ...base,
+    async flushAll(): Promise<void> {
+      // Немедленный flush всех отложенных записей (например, при закрытии страницы).
+      const ids = [...queue.keys()];
+      await Promise.all(ids.map((id) => flushDocument(id)));
+    },
     async restoreAll(): Promise<ManagedDocument[]> {
       if (!store) {
         return [];
@@ -295,6 +306,18 @@ export function createDocumentService(
         queue.set(document.id, entry);
       }
       return all;
+    },
+    listDocuments(
+      filter?: { readonly moduleId?: string; readonly documentType?: string },
+    ): ManagedDocument[] {
+      return [...documents.values()]
+        .map((record) => record.document)
+        .filter(
+          (document) =>
+            (!filter?.moduleId || document.moduleId === filter.moduleId) &&
+            (!filter?.documentType ||
+              document.documentType === filter.documentType),
+        );
     },
     getSaveState(documentId: string): DocumentSaveState | undefined {
       return saveStates.get(documentId);
