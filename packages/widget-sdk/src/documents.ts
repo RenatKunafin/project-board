@@ -41,3 +41,19 @@ export class DocumentConflictError extends Error {
 export type DocumentChangeHandler = (document: ManagedDocument) => void;
 
 export type Unsubscribe = () => void;
+
+export interface DocumentService {
+  create(input: DocumentCreateInput): ManagedDocument;
+  get(documentId: string): ManagedDocument | undefined;
+  update(
+    documentId: string,
+    expectedRevision: number,
+    nextContent: DocumentContent,
+  ): ManagedDocument;
+  subscribe(documentId: string, handler: DocumentChangeHandler): Unsubscribe;
+  getViewSettings(viewSettingsKey: string): Record<string, unknown> | undefined;
+  setViewSettings(
+    viewSettingsKey: string,
+    settings: Record<string, unknown>,
+  ): void;
+}

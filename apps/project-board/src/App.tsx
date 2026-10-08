@@ -1,15 +1,21 @@
-import type { WidgetRegistry } from '@project-board/dashboard';
+import type { DocumentService, WidgetRegistry } from '@project-board/dashboard';
 import { UnknownWidgetType } from '@project-board/dashboard';
-import DemoWidget from './widgets/demo-widget';
+import { ChecklistWidget } from '@project-board/checklist';
 
 interface AppProps {
   widgetRegistry: WidgetRegistry;
+  documentService: DocumentService;
+  documentId: string;
 }
 
-export default function App({ widgetRegistry }: AppProps) {
+export default function App({
+  widgetRegistry,
+  documentService,
+  documentId,
+}: AppProps) {
   const catalog = widgetRegistry.list();
-  const demoType = widgetRegistry.get('demo');
   const checklistType = widgetRegistry.get('checklist');
+  const unknownType = widgetRegistry.get('demo');
 
   return (
     <main className="shell">
@@ -28,12 +34,33 @@ export default function App({ widgetRegistry }: AppProps) {
       </section>
 
       <section className="instances" aria-label="Экземпляры виджетов">
-        {'kind' in demoType ? (
-          <UnknownWidgetType lookup={demoType} />
-        ) : (
-          <DemoWidget widgetInstanceId="w-demo-1" settings={demoType.startSettings} />
-        )}
-        <UnknownWidgetType lookup={checklistType} />
+        <div className="instances__pair">
+          {'kind' in checklistType ? (
+            <UnknownWidgetType lookup={checklistType} />
+          ) : (
+            <>
+              <div className="instances__pane" role="group" aria-label="Экземпляр 1">
+                <p className="instances__label">Экземпляр 1</p>
+                <ChecklistWidget
+                  widgetInstanceId="w-1"
+                  settings={checklistType.startSettings}
+                  documentId={documentId}
+                  documentService={documentService}
+                />
+              </div>
+              <div className="instances__pane" role="group" aria-label="Экземпляр 2">
+                <p className="instances__label">Экземпляр 2</p>
+                <ChecklistWidget
+                  widgetInstanceId="w-2"
+                  settings={checklistType.startSettings}
+                  documentId={documentId}
+                  documentService={documentService}
+                />
+              </div>
+            </>
+          )}
+        </div>
+        <UnknownWidgetType lookup={unknownType} />
       </section>
     </main>
   );

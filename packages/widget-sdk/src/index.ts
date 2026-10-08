@@ -1,10 +1,15 @@
 import type { ComponentType } from 'react';
+import type { DocumentService } from './documents';
 
 export type WidgetTypeSettings = Record<string, unknown>;
 
 export interface WidgetProps {
   readonly widgetInstanceId: string;
   readonly settings: WidgetTypeSettings;
+  /** Идентификатор документа, привязанного к экземпляру (если работает с документом). */
+  readonly documentId?: string;
+  /** Сервис документов платформы (SDK-контракт; реализация — платформа). */
+  readonly documentService?: DocumentService;
 }
 
 export interface WidgetSizeConstraints {
@@ -42,6 +47,7 @@ export type {
   DocumentContent,
   DocumentCreateInput,
   DocumentChangeHandler,
+  DocumentService,
   ManagedDocument,
   Unsubscribe,
 } from './documents';
