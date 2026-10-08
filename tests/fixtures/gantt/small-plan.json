@@ -1,0 +1,72 @@
+{
+  "$comment": "Малый контрольный набор PBT-012. Правила семантики — ADR PBT-003. Календарь по умолчанию: пн-пт рабочие; праздник 2026-10-14 (среда).",
+  "meta": {
+    "title": "Малый контрольный набор",
+    "calendar": {
+      "workingDays": [1, 2, 3, 4, 5],
+      "holidays": ["2026-10-14"]
+    }
+  },
+  "workTypes": [
+    { "id": "dev", "title": "Разработка", "parallel": false },
+    { "id": "psi", "title": "ПСИ", "parallel": true }
+  ],
+  "resources": [
+    { "id": "r1", "name": "Разработчик R1", "workTypeIds": ["dev", "psi"] },
+    { "id": "r2", "name": "Разработчик R2", "workTypeIds": ["dev"] }
+  ],
+  "groups": [{ "id": "g-phase-1", "title": "Фаза 1" }],
+  "tasks": [
+    {
+      "id": "t-a",
+      "title": "Задача A",
+      "groupId": "g-phase-1",
+      "start": "2026-10-12",
+      "end": "2026-10-16",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-b",
+      "title": "Задача B (ПСИ)",
+      "groupId": "g-phase-1",
+      "start": "2026-10-19",
+      "end": "2026-10-20",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["psi"]
+    },
+    {
+      "id": "t-c",
+      "title": "Задача C",
+      "groupId": "g-phase-1",
+      "start": "2026-10-19",
+      "end": "2026-10-23",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-d",
+      "title": "Задача D",
+      "groupId": "g-phase-1",
+      "start": "2026-10-20",
+      "end": "2026-10-21",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-e",
+      "title": "Задача E",
+      "groupId": "g-phase-1",
+      "start": "2026-10-26",
+      "end": "2026-10-28",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    }
+  ],
+  "dependencies": [
+    { "fromTaskId": "t-a", "toTaskId": "t-b", "lagDays": 0 }
+  ],
+  "unavailability": [
+    { "id": "u-r1", "resourceId": "r1", "start": "2026-10-26", "end": "2026-10-27", "title": "Отпуск R1" }
+  ]
+}
