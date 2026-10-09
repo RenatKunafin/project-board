@@ -8,6 +8,9 @@ Project Board — PWA-дашборд для управления проекта�
 - `.context/project-decisions.md` — согласованные решения, стек-кандидаты, глоссарий.
 - `.context/tasks/README.md` — реестр задач PBT-001–PBT-065 и статусов.
 - `.context/openspec-workflow.md` — процесс работы (полная версия).
+- `.context/layout` — макеты проекта.
+- `.context/research` — результаты исследования возникших вопросов.
+- `.docs/adr` — архитектурные инварианты и соглашения.
 - `openspec/` — артефакты OpenSpec (changes, specs).
 
 ## Процесс
@@ -19,6 +22,6 @@ Project Board — PWA-дашборд для управления проекта�
 
 ## Конвенции
 
-- Язык документации, размышлений и коммуникации — русский; служебные заголовки OpenSpec (ADDED/Requirements/Scenario, SHALL, GIVEN/WHEN/THEN) — на английском.
+- Язык документации, **размышлений** и коммуникации — русский; служебные заголовки OpenSpec (ADDED/Requirements/Scenario, SHALL, GIVEN/WHEN/THEN) — на английском.
 - Целевой стек (кандидат): React + TypeScript + Vite, монорепо `apps/` + `packages/`.
 - Не выдавать предложения за согласованные решения: сверяться с `project-decisions.md`.
