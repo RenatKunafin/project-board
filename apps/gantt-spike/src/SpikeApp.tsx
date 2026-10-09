@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { IApi } from '@svar-ui/react-gantt';
+import type { IApi, IColumnConfig } from '@svar-ui/react-gantt';
 import { Gantt, Willow, Editor } from '@svar-ui/react-gantt';
 import { toSvarLinks, toSvarTasks } from './adapter';
 import {
@@ -33,6 +33,34 @@ export default function SpikeApp({ initialPlan }: Props) {
   const appendLog = (line: string) => {
     setLog((prev) => [`${new Date().toLocaleTimeString()} ${line}`, ...prev].slice(0, 40));
   };
+
+  // Колонка «Раб. дни»: длительность по календарю плана (A4), а не
+  // календарные дни SVAR. Для сводной группы — рабочие дни span детей.
+  const columns = useMemo<IColumnConfig[]>(
+    () => [
+      { id: 'text', header: 'Задача', flexgrow: 1 },
+      { id: 'start', header: 'Начало', width: 110 },
+      {
+        id: 'work-days',
+        header: 'Раб. дни',
+        width: 90,
+        cell: ({ row }) => {
+          const id = String(row.id);
+          const cal = createWorkingCalendar(planRef.current.calendar);
+          const kids = planRef.current.tasks.filter((t) => t.groupId === id);
+          if (kids.length > 0) {
+            const start = kids.reduce((m, t) => (t.start < m ? t.start : m), kids[0].start);
+            const end = kids.reduce((m, t) => (t.end > m ? t.end : m), kids[0].end);
+            return <span>{cal.workingDaysBetween(start, end)}</span>;
+          }
+          const task = planRef.current.tasks.find((t) => t.id === id);
+          if (!task) return <span></span>;
+          return <span>{workingDuration(planRef.current, task)}</span>;
+        },
+      },
+    ],
+    [],
+  );
 
   // Данные передаются в SVAR один раз: источник отображения — стор компонента.
   // План спайка — производная модель, синхронизируемая после жестов (ниже).
@@ -232,6 +260,7 @@ export default function SpikeApp({ initialPlan }: Props) {
           <Gantt
             tasks={initialTasks}
             links={initialLinks}
+            columns={columns}
             inclusiveEnd={inclusiveEnd}
             init={initApi}
             highlightTime={highlightTime}
