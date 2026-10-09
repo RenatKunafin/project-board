@@ -1,0 +1,98 @@
+{
+  "$comment": "Расширенный fixtures-only набор спайка PBT-015: три ресурса со своими задачами, отпусками, пересечениями и задачей с двумя исполнителями (D1). Правила семантики — ADR PBT-003. Календарь как в small-plan: пн–пт рабочие, праздник 2026-10-14.",
+  "meta": {
+    "title": "Расширенный набор (3 ресурса)",
+    "calendar": {
+      "workingDays": [1, 2, 3, 4, 5],
+      "holidays": ["2026-10-14"]
+    }
+  },
+  "resources": [
+    { "id": "r1", "name": "Разработчик R1" },
+    { "id": "r2", "name": "Разработчик R2" },
+    { "id": "r3", "name": "Аналитик" }
+  ],
+  "groups": [],
+  "tasks": [
+    {
+      "id": "t-a",
+      "title": "Задача A",
+      "groupId": "g-phase-1",
+      "start": "2026-10-12",
+      "end": "2026-10-16",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-d",
+      "title": "Задача D",
+      "groupId": "g-phase-1",
+      "start": "2026-10-20",
+      "end": "2026-10-21",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-e",
+      "title": "Задача E",
+      "groupId": "g-phase-1",
+      "start": "2026-10-26",
+      "end": "2026-10-28",
+      "assigneeIds": ["r1"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-f",
+      "title": "Настройка CI",
+      "groupId": "g-phase-1",
+      "start": "2026-10-12",
+      "end": "2026-10-15",
+      "assigneeIds": ["r2"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-g",
+      "title": "Рефакторинг",
+      "groupId": "g-phase-1",
+      "start": "2026-10-19",
+      "end": "2026-10-22",
+      "assigneeIds": ["r2"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-i",
+      "title": "Сбор требований",
+      "groupId": "g-phase-1",
+      "start": "2026-10-12",
+      "end": "2026-10-13",
+      "assigneeIds": ["r3"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-j",
+      "title": "Анализ",
+      "groupId": "g-phase-1",
+      "start": "2026-10-15",
+      "end": "2026-10-19",
+      "assigneeIds": ["r3"],
+      "workTypeIds": ["dev"]
+    },
+    {
+      "id": "t-k",
+      "title": "Согласование",
+      "groupId": "g-phase-1",
+      "start": "2026-10-19",
+      "end": "2026-10-21",
+      "assigneeIds": ["r2", "r3"],
+      "workTypeIds": ["psi"]
+    }
+  ],
+  "dependencies": [
+    { "fromTaskId": "t-f", "toTaskId": "t-g", "lagDays": 0 }
+  ],
+  "unavailability": [
+    { "id": "u-r1", "resourceId": "r1", "start": "2026-10-26", "end": "2026-10-27", "title": "Отпуск R1" },
+    { "id": "u-r2", "resourceId": "r2", "start": "2026-10-16", "end": "2026-10-16", "title": "Отпуск R2" },
+    { "id": "u-r3", "resourceId": "r3", "start": "2026-10-27", "end": "2026-10-27", "title": "Отпуск R3" }
+  ]
+}
