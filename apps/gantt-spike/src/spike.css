@@ -1,0 +1,72 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+.spike {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.spike-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.spike-summary table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.spike-summary th,
+.spike-summary td {
+  border: 1px solid #ccc;
+  padding: 2px 8px;
+  text-align: left;
+}
+
+.spike-gantt {
+  flex: 1;
+  min-height: 380px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  overflow: auto;
+}
+
+/* SVAR растягивается на высоту контейнера спайка */
+.spike-gantt .wx-theme {
+  height: 100%;
+}
+
+.spike-log {
+  max-height: 180px;
+  overflow: auto;
+  font-size: 12px;
+  background: #f6f6f6;
+  padding: 8px;
+}
+
+.spike-log ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* Подсветка нерабочих дней (highlightTime) */
+.spike .svar-holiday {
+  background: repeating-linear-gradient(
+    45deg,
+    #f5d0d0,
+    #f5d0d0 4px,
+    #f8e4e4 4px,
+    #f8e4e4 8px
+  );
+}
