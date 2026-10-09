@@ -5,10 +5,12 @@ import { toSvarLinks, toSvarTasks } from './adapter';
 import {
   addCalendarDaysIso,
   createWorkingCalendar,
+  daysDelta,
   dragTaskTo,
   formatIso,
   isoToDate,
   resizeTaskEnd,
+  resizeTaskStart,
   toggleHoliday,
   workingDuration,
   type SpikePlan,
@@ -74,16 +76,24 @@ export default function SpikeApp({ initialPlan }: Props) {
       if (storeStart === task.start && storeEndInc === task.end) return;
       let next: SpikePlan;
       let kind: string;
-      if (storeStart !== task.start) {
-        // Drag или resize за левый край: сохраняем рабочую длительность (A2),
-        // начало привязывается к рабочему дню в сторону переноса.
-        const direction = storeStart < task.start ? 'backward' : 'forward';
+      const dStart = daysDelta(task.start, storeStart);
+      const dEnd = daysDelta(task.end, storeEndInc);
+      if (dStart !== 0 && dStart === dEnd) {
+        // Перетаскивание всей задачи: оба края сдвинуты одинаково —
+        // рабочая длительность сохраняется, начало привязывается к
+        // рабочему дню в сторону переноса (A2).
+        const direction = dStart < 0 ? 'backward' : 'forward';
         next = dragTaskTo(planRef.current, id, storeStart, direction);
         kind = 'drag (A2)';
+      } else if (dStart !== 0) {
+        // Ресайз левой границы: ручной ввод начала — сохраняем как введено,
+        // даже нерабочий день (A3); окончание не меняется.
+        next = resizeTaskStart(planRef.current, id, storeStart);
+        kind = 'resize-left (A3)';
       } else {
-        // Resize правого края: окончание сохраняем как введённое (A3/A4).
+        // Ресайз правой границы: окончание сохраняем как введённое (A3/A4).
         next = resizeTaskEnd(planRef.current, id, storeEndInc);
-        kind = 'resize (A3)';
+        kind = 'resize-right (A3)';
       }
       const updated = next.tasks.find((t) => t.id === id);
       if (!updated) return;

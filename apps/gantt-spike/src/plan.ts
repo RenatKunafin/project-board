@@ -182,6 +182,22 @@ export function resizeTaskEnd(plan: SpikePlan, id: string, newEndIso: string): S
   return replaceTask(plan, id, { end });
 }
 
+// A3: ресайз левой границы сохраняет введённое начало как есть (даже
+// нерабочее); окончание не меняется, рабочая длительность пересчитывается.
+export function resizeTaskStart(plan: SpikePlan, id: string, newStartIso: string): SpikePlan {
+  const task = plan.tasks.find((t) => t.id === id);
+  if (!task) return plan;
+  const start = newStartIso > task.end ? task.end : newStartIso;
+  return replaceTask(plan, id, { start });
+}
+
+// Дельта между датами в календарных днях (знаковая).
+export function daysDelta(fromIso: string, toIso: string): number {
+  const from = toUtcDate(fromIso).getTime();
+  const to = toUtcDate(toIso).getTime();
+  return Math.round((to - from) / 86400000);
+}
+
 // A5/A6: праздник <-> рабочее исключение; границы задач не меняются.
 export function toggleHoliday(plan: SpikePlan, isoDate: string): SpikePlan {
   const normalized = toIsoDate(toUtcDate(isoDate));
