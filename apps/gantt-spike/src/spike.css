@@ -61,7 +61,23 @@ body {
 }
 
 /* Нерабочие дни: сплошная вертикальная заливка колонки на всю высоту
-   (по образцу OnlineGantt). Праздник отличается от выходного цветом. */
+   (по образцу OnlineGantt). Праздник отличается от выходного цветом.
+   SVAR рисует подсветку тела в слое .wx-gantt-holidays с нулевой высотой
+   элементов — растягиваем слой и элементы на всю высоту чарта. */
+.spike .wx-gantt-holidays {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.spike .wx-gantt-holidays > * {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
 .spike .svar-weekend {
   background: #e3e7ec;
 }
