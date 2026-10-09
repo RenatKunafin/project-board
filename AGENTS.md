@@ -1,24 +1,61 @@
 # AGENTS.md
 
-Project Board — PWA-дашборд для управления проектами: платформа виджетов (табы, тайлинг/каскад), виджеты Гантта и чек-листа. Сейчас проект на стадии проектирования — кода ещё нет.
+Project Board — PWA-дашборд для управления проектами: универсальная платформа виджетов (вкладки, каталог, тайлинг/каскад) и первые модули — чек-лист и Гантт. Стек: React 18 + TypeScript + Vite, монорепо npm workspaces (утверждено [ADR PBT-002](.docs/adr/PBT-002.md)).
+
+> Этот файл — навигатор, а не источник статуса. Текущую стадию и статусы задач смотри в реестре `.context/tasks/README.md`.
+
+## Стадия (обновлено 2026-10-09)
+
+- **Готово:** процесс и каркас (PBT-001–005); платформа: чек-лист, общие документы, IndexedDB, автосохранение, вкладки, каталог виджетов (PBT-006–011, 018–019); арифметика рабочих дней и фикстуры Гантта (PBT-012–013). PR смержены в `develop`.
+- **В работе:** PBT-014 — спайк SVAR React Gantt (стенд `apps/gantt-spike`, порт 5174), вывод «подходит с ограничениями», отчёт в `.docs/research/PBT-014.md`.
+- **Далее:** PBT-015 (ресурсные дорожки) → PBT-016 (нагрузка) → **PBT-017 — решение по компонентам Гантта** (блокирует ядро PBT-030+); параллельно платформа PBT-020+ (рамка окон, тайлинг, каскад, восстановление раскладки).
+
+## Порядок погружения (для нового агента)
+
+1. `.context/tasks/README.md` — реестр: статусы, PR, зависимости. Отсюда брать задачу.
+2. Карточка задачи `.context/tasks/PBT-XXX.md` — цель, границы PR, DoD.
+3. `.context/project-decisions.md` — согласованные решения и открытые вопросы. Критично различать статусы: «Согласовано» ≠ «Предложено».
+4. `.context/openspec-workflow.md` — цикл работы задачи и места хранения артефактов.
+5. По теме задачи: `.docs/adr/` (принятые правила), `.docs/research/` (отчёты спайков), `openspec/specs/` (действующее поведение по capabilities).
 
 ## Документация
 
+Локальная (`.context/` — в `.gitignore`, в коммиты не попадает):
+
 - `.context/intent.md` — исходное описание продукта.
-- `.context/project-decisions.md` — согласованные решения, стек-кандидаты, глоссарий.
-- `.context/tasks/README.md` — реестр задач PBT-001–PBT-065 и статусов.
-- `.context/openspec-workflow.md` — процесс работы (полная версия).
-- `openspec/` — артефакты OpenSpec (changes, specs).
+- `.context/project-decisions.md` — согласованные решения, стек, глоссарий, история отменённых вариантов.
+- `.context/tasks/README.md` — реестр задач PBT-001–PBT-066, статусы и ссылки на PR (единственное место статусов).
+- `.context/tasks/PBT-XXX.md` — карточки задач: границы PR, зависимости, DoD.
+- `.context/openspec-workflow.md` — полный процесс: цикл задачи, шаблон сценариев, capability-имена.
+- `.context/openspec-setup.md` — версии инструментов и настройка OpenSpec с нуля.
+- `.context/layout/` — макеты UI.
 
-## Процесс
+В репозитории:
 
-- Единица работы: **одна задача PBT = один OpenSpec change = один PR**.
-- Имя change: `pbt-006-widget-registry` (lowercase kebab-case), ID задачи — `PBT-006`.
-- Перед реализацией — согласование scope и design с владельцем; технические решения — в `design.md`, не в требованиях.
-- Проверки: `openspec validate <change> --strict --no-interactive`; артефакты архивировать в ветке задачи до merge.
+- `.docs/adr/` — принятые решения: PBT-002 (границы платформы, стек, схема хранения, SDK v0), PBT-003 (семантика редактирования плана: правила A1–D7).
+- `.docs/research/` — отчёты исследований: PBT-011 (vertical slice платформы), PBT-012 (фикстуры Гантта), PBT-014 (спайк SVAR).
+- `openspec/specs/` — действующие требования по capabilities (`checklists`, `document-management`, `widget-registry`, `widget-windows`, `workspace-tabs`, `local-persistence`, `working-calendars`); `openspec/changes/` — активные changes и `archive/`.
+
+## Процесс (кратко; полная версия — `.context/openspec-workflow.md`)
+
+- Единица работы: **одна задача PBT = один OpenSpec change = один PR**. Ветка `feature/pbt-xxx-slug` от `develop`.
+- Имя change: `pbt-014-project-gantt-spike` (lowercase kebab-case с ID задачи).
+- Артефакты change: `proposal.md` (зачем/границы/Non-goals) → `design.md` (технические решения — здесь, не в требованиях) → `tasks.md` (шаги). Исследования и tooling без продуктового поведения — `skip_specs: true` в `.openspec.yaml`.
+- Цикл: proposal + design на ревью владельца **до** кода → реализация строго в границах карточки → проверки → PR в `develop` → архивация change в ветке задачи с переносом delta specs в `openspec/specs/`.
+- Валидация: `openspec validate <change> --strict` и `openspec validate --all --strict` (CLI 1.11.0; у `validate` нет флага `--no-interactive`, вопреки `openspec-setup.md`).
+- Статусы: `Backlog → Ready → In progress → In review → Done`; статус и ссылка на PR меняются только в реестре.
+
+## Разработка
+
+- `npm run dev` — основное приложение, `http://localhost:5173`; selftest хранилища: `/#storage-selftest`.
+- `npm run dev:spike` — исследовательский стенд Гантта, `http://localhost:5174` (не входит в прод-сборку).
+- `npm run lint` · `npm run typecheck` · `npm test` · `npm run test:browser` (локально: `npx playwright install chromium`).
+- CI на каждый PR в `develop`: lint → typecheck → unit → build → `openspec validate --all --strict`.
 
 ## Конвенции
 
-- Язык документации, размышлений и коммуникации — русский; служебные заголовки OpenSpec (ADDED/Requirements/Scenario, SHALL, GIVEN/WHEN/THEN) — на английском.
-- Целевой стек (кандидат): React + TypeScript + Vite, монорепо `apps/` + `packages/`.
-- Не выдавать предложения за согласованные решения: сверяться с `project-decisions.md`.
+- Язык документации, размышлений и коммуникации — русский; служебные заголовки OpenSpec (ADDED/Requirements/Scenario, SHALL, GIVEN/WHEN/THEN) — английские.
+- Не выдавать предложения за согласованные решения: статус — по `project-decisions.md`; кандидаты и компромиссы — в `design.md`, не в требованиях.
+- Коды PBT неизменяемы; новые работы получают следующие свободные номера (сейчас — после PBT-066).
+- Спайки не становятся production-кодом без принятого решения (сейчас: судьба `apps/gantt-spike` — после PBT-017).
+- Ограничения библиотеки-кандидата Гантта (исключительная семантика дат, ненадёжный payload жестов) — см. `.docs/research/PBT-014.md` перед интеграцией.
