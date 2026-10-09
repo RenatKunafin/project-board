@@ -13,9 +13,10 @@
   "scripts": {
     "dev": "npm run dev -w apps/project-board",
     "dev:spike": "npm run dev -w apps/gantt-spike",
+    "dev:resource-spike": "npm run dev -w apps/resource-timeline-spike",
     "build": "npm run build -w apps/project-board",
     "preview": "npm run preview -w apps/project-board",
-    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p apps/gantt-spike",
+    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p apps/gantt-spike && tsc --noEmit -p apps/resource-timeline-spike",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:browser": "playwright test"
