@@ -60,13 +60,29 @@ body {
   padding-left: 18px;
 }
 
-/* Подсветка нерабочих дней (highlightTime) */
+/* Нерабочие дни: сплошная вертикальная заливка колонки на всю высоту
+   (по образцу OnlineGantt). Праздник отличается от выходного цветом. */
+.spike .svar-weekend {
+  background: #e3e7ec;
+}
+
 .spike .svar-holiday {
-  background: repeating-linear-gradient(
-    45deg,
-    #f5d0d0,
-    #f5d0d0 4px,
-    #f8e4e4 4px,
-    #f8e4e4 8px
-  );
+  background: #f8d3d3;
+}
+
+.spike-legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: #444;
+}
+
+.spike-legend .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #bbb;
+  margin-right: 4px;
+  vertical-align: -2px;
 }

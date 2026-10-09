@@ -134,10 +134,25 @@ export default function SpikeApp({ initialPlan }: Props) {
     [plan.calendar],
   );
 
-  // Подсветка нерабочих дней (выходные, праздники) в открытом масштабе.
+  // Тип дня для подсветки: праздник (явно заданный) или выходной по неделе.
+  const dayKind = useCallback(
+    (date: Date): 'holiday' | 'weekend' | '' => {
+      const iso = formatIso(date);
+      if (plan.calendar.holidays.includes(iso)) return 'holiday';
+      return calendar.isWorkingDay(iso) ? '' : 'weekend';
+    },
+    [calendar, plan.calendar.holidays],
+  );
+
+  // Подсветка нерабочих дней по образцу OnlineGantt: сплошная вертикальная
+  // заливка колонки на всю высоту; праздник отличается от выходного цветом.
   const highlightTime = useCallback(
-    (date: Date) => (calendar.isWorkingDay(formatIso(date)) ? '' : 'svar-holiday'),
-    [calendar],
+    (date: Date, unit: 'day' | 'hour') => {
+      if (unit !== 'day') return '';
+      const kind = dayKind(date);
+      return kind === 'holiday' ? 'svar-holiday' : kind === 'weekend' ? 'svar-weekend' : '';
+    },
+    [dayKind],
   );
 
   const checkB = () => {
@@ -175,6 +190,16 @@ export default function SpikeApp({ initialPlan }: Props) {
         <button type="button" onClick={checkB}>
           Проверить t-b (автоперенос?)
         </button>
+        <span className="spike-legend">
+          <span>
+            <span className="swatch" style={{ background: '#e3e7ec' }} />
+            выходной
+          </span>
+          <span>
+            <span className="swatch" style={{ background: '#f8d3d3' }} />
+            праздник
+          </span>
+        </span>
       </header>
 
       <div className="spike-summary">
