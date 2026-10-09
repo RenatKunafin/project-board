@@ -27,14 +27,38 @@ const TIMELINE_KEYS: TimelineKeys = {
   itemTimeEndKey: 'end_time',
 };
 
+export interface Dataset {
+  key: string;
+  label: string;
+  plan: SpikePlan;
+}
+
 interface Props {
-  initialPlan: SpikePlan;
+  datasets: Dataset[];
   periodStart: string;
   periodEnd: string;
 }
 
-export default function ResourceSpike({ initialPlan, periodStart, periodEnd }: Props) {
-  const [plan, setPlan] = useState<SpikePlan>(initialPlan);
+export default function ResourceSpike({ datasets, periodStart, periodEnd }: Props) {
+  const first = datasets[0];
+  const [current, setCurrent] = useState<{ key: string; plan: SpikePlan }>({
+    key: first.key,
+    plan: first.plan,
+  });
+  const plan = current.plan;
+  const setPlan = useCallback(
+    (next: SpikePlan) => setCurrent((prev) => ({ key: prev.key, plan: next })),
+    [],
+  );
+  const switchDataset = useCallback(
+    (key: string) => {
+      const dataset = datasets.find((d) => d.key === key);
+      if (!dataset) return;
+      setCurrent({ key: dataset.key, plan: dataset.plan });
+      setLog((prev) => [`${new Date().toLocaleTimeString()} набор: ${dataset.label}`, ...prev].slice(0, 40));
+    },
+    [datasets],
+  );
   const [log, setLog] = useState<string[]>([]);
   const planRef = useRef(plan);
   planRef.current = plan;
@@ -138,7 +162,7 @@ export default function ResourceSpike({ initialPlan, periodStart, periodEnd }: P
       setPlan(next);
       appendLog(`${kind} ${taskId}: ${task.start}..${task.end} -> ${updated.start}..${updated.end} (wd=${workingDuration(next, updated)})`);
     },
-    [],
+    [setPlan],
   );
 
   // В 0.30.0-beta.19 onItemMove/onItemResize при жестах не эмитятся —
@@ -208,6 +232,18 @@ export default function ResourceSpike({ initialPlan, periodStart, periodEnd }: P
     <div className="spike">
       <header className="spike-toolbar">
         <strong>PBT-015 · спайк ресурсных дорожек (React Calendar Timeline)</strong>
+        <span className="spike-toolbar">
+          {datasets.map((d) => (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => switchDataset(d.key)}
+              style={d.key === current.key ? { fontWeight: 700 } : undefined}
+            >
+              {d.label}
+            </button>
+          ))}
+        </span>
         <span className="spike-legend">
           <span>
             <span className="swatch" style={{ background: '#e3e7ec' }} />
