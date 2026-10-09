@@ -9,7 +9,7 @@ Project Board — PWA-дашборд для управления проекта�
 - `.context/tasks/README.md` — реестр задач PBT-001–PBT-065 и статусов.
 - `.context/openspec-workflow.md` — процесс работы (полная версия).
 - `.context/layout` — макеты проекта.
-- `.context/research` — результаты исследования возникших вопросов.
+- `.docs/research` — результаты исследований (PBT-011, PBT-012, PBT-014).
 - `.docs/adr` — архитектурные инварианты и соглашения.
 - `openspec/` — артефакты OpenSpec (changes, specs).
 
