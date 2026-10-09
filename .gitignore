@@ -11,8 +11,8 @@ dist-ssr/
 # Playwright
 test-results/
 playwright-report/
-.playwright-mcp/
-screenshots/
+/.playwright-mcp/
+/screenshots/
 
 # Логи
 logs/
