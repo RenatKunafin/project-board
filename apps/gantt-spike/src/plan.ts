@@ -149,14 +149,21 @@ export function workingDuration(plan: SpikePlan, task: SpikeTask): number {
 }
 
 // A2: перетаскивание сохраняет рабочую длительность; начало привязывается
-// к ближайшему рабочему дню вперёд, если введённый день нерабочий.
-export function dragTaskTo(plan: SpikePlan, id: string, newStartIso: string): SpikePlan {
+// к ближайшему рабочему дню в сторону переноса.
+export function dragTaskTo(
+  plan: SpikePlan,
+  id: string,
+  newStartIso: string,
+  direction: 'forward' | 'backward' = 'forward',
+): SpikePlan {
   const cal = createWorkingCalendar(plan.calendar);
   const task = plan.tasks.find((t) => t.id === id);
   if (!task) return plan;
   const duration = cal.workingDaysBetween(task.start, task.end);
   let start = newStartIso;
-  if (!cal.isWorkingDay(start)) start = cal.nextWorkingDay(start);
+  if (!cal.isWorkingDay(start)) {
+    start = direction === 'backward' ? cal.prevWorkingDay(start) : cal.nextWorkingDay(start);
+  }
   let end = start;
   let count = cal.isWorkingDay(start) ? 1 : 0;
   while (count < duration) {

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IApi } from '@svar-ui/react-gantt';
 import { Gantt, Willow, Editor } from '@svar-ui/react-gantt';
 import { toSvarLinks, toSvarTasks } from './adapter';
@@ -27,102 +27,106 @@ export default function SpikeApp({ initialPlan }: Props) {
   const [log, setLog] = useState<string[]>([]);
   const planRef = useRef(plan);
   planRef.current = plan;
+  const apiRef = useRef<IApi | null>(null);
+  const ganttHostRef = useRef<HTMLDivElement | null>(null);
+
   const appendLog = (line: string) => {
     setLog((prev) => [`${new Date().toLocaleTimeString()} ${line}`, ...prev].slice(0, 40));
   };
 
-  const tasks = useMemo(() => toSvarTasks(plan), [plan]);
-  const links = useMemo(() => toSvarLinks(plan), [plan]);
+  // Данные передаются в SVAR один раз: источник отображения — стор компонента.
+  // План спайка — производная модель, синхронизируемая после жестов (ниже).
+  const initialTasks = useMemo(() => toSvarTasks(initialPlan), [initialPlan]);
+  const initialLinks = useMemo(() => toSvarLinks(initialPlan), [initialPlan]);
+
+  const applyRule = useCallback(
+    (id: string, storeStart: string, storeEndInc: string) => {
+      const task = planRef.current.tasks.find((t) => t.id === id);
+      if (!task) return;
+      if (storeStart === task.start && storeEndInc === task.end) return;
+      let next: SpikePlan;
+      let kind: string;
+      if (storeStart !== task.start) {
+        // Drag или resize за левый край: сохраняем рабочую длительность (A2),
+        // начало привязывается к рабочему дню в сторону переноса.
+        const direction = storeStart < task.start ? 'backward' : 'forward';
+        next = dragTaskTo(planRef.current, id, storeStart, direction);
+        kind = 'drag (A2)';
+      } else {
+        // Resize правого края: окончание сохраняем как введённое (A3/A4).
+        next = resizeTaskEnd(planRef.current, id, storeEndInc);
+        kind = 'resize (A3)';
+      }
+      const updated = next.tasks.find((t) => t.id === id);
+      if (!updated) return;
+      setPlan(next);
+      // Исправленные даты возвращаем в стор SVAR (исключительное окончание).
+      const instance = apiRef.current;
+      if (instance) {
+        instance.exec('update-task', {
+          id,
+          task: {
+            start: isoToDate(updated.start),
+            end: isoToDate(addCalendarDaysIso(updated.end, 1)),
+          },
+        });
+      }
+      appendLog(`${kind} ${id}: ${task.start}..${task.end} -> ${updated.start}..${updated.end}`);
+    },
+    [],
+  );
+
+  // Payload update-task ненадёжен, init-перехватчики переживают пересоздание
+  // внутреннего bus SVAR. Поэтому после жеста (mouseup/touchend) сверяем стор с
+  // планом несколько раз: стор применяет жест с нестабильной задержкой.
+  const syncWithStore = useCallback(() => {
+    const readOnce = () => {
+      const store = apiRef.current;
+      if (!store) return;
+      for (const task of planRef.current.tasks) {
+        let stored: { start?: Date; end?: Date };
+        try {
+          stored = store.getTask(task.id) as { start?: Date; end?: Date };
+        } catch {
+          continue;
+        }
+        if (!(stored.start instanceof Date) || !(stored.end instanceof Date)) continue;
+        const storeStart = formatIso(stored.start);
+        const endDate = new Date(stored.end);
+        endDate.setDate(endDate.getDate() - 1);
+        const storeEndInc = formatIso(endDate);
+        if (storeStart !== task.start || storeEndInc !== task.end) {
+          applyRule(task.id, storeStart, storeEndInc);
+          break;
+        }
+      }
+    };
+    for (const delay of [80, 450, 1000]) {
+      setTimeout(readOnce, delay);
+    }
+  }, [applyRule]);
+
+  useEffect(() => {
+    const host = ganttHostRef.current;
+    if (!host) return;
+    const handler = () => syncWithStore();
+    host.addEventListener('mouseup', handler);
+    host.addEventListener('touchend', handler);
+    return () => {
+      host.removeEventListener('mouseup', handler);
+      host.removeEventListener('touchend', handler);
+    };
+  }, [syncWithStore]);
 
   const initApi = (instance: IApi) => {
-    // Обновление задачи: различаем drag (пришло начало) и resize (пришёл
-    // конец). Даты SVAR исключительные: входящий end уменьшаем на день,
-    // исходящий увеличиваем (следствие A1).
-    instance.intercept('update-task', (ev: { id: string | number; task: Record<string, unknown> }) => {
-      const task = ev.task as { start?: Date; end?: Date; text?: string; duration?: number };
-      const dump = {
-        id: String(ev.id),
-        start: task.start instanceof Date ? formatIso(task.start) : task.start,
-        endInc: task.end instanceof Date ? prevDay(formatIso(task.end)) : task.end,
-        duration: task.duration,
-        keys: Object.keys(ev.task ?? {}),
-      };
-      appendLog(`update-task payload: ${JSON.stringify(dump)}`);
-      const current = planRef.current.tasks.find((t) => t.id === String(ev.id));
-      if (!current) return true;
-      if (task.start instanceof Date) {
-        const startIso = formatIso(task.start);
-        if (startIso !== current.start) {
-          const next = dragTaskTo(planRef.current, String(ev.id), startIso);
-          setPlan(next);
-          const updated = next.tasks.find((t) => t.id === String(ev.id));
-          appendLog(
-            `drag ${String(ev.id)}: ${current.start}..${current.end} -> ${updated?.start}..${updated?.end} (A2)`,
-          );
-          if (updated) {
-            ev.task = {
-              ...ev.task,
-              start: isoToDate(updated.start),
-              end: isoToDate(addCalendarDaysIso(updated.end, 1)),
-            };
-          }
-          return true;
-        }
-      }
-      if (task.end instanceof Date) {
-        const endInc = prevDay(formatIso(task.end));
-        const next = resizeTaskEnd(planRef.current, String(ev.id), endInc);
-        setPlan(next);
-        const updated = next.tasks.find((t) => t.id === String(ev.id));
-        appendLog(
-          `resize ${String(ev.id)}: end ${current.end} -> ${updated?.end} (A3)`,
-        );
-        if (updated) {
-          ev.task = {
-            ...ev.task,
-            end: isoToDate(addCalendarDaysIso(updated.end, 1)),
-          };
-        }
-        return true;
-      }
-      if (typeof task.text === 'string') {
-        appendLog(`rename ${String(ev.id)}: "${task.text}" (наблюдение)`);
-        return true;
-      }
-      appendLog(`update-task ${String(ev.id)}: без дат — пропущено: ${JSON.stringify(task)}`);
-      return true;
-    });
-
-    instance.intercept('select-task', (ev: { id?: string | number }) => {
-      appendLog(`select-task: ${String(ev.id)}`);
-      return true;
-    });
-
-    instance.intercept('drag-task', (ev: { id: string | number; inProgress?: boolean; left?: number; width?: number }) => {
-      if (!ev.inProgress) {
-        appendLog(
-          `drag-task ${String(ev.id)}: завершение, left=${ev.left} width=${ev.width}`,
-        );
-      }
-      return true;
-    });
-
-    instance.intercept('add-link', (ev: { link: { source?: unknown; target?: unknown; type?: string } }) => {
-      appendLog(
-        `add-link: ${String(ev.link.source)} -> ${String(ev.link.target)} (${ev.link.type ?? '?'})`,
-      );
-      return true;
-    });
-
     instance.intercept('schedule-tasks', (ev: unknown) => {
       appendLog(`schedule-tasks: НЕ ОЖИДАНО в open-редакции: ${JSON.stringify(ev)}`);
       return true;
     });
-
-    setApi(instance);
-    // Отладочный хук для проверок спайка (не для продуктовой интеграции).
+    apiRef.current = instance;
     (window as unknown as Record<string, unknown>).__spikeApi = instance;
-    appendLog('api инициализирован, перехватчики установлены');
+    appendLog('api инициализирован');
+    setApi(instance);
   };
 
   const calendar = useMemo(
@@ -198,11 +202,11 @@ export default function SpikeApp({ initialPlan }: Props) {
         </table>
       </div>
 
-      <div className="spike-gantt">
+      <div className="spike-gantt" ref={ganttHostRef}>
         <Willow>
           <Gantt
-            tasks={tasks}
-            links={links}
+            tasks={initialTasks}
+            links={initialLinks}
             inclusiveEnd={inclusiveEnd}
             init={initApi}
             highlightTime={highlightTime}
@@ -221,10 +225,4 @@ export default function SpikeApp({ initialPlan }: Props) {
       </aside>
     </div>
   );
-}
-
-function prevDay(iso: string): string {
-  const d = isoToDate(iso);
-  d.setDate(d.getDate() - 1);
-  return formatIso(d);
 }
