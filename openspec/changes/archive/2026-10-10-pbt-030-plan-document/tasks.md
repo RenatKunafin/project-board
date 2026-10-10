@@ -17,4 +17,4 @@
 
 - [x] 4.1 `apps/project-board/src/widgets.ts`: подключить `createGanttModule()`; каталог предлагает «План»; App.tsx: диалог выбора документа обобщён по типу, рендер панелей — по реестру (design D7)
 - [x] 4.2 E2E: создать план через каталог → автосохранение → перезагрузка → документ открылся из каталога → второй экземпляр того же плана; unit: два плана с ресурсами-тёзками независимы
-- [x] 4.3 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-030-plan-document --strict`; DoD-чекбоксы карточки; реестр (статус, PR)
+- [x] 4.3 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-030-plan-document --strict`; DoD-чекбоксы карточки; реестр (статус, PR#22)
