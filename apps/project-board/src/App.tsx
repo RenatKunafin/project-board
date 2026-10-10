@@ -12,7 +12,8 @@ import {
   setActive,
   UnknownWidgetType,
 } from '@project-board/dashboard';
-import { ChecklistWidget, checklistTitle } from '@project-board/checklist';
+import { checklistTitle } from '@project-board/checklist';
+import { planTitle } from '@project-board/gantt';
 import { useEffect, useReducer, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceState } from '@project-board/dashboard';
@@ -23,9 +24,15 @@ import type {
 
 interface PaneInstance {
   readonly instanceId: string;
+  readonly typeId: string;
   readonly label: string;
   readonly documentId?: string;
 }
+
+const NEW_DOCUMENT_TITLE_BY_MODULE: Record<string, string> = {
+  checklist: 'чек-листа',
+  gantt: 'плана',
+};
 
 interface AppProps {
   widgetRegistry: WidgetRegistry;
@@ -70,6 +77,26 @@ type CatalogDialog =
   | { readonly step: 'none' }
   | { readonly step: 'document-choice'; readonly type: WidgetTypeDefinition };
 
+function WidgetPane({
+  lookup,
+  pane,
+  documentService,
+}: {
+  lookup: WidgetTypeDefinition;
+  pane: PaneInstance;
+  documentService: AutosavingDocumentService;
+}) {
+  const WidgetComponent = lookup.component;
+  return (
+    <WidgetComponent
+      widgetInstanceId={pane.instanceId}
+      settings={lookup.startSettings}
+      documentId={pane.documentId}
+      documentService={documentService}
+    />
+  );
+}
+
 export default function App({
   widgetRegistry,
   documentService,
@@ -85,9 +112,24 @@ export default function App({
   const [panesByTab, setPanesByTab] = useState<Record<string, PaneInstance[]>>(
     () => ({
       [workspace.tabs[0].id]: [
-        { instanceId: 'w-1', label: 'Экземпляр 1 · Список 1', documentId: list1Id },
-        { instanceId: 'w-2', label: 'Экземпляр 2 · Список 1', documentId: list1Id },
-        { instanceId: 'w-3', label: 'Экземпляр 3 · Список 2', documentId: list2Id },
+        {
+          instanceId: 'w-1',
+          typeId: 'checklist',
+          label: 'Экземпляр 1 · Список 1',
+          documentId: list1Id,
+        },
+        {
+          instanceId: 'w-2',
+          typeId: 'checklist',
+          label: 'Экземпляр 2 · Список 1',
+          documentId: list1Id,
+        },
+        {
+          instanceId: 'w-3',
+          typeId: 'checklist',
+          label: 'Экземпляр 3 · Список 2',
+          documentId: list2Id,
+        },
       ],
     }),
   );
@@ -114,10 +156,6 @@ export default function App({
   );
   const isLastTab = workspace.tabs.length === 1;
 
-  const checklistType = widgetRegistry.get('checklist');
-  const unknownType = widgetRegistry.get('demo');
-  const hasChecklistType = checklistType && !('kind' in checklistType);
-
   const catalogTypes = widgetRegistry.list();
 
   const addPane = (type: WidgetTypeDefinition, documentId?: string, title?: string): void => {
@@ -134,6 +172,7 @@ export default function App({
         ...(previous[activeTab.id] ?? []),
         {
           instanceId,
+          typeId: type.id,
           label,
           documentId,
         },
@@ -183,7 +222,14 @@ export default function App({
     if (dialog.step !== 'document-choice') {
       return;
     }
-    addPane(dialog.type, document.id, checklistTitle(document.content));
+    const moduleId = dialog.type.documentSupport?.moduleId;
+    addPane(
+      dialog.type,
+      document.id,
+      moduleId === 'gantt'
+        ? planTitle(document.content)
+        : checklistTitle(document.content),
+    );
     setDialog({ step: 'none' });
     setCatalogOpen(false);
   };
@@ -358,46 +404,39 @@ export default function App({
         aria-label={`Пространство: ${activeTab?.title ?? ''}`}
         role="tabpanel"
       >
-        {hasChecklistType ? (
-          visiblePanes.length === 0 ? (
-            <EmptyWorkspace />
-          ) : (
-            <div className="instances__pair">
-              {visiblePanes.map((pane) => {
-                const type = widgetRegistry
-                  .list()
-                  .find((definition) => definition.id === 'checklist');
-                return (
-                  <div
-                    key={pane.instanceId}
-                    className="instances__pane"
-                    role="group"
-                    aria-label={pane.label}
-                  >
-                    <div className="instances__head">
-                      <p className="instances__label">{pane.label}</p>
-                      <button
-                        type="button"
-                        className="instances__close"
-                        aria-label={`Закрыть ${pane.label}`}
-                        onClick={() => togglePane(pane.instanceId)}
-                      >
-                        Закрыть
-                      </button>
-                    </div>
-                    <ChecklistWidget
-                      widgetInstanceId={pane.instanceId}
-                      settings={type?.startSettings ?? {}}
-                      documentId={pane.documentId}
-                      documentService={documentService}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )
+        {visiblePanes.length === 0 ? (
+          <EmptyWorkspace />
         ) : (
-          <UnknownWidgetType lookup={unknownType} />
+          <div className="instances__pair">
+            {visiblePanes.map((pane) => {
+              const lookup = widgetRegistry.get(pane.typeId);
+              return (
+                <div
+                  key={pane.instanceId}
+                  className="instances__pane"
+                  role="group"
+                  aria-label={pane.label}
+                >
+                  <div className="instances__head">
+                    <p className="instances__label">{pane.label}</p>
+                    <button
+                      type="button"
+                      className="instances__close"
+                      aria-label={`Закрыть ${pane.label}`}
+                      onClick={() => togglePane(pane.instanceId)}
+                    >
+                      Закрыть
+                    </button>
+                  </div>
+                  {lookup && !('kind' in lookup) ? (
+                    <WidgetPane lookup={lookup} pane={pane} documentService={documentService} />
+                  ) : (
+                    <UnknownWidgetType lookup={lookup} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
@@ -456,7 +495,7 @@ export default function App({
         >
           <div className="catalog-dialog">
             <div className="catalog-dialog__head">
-              <h2 className="catalog-dialog__title">Чек-лист</h2>
+              <h2 className="catalog-dialog__title">{dialog.type.title}</h2>
               <button
                 type="button"
                 className="tab__close"
@@ -475,8 +514,12 @@ export default function App({
             >
               <input
                 className="checklist__input"
-                placeholder="Название нового чек-листа"
-                aria-label="Название нового чек-листа"
+                placeholder={`Название нового ${NEW_DOCUMENT_TITLE_BY_MODULE[
+                  dialog.type.documentSupport?.moduleId ?? ''
+                ] ?? 'документа'}`}
+                aria-label={`Название нового ${NEW_DOCUMENT_TITLE_BY_MODULE[
+                  dialog.type.documentSupport?.moduleId ?? ''
+                ] ?? 'документа'}`}
                 value={newListTitle}
                 onChange={(event) => setNewListTitle(event.target.value)}
               />
@@ -486,7 +529,7 @@ export default function App({
             </form>
             <p className="doc-choice__caption">Или открыть существующий:</p>
             {existingDocuments.length === 0 ? (
-              <p className="checklist__hint">Существующих чек-листов нет.</p>
+              <p className="checklist__hint">Существующих документов нет.</p>
             ) : (
               <ul className="doc-choice__list">
                 {existingDocuments.map((document) => (
@@ -496,7 +539,9 @@ export default function App({
                       className="doc-choice__item"
                       onClick={() => openExistingDocument(document)}
                     >
-                      {checklistTitle(document.content)}
+                      {dialog.type.documentSupport?.moduleId === 'gantt'
+                        ? planTitle(document.content)
+                        : checklistTitle(document.content)}
                     </button>
                   </li>
                 ))}

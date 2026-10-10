@@ -69,7 +69,12 @@ test('закрытие и перезагрузка сохраняют докум
   await expect(page.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
 
   await page.reload();
-  await expect(page.getByText('Переживает закрытие')).toBeVisible({ timeout: 10000 });
+  // Документ открыт в двух экземплярах — текст ищем в конкретной панели.
+  await expect(
+    page
+      .getByLabel('Экземпляр 1 · Список 1')
+      .getByText('Переживает закрытие'),
+  ).toBeVisible({ timeout: 10000 });
 });
 
 test('новая вкладка активна и пуста; переключение сохраняет наборы', async ({ page }) => {
@@ -148,8 +153,11 @@ test('удаление активной вкладки делает активн
   );
 
   // Документ пережил удаление вкладки: перезагрузка восстанавливает его.
+  // Он открыт в двух экземплярах — текст ищем в конкретной панели.
   await page.reload();
-  await expect(page.getByText('Документ жив')).toBeVisible({ timeout: 10000 });
+  await expect(
+    page.getByLabel('Экземпляр 1 · Список 1').getByText('Документ жив'),
+  ).toBeVisible({ timeout: 10000 });
 });
 
 test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
