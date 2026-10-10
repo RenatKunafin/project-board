@@ -11,5 +11,5 @@
 
 - [x] 3.1 ADR → «Принято»; обновить `.context/project-decisions.md` (§19: кандидаты → решения со ссылкой на ADR; §20 — пороги) и зависящие карточки (PBT-037, PBT-047, PBT-048, PBT-058)
 - [x] 3.2 Актуализировать `AGENTS.md`: раздел «Стадия», ссылки на ADR PBT-017 в документации/конвенциях
-- [ ] 3.3 Прогнать `openspec validate pbt-017-gantt-components-decision --strict`; отметить DoD-чекбоксы карточки PBT-017; обновить реестр (статус, PR)
-- [ ] 3.4 Открыть PR в `develop`; после merge — архивация change, статус `Done`
+- [x] 3.3 Прогнать `openspec validate pbt-017-gantt-components-decision --strict`; отметить DoD-чекбоксы карточки PBT-017; обновить реестр (статус, PR)
+- [x] 3.4 Открыть PR в `develop` (PR#20); после merge — статус `Done`
