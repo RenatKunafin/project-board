@@ -2,7 +2,7 @@
 
 PWA-дашборд для управления проектами: платформа виджетов (вкладки, каталог, тайлинг/каскад) и модули чек-листа и Гантта.
 
-**Текущая стадия:** платформа работает — вкладки, каталог виджетов, чек-лист с общими документами, локальное хранение и автосохранение (IndexedDB). Гантт — на этапе выбора компонента: ведётся спайк SVAR ([отчёт](.docs/research/PBT-014.md)), итоговое решение — задача PBT-017. Прогресс и статусы — [реестр задач](.context/tasks/README.md).
+**Текущая стадия:** платформа работает — вкладки, каталог виджетов, чек-лист с общими документами, локальное хранение и автосохранение (IndexedDB). Компоненты Гантта выбраны ([ADR PBT-017](.docs/adr/PBT-017.md): SVAR — проектный вид, React Calendar Timeline — ресурсный); впереди ядро планирования и продуктовые представления. Прогресс и статусы — [реестр задач](.context/tasks/README.md).
 
 ## Запуск
 
@@ -11,7 +11,7 @@ PWA-дашборд для управления проектами: платфо�
 ```bash
 npm install        # установка зависимостей по lockfile (или npm ci)
 npm run dev        # основное приложение: http://localhost:5173
-npm run dev:spike  # исследовательский стенд Гантта: http://localhost:5174 (не в прод-сборке)
+npm run dev:load-demo  # нагрузочный стенд Гантта: http://localhost:5176 (не в прод-сборке, до PBT-058)
 npm run build      # production-сборка в apps/project-board/dist
 npm run preview    # отдача собранной страницы: http://localhost:4173
 npm run typecheck  # tsc --noEmit по всем пакетам
@@ -26,7 +26,7 @@ CI (GitHub Actions) на каждый PR в `develop`: lint → typecheck → un
 
 ```text
 apps/project-board      # Сборка PWA: Vite + React + TS, оболочка приложения
-apps/gantt-spike        # Спайк SVAR (PBT-014), не входит в прод-сборку
+apps/load-demo          # Нагрузочный стенд Гантта (PBT-016), не входит в прод-сборку
 packages/dashboard      # Универсальная платформа дашборда
 packages/widget-sdk     # Публичный контракт платформы и модулей
 packages/gantt          # Модуль Гантта (зависит от widget-sdk)
@@ -37,7 +37,7 @@ packages/checklist      # Модуль чек-листа (зависит от wi
 
 ## Инструментарий
 
-Node.js 22.12.0 · npm 11.2.0 · Vite 6.4.4 · React 18.3.1 · TypeScript 5.9.3 · Dexie 4.4.6 (IndexedDB) · SVAR React Gantt 2.8.0 (спайк)
+Node.js 22.12.0 · npm 11.2.0 · Vite 6.4.4 · React 18.3.1 · TypeScript 5.9.3 · Dexie 4.4.6 (IndexedDB) · SVAR React Gantt 2.8.0 и React Calendar Timeline 0.30.0-beta.19 (выбраны, [ADR PBT-017](.docs/adr/PBT-017.md); подключаются задачами представлений)
 
 Проверка артефактов OpenSpec:
 
@@ -51,6 +51,6 @@ openspec validate --all --strict
 
 Локальная (`.context/`, не в git): [решения по проекту](.context/project-decisions.md), [бэклог и статусы](.context/tasks/README.md), [процесс работы](.context/openspec-workflow.md), [настройка OpenSpec](.context/openspec-setup.md), [макеты](.context/layout/).
 
-В репозитории: [ADR](.docs/adr/) (PBT-002 — границы платформы, PBT-003 — семантика редактирования плана), [отчёты исследований](.docs/research/) (PBT-011, PBT-012, PBT-014), [действующие спецификации](openspec/specs/).
+В репозитории: [ADR](.docs/adr/) (PBT-002 — границы платформы, PBT-003 — семантика редактирования плана, PBT-017 — компоненты Гантта), [отчёты исследований](.docs/research/) (PBT-011–PBT-016), [действующие спецификации](openspec/specs/).
 
 Для AI-агентов — [AGENTS.md](AGENTS.md): порядок погружения, процесс, конвенции.
