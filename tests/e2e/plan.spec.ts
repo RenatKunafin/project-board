@@ -35,8 +35,10 @@ test('план создаётся через каталог, переживае�
   await reopened.getByRole('button', { name: 'ОКАД' }).click();
 
   const restored = page.getByRole('group', { name: 'План · ОКАД' });
-  await expect(restored).toBeVisible();
-  await expect(restored.getByText('ОКАД')).toBeVisible();
+  // Перезагрузка восстанавливает сохранённое окно плана (PBT-024),
+  // открытие из каталога добавляет второе представление того же документа.
+  await expect(restored).toHaveCount(2);
+  await expect(restored.first().getByText('ОКАД', { exact: true })).toBeVisible();
 });
 
 test('второе представление существующего плана показывает тот же документ', async ({

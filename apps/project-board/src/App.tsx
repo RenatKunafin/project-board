@@ -16,9 +16,11 @@ import {
   CascadeLayout,
   defaultArea,
   TILE_GRID_COLUMNS,
+  WorkspaceStore,
   type CascadeItemInput,
   type CascadeLayoutState,
   type TiledLayoutState,
+  type WorkspaceSnapshot,
 } from '@project-board/dashboard';
 import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
@@ -43,12 +45,29 @@ const NEW_DOCUMENT_TITLE_BY_MODULE: Record<string, string> = {
   gantt: 'плана',
 };
 
+export interface RestoredWorkspace {
+  readonly tabs: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly mode: 'grid' | 'cascade';
+  }[];
+  readonly activeTabId: string | null;
+  readonly panesByTab: Record<string, PaneInstance[]>;
+  readonly areasByTab: Record<string, TiledLayoutState>;
+  readonly cascadeByTab: CascadeByTab;
+  readonly modeByTab: Record<string, 'grid' | 'cascade'>;
+}
+
 interface AppProps {
   widgetRegistry: WidgetRegistry;
   documentService: AutosavingDocumentService;
+  workspaceStore: WorkspaceStore;
   list1Id: string;
   list2Id: string;
+  restored?: RestoredWorkspace;
 }
+
+type CascadeByTab = { readonly [tabId: string]: CascadeLayoutState };
 
 const SAVE_STATE_LABELS: Record<string, string> = {
   saved: 'Сохранено',
@@ -95,6 +114,15 @@ function WidgetPane({
   pane: PaneInstance;
   documentService: AutosavingDocumentService;
 }) {
+  // Восстановленное окно может ссылаться на недоступный документ:
+  // показываем определённое состояние вместо содержимого (PBT-024).
+  if (pane.documentId && !documentService.get(pane.documentId)) {
+    return (
+      <p className="pane-document-missing" role="status">
+        Документ недоступен.
+      </p>
+    );
+  }
   const WidgetComponent = lookup.component;
   return (
     <WidgetComponent
@@ -109,38 +137,51 @@ function WidgetPane({
 export default function App({
   widgetRegistry,
   documentService,
+  workspaceStore,
   list1Id,
   list2Id,
+  restored,
 }: AppProps) {
   const [workspace, dispatch] = useReducer(
     workspaceReducer,
     undefined,
-    () => createWorkspaceState('Чек-листы'),
+    () =>
+      restored && restored.tabs.length > 0
+        ? {
+            tabs: restored.tabs.map((tab) => ({
+              id: tab.id,
+              title: tab.title,
+            })),
+            activeId:
+              restored.activeTabId ?? restored.tabs[0]?.id ?? 'workspace-tab',
+          }
+        : createWorkspaceState('Чек-листы'),
   );
 
   const [panesByTab, setPanesByTab] = useState<Record<string, PaneInstance[]>>(
-    () => ({
-      [workspace.tabs[0].id]: [
-        {
-          instanceId: 'w-1',
-          typeId: 'checklist',
-          label: 'Экземпляр 1 · Список 1',
-          documentId: list1Id,
-        },
-        {
-          instanceId: 'w-2',
-          typeId: 'checklist',
-          label: 'Экземпляр 2 · Список 1',
-          documentId: list1Id,
-        },
-        {
-          instanceId: 'w-3',
-          typeId: 'checklist',
-          label: 'Экземпляр 3 · Список 2',
-          documentId: list2Id,
-        },
-      ],
-    }),
+    () =>
+      restored?.panesByTab ?? {
+        [workspace.tabs[0].id]: [
+          {
+            instanceId: 'w-1',
+            typeId: 'checklist',
+            label: 'Экземпляр 1 · Список 1',
+            documentId: list1Id,
+          },
+          {
+            instanceId: 'w-2',
+            typeId: 'checklist',
+            label: 'Экземпляр 2 · Список 1',
+            documentId: list1Id,
+          },
+          {
+            instanceId: 'w-3',
+            typeId: 'checklist',
+            label: 'Экземпляр 3 · Список 2',
+            documentId: list2Id,
+          },
+        ],
+      },
   );
 
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -156,16 +197,16 @@ export default function App({
   // Персистентность режима и раскладок — PBT-024.
   const [modeByTab, setModeByTab] = useState<
     Record<string, 'grid' | 'cascade'>
-  >({});
+  >(() => restored?.modeByTab ?? {});
 
   // Раскладка вкладок в собственной структуре платформы; персистентность — PBT-024.
   const [areasByTab, setAreasByTab] = useState<Record<string, TiledLayoutState>>(
-    {},
+    () => restored?.areasByTab ?? {},
   );
   // Каскадные раскладки вкладок: области и порядок глубины; персистентность — PBT-024.
-  const [cascadeByTab, setCascadeByTab] = useState<
-    Record<string, CascadeLayoutState>
-  >({});
+  const [cascadeByTab, setCascadeByTab] = useState<CascadeByTab>(
+    () => restored?.cascadeByTab ?? {},
+  );
   // Прежняя высота свёрнутых окон: разворачивание возвращает область (ADR-7).
   const collapsedHeights = useRef<Map<string, number>>(new Map());
 
@@ -344,12 +385,15 @@ export default function App({
     setCascadeByTab((previous) => {
       const next: Record<string, CascadeLayoutState> = {};
       for (const [tabId, state] of Object.entries(previous)) {
-        if (instanceId in state.areas || state.order.includes(instanceId)) {
-          const restAreas = { ...state.areas };
+        if (
+          instanceId in (state.areas ?? {}) ||
+          (state.order ?? []).includes(instanceId)
+        ) {
+          const restAreas = { ...(state.areas ?? {}) };
           delete restAreas[instanceId];
           next[tabId] = {
             areas: restAreas,
-            order: state.order.filter((id) => id !== instanceId),
+            order: (state.order ?? []).filter((id) => id !== instanceId),
           };
         } else {
           next[tabId] = state;
@@ -393,6 +437,66 @@ export default function App({
       ),
     };
   };
+
+  // Снапшот рабочего пространства записывается с отложенной серией:
+  // многократные изменения (например, перетаскивание) дают одну запись
+  // итогового состояния (PBT-024).
+  const snapshotRef = useRef<WorkspaceSnapshot | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const snapshot: WorkspaceSnapshot = {
+      tabs: workspace.tabs.map((tab, index) => ({
+        id: tab.id,
+        title: tab.title,
+        position: index,
+        mode: modeByTab[tab.id] ?? 'grid',
+        cascadeOrder: cascadeByTab[tab.id]?.order ?? [],
+        active: tab.id === workspace.activeId ? 1 : 0,
+      })),
+      instances: Object.entries(panesByTab).flatMap(([tabId, panes]) =>
+        panes.map((pane) => ({
+          id: pane.instanceId,
+          tabId,
+          typeId: pane.typeId,
+          documentId: pane.documentId,
+          label: pane.label,
+          collapsed: pane.collapsed ? 1 : 0,
+          gridArea: areasByTab[tabId]?.[pane.instanceId] ?? null,
+          cascadeArea: cascadeByTab[tabId]?.areas[pane.instanceId] ?? null,
+        })),
+      ),
+      activeTabId: workspace.activeId,
+    };
+    snapshotRef.current = snapshot;
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null;
+      const pending = snapshotRef.current;
+      if (pending) {
+        void workspaceStore
+          .save(pending)
+          .catch((error) => console.error('workspace save failed', error));
+      }
+    }, 300);
+  });
+
+  useEffect(() => {
+    const flush = (): void => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      const pending = snapshotRef.current;
+      if (pending) {
+        void workspaceStore.save(pending);
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    return () => window.removeEventListener('pagehide', flush);
+  }, [workspaceStore]);
 
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
     if (!type.documentSupport) {

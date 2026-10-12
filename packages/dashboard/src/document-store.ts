@@ -3,6 +3,11 @@ import {
   DocumentConflictError,
   type ManagedDocument,
 } from '@project-board/widget-sdk';
+import {
+  DOCUMENTS_TABLE_DECLARATION,
+  WORKSPACE_DB_SCHEMA_VERSION,
+  WORKSPACE_TABLE_DECLARATIONS,
+} from './db-schema';
 
 export type PersistenceErrorCode =
   | 'open-failed'
@@ -34,7 +39,9 @@ export interface DocumentStore {
   close(): void;
 }
 
-export const DOCUMENTS_DB_SCHEMA_VERSION = 1;
+export const DB_SCHEMA_VERSION = WORKSPACE_DB_SCHEMA_VERSION;
+/** Историческое имя константы: общая версия схемы БД приложения. */
+export const DOCUMENTS_DB_SCHEMA_VERSION = DB_SCHEMA_VERSION;
 
 export class IndexedDbDocumentStore implements DocumentStore {
   private readonly db: Dexie;
@@ -43,9 +50,12 @@ export class IndexedDbDocumentStore implements DocumentStore {
 
   constructor(name: string) {
     this.db = new Dexie(name);
-    this.db.version(DOCUMENTS_DB_SCHEMA_VERSION).stores({
-      documents: 'id, moduleId, documentType',
-    });
+    this.db
+      .version(WORKSPACE_DB_SCHEMA_VERSION - 1)
+      .stores({ documents: DOCUMENTS_TABLE_DECLARATION });
+    this.db
+      .version(WORKSPACE_DB_SCHEMA_VERSION)
+      .stores(WORKSPACE_TABLE_DECLARATIONS);
     this.documents = this.db.table('documents');
   }
 
@@ -53,7 +63,7 @@ export class IndexedDbDocumentStore implements DocumentStore {
     try {
       await this.db.open();
       // Dexie хранит нативную версию как номер версии * 10.
-      const expectedNativeVersion = DOCUMENTS_DB_SCHEMA_VERSION * 10;
+      const expectedNativeVersion = DB_SCHEMA_VERSION * 10;
       const nativeVersion = this.db.backendDB()?.version;
       if (
         typeof nativeVersion === 'number' &&
@@ -62,7 +72,7 @@ export class IndexedDbDocumentStore implements DocumentStore {
         this.db.close();
         throw new PersistenceError(
           'schema-version-unsupported',
-          `Локальная БД имеет версию схемы ${Math.floor(nativeVersion / 10)}, приложение поддерживает ${DOCUMENTS_DB_SCHEMA_VERSION}. Обновите приложение или очистите данные сайта.`,
+          `Локальная БД имеет версию схемы ${Math.floor(nativeVersion / 10)}, приложение поддерживает ${DB_SCHEMA_VERSION}. Обновите приложение или очистите данные сайта.`,
         );
       }
       this.opened = true;

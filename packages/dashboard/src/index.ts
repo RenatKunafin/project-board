@@ -20,6 +20,12 @@ export {
 export type { TiledArea, TiledLayoutState } from './tiled-layout';
 export { CascadeLayout } from './CascadeLayout';
 export type { CascadeItemInput, CascadeLayoutProps } from './CascadeLayout';
+export { WorkspaceStore } from './workspace-store';
+export type {
+  WorkspaceSnapshot,
+  WorkspaceTabRecord,
+  WidgetInstanceRecord,
+} from './workspace-store';
 export {
   CASCADE_CELL,
   CASCADE_COLLAPSED_HEIGHT,
