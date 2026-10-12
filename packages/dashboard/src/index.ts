@@ -7,6 +7,17 @@ export type {
 export { UnknownWidgetType } from './UnknownWidgetType';
 export { WidgetWindow } from './WidgetWindow';
 export type { WidgetWindowProps } from './WidgetWindow';
+export { TiledLayout } from './TiledLayout';
+export type { TiledItemInput, TiledLayoutProps } from './TiledLayout';
+export {
+  TILE_GAP,
+  TILE_GRID_COLUMNS,
+  TILE_ROW_HEIGHT,
+  areaOf,
+  areasFromPositions,
+  defaultArea,
+} from './tiled-layout';
+export type { TiledArea, TiledLayoutState } from './tiled-layout';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
 export type {

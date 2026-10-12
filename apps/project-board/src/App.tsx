@@ -12,10 +12,14 @@ import {
   setActive,
   UnknownWidgetType,
   WidgetWindow,
+  TiledLayout,
+  defaultArea,
+  TILE_GRID_COLUMNS,
+  type TiledLayoutState,
 } from '@project-board/dashboard';
 import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceState } from '@project-board/dashboard';
 import type {
@@ -143,6 +147,13 @@ export default function App({
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
+  // Раскладка вкладок в собственной структуре платформы; персистентность — PBT-024.
+  const [areasByTab, setAreasByTab] = useState<Record<string, TiledLayoutState>>(
+    {},
+  );
+  // Прежняя высота свёрнутых окон: разворачивание возвращает область (ADR-7).
+  const collapsedHeights = useRef<Map<string, number>>(new Map());
+
   const [saveState, setSaveState] = useState(
     documentService.getSaveState(list1Id),
   );
@@ -183,20 +194,56 @@ export default function App({
         },
       ],
     }));
+    // Новое окно начинает с левой или правой половины сетки поочередно:
+    // сетка сама уплотнит по вертикали без перекрытий.
+    const existing = areasByTab[activeTab.id] ?? {};
+    const start = defaultArea(type.sizeConstraints);
+    setAreasByTab((previous) => ({
+      ...previous,
+      [activeTab.id]: {
+        ...(previous[activeTab.id] ?? {}),
+        [instanceId]: {
+          ...start,
+          x: (Object.keys(existing).length % 2) * (TILE_GRID_COLUMNS / 2),
+        },
+      },
+    }));
   };
 
   const toggleCollapse = (instanceId: string): void => {
+    const pane = activePanes.find((entry) => entry.instanceId === instanceId);
+    const area = activeTab
+      ? areasByTab[activeTab.id]?.[instanceId]
+      : undefined;
+    if (pane && !pane.collapsed && area) {
+      collapsedHeights.current.set(instanceId, area.h);
+    }
     setPanesByTab((previous) => {
       const next: Record<string, PaneInstance[]> = {};
       for (const [tabId, panes] of Object.entries(previous)) {
-        next[tabId] = panes.map((pane) =>
-          pane.instanceId === instanceId
-            ? { ...pane, collapsed: !pane.collapsed }
-            : pane,
+        next[tabId] = panes.map((entry) =>
+          entry.instanceId === instanceId
+            ? { ...entry, collapsed: !entry.collapsed }
+            : entry,
         );
       }
       return next;
     });
+    if (pane?.collapsed) {
+      const restored = collapsedHeights.current.get(instanceId);
+      if (restored !== undefined && activeTab) {
+        setAreasByTab((previous) => ({
+          ...previous,
+          [activeTab.id]: {
+            ...(previous[activeTab.id] ?? {}),
+            [instanceId]: {
+              ...(previous[activeTab.id]?.[instanceId] ?? { x: 0, y: 0, w: 6, h: 4 }),
+              h: restored,
+            },
+          },
+        }));
+      }
+    }
   };
 
   const closePane = (instanceId: string): void => {
@@ -422,34 +469,49 @@ export default function App({
         {visiblePanes.length === 0 ? (
           <EmptyWorkspace />
         ) : (
-          <div className="instances__pair">
-            {visiblePanes.map((pane) => {
+          <TiledLayout
+            items={visiblePanes.map((pane) => {
               const lookup = widgetRegistry.get(pane.typeId);
-              const known = lookup && !('kind' in lookup);
-              return (
-                <WidgetWindow
-                  key={pane.instanceId}
-                  title={pane.label}
-                  icon={known ? lookup.icon : undefined}
-                  collapsed={pane.collapsed === true}
-                  active={pane.instanceId === effectiveActiveInstanceId}
-                  onActivate={() => setActiveInstanceId(pane.instanceId)}
-                  onToggleCollapse={() => toggleCollapse(pane.instanceId)}
-                  onClose={() => closePane(pane.instanceId)}
-                >
-                  {known ? (
-                    <WidgetPane
-                      lookup={lookup}
-                      pane={pane}
-                      documentService={documentService}
-                    />
-                  ) : (
-                    <UnknownWidgetType lookup={lookup} />
-                  )}
-                </WidgetWindow>
-              );
+              const definition =
+                lookup && !('kind' in lookup) ? lookup : undefined;
+              return {
+                instanceId: pane.instanceId,
+                constraints:
+                  definition?.sizeConstraints ?? { minWidth: 3, minHeight: 3 },
+                collapsed: pane.collapsed === true,
+                node: (
+                  <WidgetWindow
+                    title={pane.label}
+                    icon={definition?.icon}
+                    collapsed={pane.collapsed === true}
+                    active={pane.instanceId === effectiveActiveInstanceId}
+                    onActivate={() => setActiveInstanceId(pane.instanceId)}
+                    onToggleCollapse={() => toggleCollapse(pane.instanceId)}
+                    onClose={() => closePane(pane.instanceId)}
+                  >
+                    {definition ? (
+                      <WidgetPane
+                        lookup={definition}
+                        pane={pane}
+                        documentService={documentService}
+                      />
+                    ) : (
+                      <UnknownWidgetType lookup={lookup} />
+                    )}
+                  </WidgetWindow>
+                ),
+              };
             })}
-          </div>
+            areas={activeTab ? (areasByTab[activeTab.id] ?? {}) : {}}
+            onAreasChange={(next) => {
+              if (activeTab) {
+                setAreasByTab((previous) => ({
+                  ...previous,
+                  [activeTab.id]: next,
+                }));
+              }
+            }}
+          />
         )}
       </section>
 

@@ -75,7 +75,12 @@ body {
   flex-direction: column;
   gap: 12px;
   margin-top: 16px;
-  width: min(480px, 90vw);
+  width: 100%;
+  /* Пространство вкладки занимает оставшуюся высоту окна и прокручивается,
+     когда окна в сетке не помещаются (решения §4.2). */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .unknown-widget {
@@ -96,11 +101,41 @@ body {
   color: var(--color-text-muted);
 }
 
-.instances__pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  align-items: start;
+.tiled-grid {
+  overflow: visible;
+}
+
+.tiled-grid__cell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.tiled-grid__cell > .widget-window {
+  height: 100%;
+  overflow: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: var(--color-accent);
+  opacity: 0.16;
+  border-radius: 8px;
+  transition-duration: 100ms;
+}
+
+.react-grid-item > .react-resizable-handle {
+  width: 14px;
+  height: 14px;
+  border-radius: 0 0 6px 0;
+}
+
+.react-grid-item.react-draggable-dragging .widget-window,
+.react-grid-item.resizing .widget-window {
+  pointer-events: none;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  border-right: 2px solid var(--color-text-faint);
+  border-bottom: 2px solid var(--color-text-faint);
 }
 
 .widget-window {
@@ -323,6 +358,7 @@ body {
   justify-content: flex-start;
   gap: 12px;
   padding-top: 16px;
+  height: 100vh;
 }
 
 .tabs-header {
