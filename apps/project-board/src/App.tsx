@@ -13,8 +13,11 @@ import {
   UnknownWidgetType,
   WidgetWindow,
   TiledLayout,
+  CascadeLayout,
   defaultArea,
   TILE_GRID_COLUMNS,
+  type CascadeItemInput,
+  type CascadeLayoutState,
   type TiledLayoutState,
 } from '@project-board/dashboard';
 import { checklistTitle } from '@project-board/checklist';
@@ -147,10 +150,18 @@ export default function App({
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
+  // Режим размещения: сетка (PBT-021) или каскад (PBT-022). Переключатель
+  // временен: продуктовое переключение с раздельными раскладками — PBT-023.
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'cascade'>('grid');
+
   // Раскладка вкладок в собственной структуре платформы; персистентность — PBT-024.
   const [areasByTab, setAreasByTab] = useState<Record<string, TiledLayoutState>>(
     {},
   );
+  // Каскадные раскладки вкладок: области и порядок глубины; персистентность — PBT-024.
+  const [cascadeByTab, setCascadeByTab] = useState<
+    Record<string, CascadeLayoutState>
+  >({});
   // Прежняя высота свёрнутых окон: разворачивание возвращает область (ADR-7).
   const collapsedHeights = useRef<Map<string, number>>(new Map());
 
@@ -208,10 +219,58 @@ export default function App({
         },
       },
     }));
+    // В каскаде новое окно добавляется наверх стека; область посчитает адаптер.
+    setCascadeByTab((previous) => ({
+      ...previous,
+      [activeTab.id]: {
+        areas: previous[activeTab.id]?.areas ?? {},
+        order: [...(previous[activeTab.id]?.order ?? []), instanceId],
+      },
+    }));
+  };
+
+  const activatePane = (instanceId: string): void => {
+    setActiveInstanceId(instanceId);
+    if (layoutMode !== 'cascade' || !activeTab) {
+      return;
+    }
+    // Полный порядок глубины: сохранённые + новые окна, активируемое — наверх.
+    setCascadeByTab((previous) => {
+      const state = previous[activeTab.id] ?? { areas: {}, order: [] };
+      const liveIds = activePanes.map((pane) => pane.instanceId);
+      const kept = state.order.filter((id) => liveIds.includes(id));
+      for (const id of liveIds) {
+        if (!kept.includes(id)) {
+          kept.push(id);
+        }
+      }
+      const rotated = kept.filter((id) => id !== instanceId);
+      rotated.push(instanceId);
+      return {
+        ...previous,
+        [activeTab.id]: { ...state, order: rotated },
+      };
+    });
   };
 
   const toggleCollapse = (instanceId: string): void => {
     const pane = activePanes.find((entry) => entry.instanceId === instanceId);
+    if (layoutMode === 'cascade') {
+      // В каскаде полная высота хранится в области окна; свёрнутое окно
+      // сжимается адаптером до заголовка без изменения раскладки.
+      setPanesByTab((previous) => {
+        const next: Record<string, PaneInstance[]> = {};
+        for (const [tabId, panes] of Object.entries(previous)) {
+          next[tabId] = panes.map((entry) =>
+            entry.instanceId === instanceId
+              ? { ...entry, collapsed: !entry.collapsed }
+              : entry,
+          );
+        }
+        return next;
+      });
+      return;
+    }
     const area = activeTab
       ? areasByTab[activeTab.id]?.[instanceId]
       : undefined;
@@ -257,6 +316,38 @@ export default function App({
     setActiveInstanceId((current) =>
       current === instanceId ? null : current,
     );
+  };
+
+  const paneToItem = (pane: PaneInstance): CascadeItemInput => {
+    const lookup = widgetRegistry.get(pane.typeId);
+    const definition = lookup && !('kind' in lookup) ? lookup : undefined;
+    return {
+      instanceId: pane.instanceId,
+      constraints:
+        definition?.sizeConstraints ?? { minWidth: 3, minHeight: 3 },
+      collapsed: pane.collapsed === true,
+      node: (
+        <WidgetWindow
+          title={pane.label}
+          icon={definition?.icon}
+          collapsed={pane.collapsed === true}
+          active={pane.instanceId === effectiveActiveInstanceId}
+          onActivate={() => activatePane(pane.instanceId)}
+          onToggleCollapse={() => toggleCollapse(pane.instanceId)}
+          onClose={() => closePane(pane.instanceId)}
+        >
+          {definition ? (
+            <WidgetPane
+              lookup={definition}
+              pane={pane}
+              documentService={documentService}
+            />
+          ) : (
+            <UnknownWidgetType lookup={lookup} />
+          )}
+        </WidgetWindow>
+      ),
+    };
   };
 
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
@@ -450,6 +541,28 @@ export default function App({
               {SAVE_STATE_LABELS[saveState.status] ?? saveState.status}
             </p>
           )}
+          {/* Временное управление режимами: заменяется продуктовым
+              переключением PBT-023 (раздельные раскладки per вкладка). */}
+          <div
+            className="layout-mode-switch"
+            role="group"
+            aria-label="Режим размещения"
+          >
+            <button
+              type="button"
+              aria-pressed={layoutMode === 'grid'}
+              onClick={() => setLayoutMode('grid')}
+            >
+              Сетка
+            </button>
+            <button
+              type="button"
+              aria-pressed={layoutMode === 'cascade'}
+              onClick={() => setLayoutMode('cascade')}
+            >
+              Каскад
+            </button>
+          </div>
           <button
             type="button"
             className="add-widget-button"
@@ -469,49 +582,42 @@ export default function App({
         {visiblePanes.length === 0 ? (
           <EmptyWorkspace />
         ) : (
-          <TiledLayout
-            items={visiblePanes.map((pane) => {
-              const lookup = widgetRegistry.get(pane.typeId);
-              const definition =
-                lookup && !('kind' in lookup) ? lookup : undefined;
-              return {
-                instanceId: pane.instanceId,
-                constraints:
-                  definition?.sizeConstraints ?? { minWidth: 3, minHeight: 3 },
-                collapsed: pane.collapsed === true,
-                node: (
-                  <WidgetWindow
-                    title={pane.label}
-                    icon={definition?.icon}
-                    collapsed={pane.collapsed === true}
-                    active={pane.instanceId === effectiveActiveInstanceId}
-                    onActivate={() => setActiveInstanceId(pane.instanceId)}
-                    onToggleCollapse={() => toggleCollapse(pane.instanceId)}
-                    onClose={() => closePane(pane.instanceId)}
-                  >
-                    {definition ? (
-                      <WidgetPane
-                        lookup={definition}
-                        pane={pane}
-                        documentService={documentService}
-                      />
-                    ) : (
-                      <UnknownWidgetType lookup={lookup} />
-                    )}
-                  </WidgetWindow>
-                ),
-              };
-            })}
-            areas={activeTab ? (areasByTab[activeTab.id] ?? {}) : {}}
-            onAreasChange={(next) => {
-              if (activeTab) {
-                setAreasByTab((previous) => ({
-                  ...previous,
-                  [activeTab.id]: next,
-                }));
-              }
-            }}
-          />
+          <>
+            {layoutMode === 'grid' ? (
+              <TiledLayout
+                items={visiblePanes.map(paneToItem)}
+                areas={activeTab ? (areasByTab[activeTab.id] ?? {}) : {}}
+                onAreasChange={(next) => {
+                  if (activeTab) {
+                    setAreasByTab((previous) => ({
+                      ...previous,
+                      [activeTab.id]: next,
+                    }));
+                  }
+                }}
+              />
+            ) : (
+              <CascadeLayout
+                items={visiblePanes.map(paneToItem)}
+                state={
+                  activeTab
+                    ? (cascadeByTab[activeTab.id] ?? {
+                        areas: {},
+                        order: [],
+                      })
+                    : { areas: {}, order: [] }
+                }
+                onStateChange={(next) => {
+                  if (activeTab) {
+                    setCascadeByTab((previous) => ({
+                      ...previous,
+                      [activeTab.id]: next,
+                    }));
+                  }
+                }}
+              />
+            )}
+          </>
         )}
       </section>
 
