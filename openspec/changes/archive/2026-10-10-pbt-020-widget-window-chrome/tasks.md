@@ -12,4 +12,4 @@
 ## 3. Сквозная проверка
 
 - [x] 3.1 E2E: сворачивание прячет содержимое и сохраняет черновик; разворачивание возвращает; редактирование не затрагивает рамку; закрытие одного из двух представлений сохраняет документ во втором + повторное открытие из каталога; клик по рамке переключает активную подсветку; клавиатура (Enter на кнопках)
-- [x] 3.2 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-020-widget-window-chrome --strict`; DoD-чекбоксы карточки; реестр (статус, PR)
+- [x] 3.2 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-020-widget-window-chrome --strict`; DoD-чекбоксы карточки; реестр (статус, PR#23)
