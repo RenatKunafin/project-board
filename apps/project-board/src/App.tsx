@@ -152,7 +152,11 @@ export default function App({
 
   // Режим размещения: сетка (PBT-021) или каскад (PBT-022). Переключатель
   // временен: продуктовое переключение с раздельными раскладками — PBT-023.
-  const [layoutMode, setLayoutMode] = useState<'grid' | 'cascade'>('grid');
+  // Режим размещения — свойство вкладки (решения §4.1): умолчание — сетка.
+  // Персистентность режима и раскладок — PBT-024.
+  const [modeByTab, setModeByTab] = useState<
+    Record<string, 'grid' | 'cascade'>
+  >({});
 
   // Раскладка вкладок в собственной структуре платформы; персистентность — PBT-024.
   const [areasByTab, setAreasByTab] = useState<Record<string, TiledLayoutState>>(
@@ -174,6 +178,16 @@ export default function App({
   );
 
   const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeId);
+
+  const layoutMode: 'grid' | 'cascade' = activeTab
+    ? (modeByTab[activeTab.id] ?? 'grid')
+    : 'grid';
+
+  const setLayoutMode = (mode: 'grid' | 'cascade'): void => {
+    if (activeTab) {
+      setModeByTab((previous) => ({ ...previous, [activeTab.id]: mode }));
+    }
+  };
   const activePanes = activeTab ? (panesByTab[activeTab.id] ?? []) : [];
   const visiblePanes = activePanes;
   const effectiveActiveInstanceId = visiblePanes.some(
@@ -310,6 +324,36 @@ export default function App({
       const next: Record<string, PaneInstance[]> = {};
       for (const [tabId, panes] of Object.entries(previous)) {
         next[tabId] = panes.filter((pane) => pane.instanceId !== instanceId);
+      }
+      return next;
+    });
+    // Окно уходит из обеих раскладок вкладки (решения §4.4, design D3).
+    setAreasByTab((previous) => {
+      const next: Record<string, TiledLayoutState> = {};
+      for (const [tabId, areas] of Object.entries(previous)) {
+        if (instanceId in areas) {
+          const rest = { ...areas };
+          delete rest[instanceId];
+          next[tabId] = rest;
+        } else {
+          next[tabId] = areas;
+        }
+      }
+      return next;
+    });
+    setCascadeByTab((previous) => {
+      const next: Record<string, CascadeLayoutState> = {};
+      for (const [tabId, state] of Object.entries(previous)) {
+        if (instanceId in state.areas || state.order.includes(instanceId)) {
+          const restAreas = { ...state.areas };
+          delete restAreas[instanceId];
+          next[tabId] = {
+            areas: restAreas,
+            order: state.order.filter((id) => id !== instanceId),
+          };
+        } else {
+          next[tabId] = state;
+        }
       }
       return next;
     });
