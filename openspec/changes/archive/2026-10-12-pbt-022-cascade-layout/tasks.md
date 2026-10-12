@@ -12,4 +12,4 @@
 ## 3. Сквозная проверка
 
 - [ ] 3.1 E2E: переключить каскад; три окна перекрываются; активация нижнего поднимает поверх; перенос в свободную позицию и resize с минимумом типа; заголовок остаётся достижим у края; drag поля ввода не двигает окно; возврат в сетку работает; скриншот каскада к PR
-- [ ] 3.2 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-022-cascade-layout --strict`; DoD-чекбоксы карточки; реестр (статус, PR)
+- [ ] 3.2 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-022-cascade-layout --strict`; DoD-чекбоксы карточки; реестр (статус, PR#25)
