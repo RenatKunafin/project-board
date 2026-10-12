@@ -202,7 +202,7 @@ test('шесть окон прокручиваются; раскладка ви�
     .toBeGreaterThan(10);
 
   await page.screenshot({
-    path: 'openspec/changes/pbt-021-tiled-layout/screenshots/tiled-layout.png',
+    path: 'test-results/screenshots/tiled-layout.png',
     fullPage: false,
   });
 });

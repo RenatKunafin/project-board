@@ -105,6 +105,58 @@ body {
   overflow: visible;
 }
 
+.cascade-layout {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cascade-layout__window > .widget-window {
+  height: 100%;
+  overflow: hidden;
+}
+
+.cascade-resize {
+  border-radius: 4px;
+}
+
+.cascade-resize-se {
+  width: 14px;
+  height: 14px;
+  border-radius: 0 0 6px 0;
+}
+
+.cascade-resize-se::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-right: 2px solid var(--color-text-faint);
+  border-bottom: 2px solid var(--color-text-faint);
+  border-radius: 0 0 6px 0;
+}
+
+.layout-mode-switch {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.layout-mode-switch button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.layout-mode-switch button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .tiled-grid__cell {
   min-width: 0;
   min-height: 0;

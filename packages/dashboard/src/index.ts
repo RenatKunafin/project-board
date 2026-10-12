@@ -18,6 +18,21 @@ export {
   defaultArea,
 } from './tiled-layout';
 export type { TiledArea, TiledLayoutState } from './tiled-layout';
+export { CascadeLayout } from './CascadeLayout';
+export type { CascadeItemInput, CascadeLayoutProps } from './CascadeLayout';
+export {
+  CASCADE_CELL,
+  CASCADE_COLLAPSED_HEIGHT,
+  areaOf as cascadeAreaOf,
+  cascadeSizeBounds,
+  defaultCascadeArea,
+  depthOf,
+  orderFrom,
+} from './cascade-layout';
+export type {
+  CascadeArea,
+  CascadeLayoutState,
+} from './cascade-layout';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
 export type {
