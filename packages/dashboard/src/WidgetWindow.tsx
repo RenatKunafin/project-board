@@ -40,7 +40,15 @@ export function WidgetWindow({
           {icon ?? '🧩'}
         </span>
         <span className="widget-window__title">{title}</span>
-        <span className="widget-window__actions">
+        <span
+          className="widget-window__actions"
+          // Кнопки окна — не ручка переноса: mousedown не уходит в drag-механику
+          // сетки, иначе сеточная раскладка съедает клики кнопок.
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            onActivate?.();
+          }}
+        >
           <button
             type="button"
             className="widget-window__button"
