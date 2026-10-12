@@ -667,3 +667,10 @@ body {
   gap: 4px;
   font-size: 12px;
 }
+
+.pane-document-missing {
+  margin: 0;
+  padding: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

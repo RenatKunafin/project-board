@@ -5,13 +5,17 @@ import {
   createIndexedDbDocumentStore,
   createWidgetRegistry,
   StorageSelfTest,
+  WorkspaceStore,
+  type CascadeLayoutState,
+  type TiledLayoutState,
 } from '@project-board/dashboard';
-import App from './App';
+import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
 import './index.css';
 
 const store = createIndexedDbDocumentStore('project-board');
 const documentService = createDocumentService({ store });
+const workspaceStore = new WorkspaceStore('project-board');
 
 // Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
 window.addEventListener('pagehide', () => {
@@ -31,45 +35,144 @@ if (window.location.hash === '#storage-selftest') {
 }
 
 async function bootstrap(): Promise<void> {
-  const restored = await documentService.restoreAll();
-
-  // Вертикальный срез PBT-011: гарантировать два документа чек-листа.
-  // Сопоставление панелей с документами должно быть стабильным между
-  // перезагрузками: сортируем (createdAt, затем id) и ПОСЛЕ создания
-  // недостающих — иначе при создании двух документов в одну миллисекунду
-  // панели после перезагрузки ссылаются на другие документы.
-  const byCreation = (
-    a: { createdAt: string; id: string },
-    b: { createdAt: string; id: string },
-  ): number =>
-    a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : 1;
-  let checklistDocuments = restored
-    .filter(
-      (document) =>
-        document.moduleId === 'checklist' && document.documentType === 'list',
-    )
-    .sort(byCreation);
-  while (checklistDocuments.length < 2) {
-    const created = documentService.create({
-      moduleId: 'checklist',
-      documentType: 'list',
-      schemaVersion: 1,
-      content: { items: [] },
-    });
-    checklistDocuments = [...checklistDocuments, created].sort(byCreation);
-  }
-  const [list1Id, list2Id] = checklistDocuments.map((document) => document.id);
+  await documentService.restoreAll();
+  const saved = await workspaceStore.load();
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
+
+  // Восстановление сохранённого рабочего пространства: вкладки, окна,
+  // раскладки и режимы. Документы уже в сервисе (restoreAll).
+  if (saved.tabs.length > 0) {
+    const restored = restoreWorkspace(saved);
+    ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+      <React.StrictMode>
+        <App
+          widgetRegistry={widgetRegistry}
+          documentService={documentService}
+          workspaceStore={workspaceStore}
+          list1Id={firstChecklistId()}
+          list2Id={secondChecklistId()}
+          restored={restored}
+        />
+      </React.StrictMode>,
+    );
+    return;
+  }
+
+  // Первый запуск: вертикальный срез PBT-011 (два документа чек-листа).
+  const [list1Id, list2Id] = ensureTwoChecklists();
 
   ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
       <App
         widgetRegistry={widgetRegistry}
         documentService={documentService}
+        workspaceStore={workspaceStore}
         list1Id={list1Id}
         list2Id={list2Id}
       />
     </React.StrictMode>,
   );
+}
+
+function firstChecklistId(): string {
+  return ensureTwoChecklists()[0];
+}
+
+function secondChecklistId(): string {
+  return ensureTwoChecklists()[1];
+}
+
+function ensureTwoChecklists(): [string, string] {
+  // Сопоставление панелей с документами должно быть стабильным между
+  // перезагрузками: сортируем (createdAt, затем id) и ПОСЛЕ создания
+  // недостающих — иначе при создании двух документов в одну миллисекунду
+  // панели после перезагрузки ссылаются на другие документы.
+  const restored = documentService
+    .listDocuments({ moduleId: 'checklist', documentType: 'list' })
+    .sort(
+      (a, b) =>
+        a.createdAt < b.createdAt
+          ? -1
+          : a.createdAt > b.createdAt
+            ? 1
+            : a.id < b.id
+              ? -1
+              : 1,
+    );
+  let documents = restored;
+  while (documents.length < 2) {
+    const created = documentService.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      content: { items: [] },
+    });
+    documents = [...documents, created];
+  }
+  return [documents[0].id, documents[1].id];
+}
+
+function restoreWorkspace(
+  saved: Awaited<ReturnType<WorkspaceStore['load']>>,
+): RestoredWorkspace {
+  const tabs = saved.tabs.map((tab) => ({
+    id: tab.id,
+    title: tab.title,
+    mode: tab.mode,
+  }));
+  const panesByTab: RestoredWorkspace['panesByTab'] = {};
+  const areasByTab: Record<string, TiledLayoutState> = {};
+  const cascadeByTab: Record<string, CascadeLayoutState> = {};
+  const modeByTab: Record<string, 'grid' | 'cascade'> = {};
+
+  for (const tab of saved.tabs) {
+    panesByTab[tab.id] = [];
+    areasByTab[tab.id] = {};
+    cascadeByTab[tab.id] = { areas: {}, order: [...tab.cascadeOrder] };
+    modeByTab[tab.id] = tab.mode;
+  }
+
+  for (const instance of saved.instances) {
+    const panes = panesByTab[instance.tabId];
+    if (!panes) {
+      continue;
+    }
+    panes.push({
+      instanceId: instance.id,
+      typeId: instance.typeId,
+      label: instance.label ?? instance.typeId,
+      documentId: instance.documentId,
+      collapsed: instance.collapsed === 1,
+    });
+    if (instance.gridArea) {
+      areasByTab[instance.tabId] = areasByTab[instance.tabId] ?? {};
+      areasByTab[instance.tabId][instance.id] = instance.gridArea;
+    }
+    if (instance.cascadeArea) {
+      cascadeByTab[instance.tabId] = cascadeByTab[instance.tabId] ?? {
+        areas: {},
+        order: [],
+      };
+      cascadeByTab[instance.tabId].areas[instance.id] = instance.cascadeArea;
+    }
+  }
+
+  const activeTabId =
+    saved.activeTabId && tabs.some((tab) => tab.id === saved.activeTabId)
+      ? saved.activeTabId
+      : (tabs[0]?.id ?? null);
+
+  // Порядок глубины: держим только живые экземпляры вкладки.
+  for (const tab of saved.tabs) {
+    const live = new Set(
+      (panesByTab[tab.id] ?? []).map((pane) => pane.instanceId),
+    );
+    cascadeByTab[tab.id] = {
+      areas: cascadeByTab[tab.id]?.areas ?? {},
+      order: cascadeByTab[tab.id]?.order.filter((id) => live.has(id)) ?? [],
+    };
+  }
+
+  return { tabs, activeTabId, panesByTab, areasByTab, cascadeByTab, modeByTab };
 }
