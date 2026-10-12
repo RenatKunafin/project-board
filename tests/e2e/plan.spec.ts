@@ -22,7 +22,7 @@ test('план создаётся через каталог, переживае�
 
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(350); // хвост очереди автосохранения
+  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
 
   // Панели живут в памяти: после перезагрузки документ открывается заново по каталогу.
   await page.reload();
@@ -55,7 +55,7 @@ test('второе представление существующего пла�
     page.getByRole('group', { name: 'План · Ремонт' }),
   ).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(1500);
 
   await page.getByRole('button', { name: 'Добавить виджет' }).click();
   await page
