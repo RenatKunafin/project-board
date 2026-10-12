@@ -61,9 +61,10 @@ test('закрытие и перезагрузка сохраняют докум
 
   await pane1.getByPlaceholder('Новый пункт').fill('Переживает закрытие');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
+  // Ждём старт именно тестовой записи: «Сохранено» может висеть от bootstrap.
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(350); // хвост очереди автосохранения
+  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
 
   await pane1.getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' }).click();
   await expect(page.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
@@ -139,7 +140,7 @@ test('удаление активной вкладки делает активн
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(350); // хвост очереди автосохранения
+  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
 
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   await expect(page.getByText('Пространство пусто')).toBeVisible();

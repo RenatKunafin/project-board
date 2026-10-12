@@ -11,6 +11,7 @@ import {
   renameTab,
   setActive,
   UnknownWidgetType,
+  WidgetWindow,
 } from '@project-board/dashboard';
 import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
@@ -27,6 +28,7 @@ interface PaneInstance {
   readonly typeId: string;
   readonly label: string;
   readonly documentId?: string;
+  readonly collapsed?: boolean;
 }
 
 const NEW_DOCUMENT_TITLE_BY_MODULE: Record<string, string> = {
@@ -138,7 +140,7 @@ export default function App({
   const [dialog, setDialog] = useState<CatalogDialog>({ step: 'none' });
   const [newListTitle, setNewListTitle] = useState('');
 
-  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
+  const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
 
   const [saveState, setSaveState] = useState(
@@ -151,9 +153,12 @@ export default function App({
 
   const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeId);
   const activePanes = activeTab ? (panesByTab[activeTab.id] ?? []) : [];
-  const visiblePanes = activePanes.filter(
-    (pane) => !closed.has(pane.instanceId),
-  );
+  const visiblePanes = activePanes;
+  const effectiveActiveInstanceId = visiblePanes.some(
+    (pane) => pane.instanceId === activeInstanceId,
+  )
+    ? activeInstanceId
+    : (visiblePanes[0]?.instanceId ?? null);
   const isLastTab = workspace.tabs.length === 1;
 
   const catalogTypes = widgetRegistry.list();
@@ -178,11 +183,33 @@ export default function App({
         },
       ],
     }));
-    setClosed((previous) => {
-      const next = new Set(previous);
-      next.delete(instanceId);
+  };
+
+  const toggleCollapse = (instanceId: string): void => {
+    setPanesByTab((previous) => {
+      const next: Record<string, PaneInstance[]> = {};
+      for (const [tabId, panes] of Object.entries(previous)) {
+        next[tabId] = panes.map((pane) =>
+          pane.instanceId === instanceId
+            ? { ...pane, collapsed: !pane.collapsed }
+            : pane,
+        );
+      }
       return next;
     });
+  };
+
+  const closePane = (instanceId: string): void => {
+    setPanesByTab((previous) => {
+      const next: Record<string, PaneInstance[]> = {};
+      for (const [tabId, panes] of Object.entries(previous)) {
+        next[tabId] = panes.filter((pane) => pane.instanceId !== instanceId);
+      }
+      return next;
+    });
+    setActiveInstanceId((current) =>
+      current === instanceId ? null : current,
+    );
   };
 
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
@@ -244,18 +271,6 @@ export default function App({
           .slice()
           .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
       : [];
-
-  const togglePane = (instanceId: string) => {
-    setClosed((previous) => {
-      const next = new Set(previous);
-      if (next.has(instanceId)) {
-        next.delete(instanceId);
-      } else {
-        next.add(instanceId);
-      }
-      return next;
-    });
-  };
 
   const commitRename = (tabId: string, title: string) => {
     dispatch({ type: 'rename', tabId, title });
@@ -410,30 +425,28 @@ export default function App({
           <div className="instances__pair">
             {visiblePanes.map((pane) => {
               const lookup = widgetRegistry.get(pane.typeId);
+              const known = lookup && !('kind' in lookup);
               return (
-                <div
+                <WidgetWindow
                   key={pane.instanceId}
-                  className="instances__pane"
-                  role="group"
-                  aria-label={pane.label}
+                  title={pane.label}
+                  icon={known ? lookup.icon : undefined}
+                  collapsed={pane.collapsed === true}
+                  active={pane.instanceId === effectiveActiveInstanceId}
+                  onActivate={() => setActiveInstanceId(pane.instanceId)}
+                  onToggleCollapse={() => toggleCollapse(pane.instanceId)}
+                  onClose={() => closePane(pane.instanceId)}
                 >
-                  <div className="instances__head">
-                    <p className="instances__label">{pane.label}</p>
-                    <button
-                      type="button"
-                      className="instances__close"
-                      aria-label={`Закрыть ${pane.label}`}
-                      onClick={() => togglePane(pane.instanceId)}
-                    >
-                      Закрыть
-                    </button>
-                  </div>
-                  {lookup && !('kind' in lookup) ? (
-                    <WidgetPane lookup={lookup} pane={pane} documentService={documentService} />
+                  {known ? (
+                    <WidgetPane
+                      lookup={lookup}
+                      pane={pane}
+                      documentService={documentService}
+                    />
                   ) : (
                     <UnknownWidgetType lookup={lookup} />
                   )}
-                </div>
+                </WidgetWindow>
               );
             })}
           </div>

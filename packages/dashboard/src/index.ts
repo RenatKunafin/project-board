@@ -5,6 +5,8 @@ export type {
   UnknownWidgetType as UnknownWidgetTypeData,
 } from './widget-registry';
 export { UnknownWidgetType } from './UnknownWidgetType';
+export { WidgetWindow } from './WidgetWindow';
+export type { WidgetWindowProps } from './WidgetWindow';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
 export type {

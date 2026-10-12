@@ -5,6 +5,7 @@
   --color-text: #1c2733;
   --color-text-muted: #5a6b7b;
   --color-text-faint: #8a99a8;
+  --color-accent: #2f6fed;
 }
 
 * {
@@ -99,20 +100,75 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  align-items: start;
 }
 
-.instances__pane {
+.widget-window {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 10px 12px;
   background: var(--color-surface);
 }
 
-.instances__label {
-  margin: 0 0 8px;
-  font-size: 11px;
-  text-transform: uppercase;
-  color: var(--color-text-faint);
+.widget-window--active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.widget-window__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.widget-window--collapsed .widget-window__head {
+  border-bottom-color: transparent;
+}
+
+.widget-window__icon {
+  font-size: 13px;
+}
+
+.widget-window__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.widget-window__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.widget-window__button {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.widget-window__button:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.widget-window__body {
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 12px;
 }
 
 .checklist__items {
@@ -237,23 +293,6 @@ body {
 .save-state.is-conflict {
   color: #b36b00;
   background: rgba(179, 107, 0, 0.1);
-}
-
-.instances__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.instances__close {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-size: 11px;
-  border-radius: 6px;
-  padding: 2px 8px;
-  cursor: pointer;
 }
 
 .reopen {
