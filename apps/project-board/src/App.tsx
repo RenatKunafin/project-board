@@ -32,11 +32,19 @@ import {
   type TiledLayoutState,
   type WorkspaceSnapshot,
 } from '@project-board/dashboard';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  memo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceState } from '@project-board/dashboard';
 import type {
   ManagedDocument,
+  WidgetSize,
   WidgetTypeDefinition,
 } from '@project-board/widget-sdk';
 
@@ -114,11 +122,15 @@ function workspaceReducer(
   }
 }
 
+/** Подписка на размеры содержимого окна (registrant, design D2). */
+type ResizeSubscriber = (listener: (size: WidgetSize) => void) => () => void;
+
 function WidgetPane({
   lookup,
   pane,
   documentService,
   documents,
+  visible,
   onPickDocument,
   onCreateDocument,
 }: {
@@ -126,9 +138,59 @@ function WidgetPane({
   pane: PaneInstance;
   documentService: AutosavingDocumentService;
   documents: readonly ManagedDocument[];
+  visible: boolean;
   onPickDocument: (instanceId: string, documentId: string) => void;
   onCreateDocument: (instanceId: string) => void;
 }) {
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const sizeListeners = useRef(new Set<(size: WidgetSize) => void>());
+  const lastSize = useRef<WidgetSize | null>(null);
+  const lastFrame = useRef<number | null>(null);
+
+  // Подписка виджета на размеры (design D2): регистратор с немедленной
+  // доставкой последнего известного размера и rAF-троттлингом наблюдателя.
+  const subscribeResize = useCallback<ResizeSubscriber>((listener) => {
+    sizeListeners.current.add(listener);
+    if (lastSize.current) {
+      listener(lastSize.current);
+    }
+    return () => {
+      sizeListeners.current.delete(listener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const listeners = sizeListeners.current;
+    const element = contentRef.current;
+    if (!element || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (!rect || rect.width === 0 || rect.height === 0) {
+        return;
+      }
+      if (lastFrame.current !== null) {
+        cancelAnimationFrame(lastFrame.current);
+      }
+      lastFrame.current = requestAnimationFrame(() => {
+        lastFrame.current = null;
+        lastSize.current = { width: rect.width, height: rect.height };
+        for (const listener of [...listeners]) {
+          listener(lastSize.current);
+        }
+      });
+    });
+    observer.observe(element);
+    return () => {
+      if (lastFrame.current !== null) {
+        cancelAnimationFrame(lastFrame.current);
+      }
+      observer.disconnect();
+      listeners.clear();
+    };
+  }, []);
+
   // Ссылка на недоступный документ (удалён или битая ссылка после восстановления):
   // состояние с выбором другого документа того же типа (ADR-7 PBT-002).
   if (pane.documentId && !documentService.get(pane.documentId)) {
@@ -151,14 +213,230 @@ function WidgetPane({
   }
   const WidgetComponent = lookup.component;
   return (
-    <WidgetComponent
-      widgetInstanceId={pane.instanceId}
-      settings={lookup.startSettings}
-      documentId={pane.documentId}
-      documentService={documentService}
-    />
+    <div className="widget-pane__content" ref={contentRef}>
+      <WidgetComponent
+        widgetInstanceId={pane.instanceId}
+        settings={lookup.startSettings}
+        documentId={pane.documentId}
+        documentService={documentService}
+        visible={visible}
+        onResize={subscribeResize}
+      />
+    </div>
   );
 }
+
+/** Обработчики поверхности вкладки: актуальные реализации через стабильный ref. */
+interface PaneHandlers {
+  activatePane(instanceId: string): void;
+  toggleCollapse(instanceId: string): void;
+  closePane(instanceId: string): void;
+  replacePaneDocument(instanceId: string, documentId: string): void;
+  createDocumentForPane(instanceId: string): void;
+  onAreasChange(next: TiledLayoutState): void;
+  onCascadeChange(next: CascadeLayoutState): void;
+}
+
+interface TabSurfaceProps {
+  readonly tabTitle: string;
+  readonly visible: boolean;
+  readonly mode: 'grid' | 'cascade';
+  readonly panes: readonly PaneInstance[];
+  readonly areas: TiledLayoutState;
+  readonly cascade: CascadeLayoutState;
+  readonly activeInstanceId: string | null;
+  readonly registry: WidgetRegistry;
+  readonly documentService: AutosavingDocumentService;
+  readonly documents: readonly ManagedDocument[];
+  readonly handlers: { readonly current: PaneHandlers };
+}
+
+/** Скрытые вкладки не перерисовываются от действий активной: сравнение
+ * собственных данных (design D1). Обработчики идут через стабильный ref. */
+function tiledAreasEqual(
+  previous: TiledLayoutState,
+  next: TiledLayoutState,
+): boolean {
+  const previousKeys = Object.keys(previous);
+  if (previousKeys.length !== Object.keys(next).length) {
+    return false;
+  }
+  return previousKeys.every((key) => {
+    const a = previous[key];
+    const b = next[key];
+    if (!a || !b) {
+      return a === b;
+    }
+    return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+  });
+}
+
+function cascadeEqual(
+  previous: CascadeLayoutState,
+  next: CascadeLayoutState,
+): boolean {
+  const previousAreas = previous.areas ?? {};
+  const nextAreas = next.areas ?? {};
+  if (!tiledAreasEqual(previousAreas, nextAreas)) {
+    return false;
+  }
+  const previousOrder = previous.order ?? [];
+  const nextOrder = next.order ?? [];
+  return (
+    previousOrder.length === nextOrder.length &&
+    previousOrder.every((id, index) => id === nextOrder[index])
+  );
+}
+
+function tabSurfaceAreEqual(previous: TabSurfaceProps, next: TabSurfaceProps): boolean {
+  if (
+    previous.visible !== next.visible ||
+    previous.mode !== next.mode ||
+    previous.tabTitle !== next.tabTitle ||
+    previous.activeInstanceId !== next.activeInstanceId ||
+    previous.registry !== next.registry ||
+    previous.documentService !== next.documentService ||
+    previous.handlers !== next.handlers
+  ) {
+    return false;
+  }
+  if (!tiledAreasEqual(previous.areas, next.areas)) {
+    return false;
+  }
+  if (!cascadeEqual(previous.cascade, next.cascade)) {
+    return false;
+  }
+  if (previous.panes.length !== next.panes.length) {
+    return false;
+  }
+  for (let index = 0; index < previous.panes.length; index += 1) {
+    const a = previous.panes[index];
+    const b = next.panes[index];
+    if (
+      a.instanceId !== b.instanceId ||
+      a.typeId !== b.typeId ||
+      a.label !== b.label ||
+      a.documentId !== b.documentId ||
+      a.collapsed !== b.collapsed
+    ) {
+      return false;
+    }
+  }
+  if (previous.documents.length !== next.documents.length) {
+    return false;
+  }
+  for (let index = 0; index < previous.documents.length; index += 1) {
+    const a = previous.documents[index];
+    const b = next.documents[index];
+    if (a.id !== b.id || a.revision !== b.revision) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export const TabSurface = memo(function TabSurface({
+  tabTitle,
+  visible,
+  mode,
+  panes,
+  areas,
+  cascade,
+  activeInstanceId,
+  registry,
+  documentService,
+  documents,
+  handlers,
+}: TabSurfaceProps) {
+  const effectiveActiveInstanceId = visible
+    ? (panes.some((pane) => pane.instanceId === activeInstanceId)
+        ? activeInstanceId
+        : (panes[0]?.instanceId ?? null))
+    : null;
+
+  // Подпись окна — производная при рендере: префикс экземпляра из label +
+  // актуальное название документа из метаданных (design PBT-024 D2 снят).
+  const windowTitleOf = (pane: PaneInstance): string => {
+    const prefix = pane.label.split(' · ')[0] ?? pane.label;
+    if (!pane.documentId) {
+      return pane.label;
+    }
+    const document = documentService.get(pane.documentId);
+    return document ? `${prefix} · ${document.title}` : prefix;
+  };
+
+  const paneToItem = (pane: PaneInstance): CascadeItemInput => {
+    const lookup = registry.get(pane.typeId);
+    const definition = lookup && !('kind' in lookup) ? lookup : undefined;
+    return {
+      instanceId: pane.instanceId,
+      constraints:
+        definition?.sizeConstraints ?? { minWidth: 3, minHeight: 3 },
+      collapsed: pane.collapsed === true,
+      node: (
+        <WidgetWindow
+          title={windowTitleOf(pane)}
+          icon={definition?.icon}
+          collapsed={pane.collapsed === true}
+          active={pane.instanceId === effectiveActiveInstanceId}
+          onActivate={() => handlers.current.activatePane(pane.instanceId)}
+          onToggleCollapse={() => handlers.current.toggleCollapse(pane.instanceId)}
+          onClose={() => handlers.current.closePane(pane.instanceId)}
+        >
+          {definition ? (
+            <WidgetPane
+              lookup={definition}
+              pane={pane}
+              documentService={documentService}
+              documents={documents}
+              visible={visible && pane.collapsed !== true}
+              onPickDocument={(instanceId, documentId) =>
+                handlers.current.replacePaneDocument(instanceId, documentId)
+              }
+              onCreateDocument={(instanceId) =>
+                handlers.current.createDocumentForPane(instanceId)
+              }
+            />
+          ) : (
+            <UnknownWidgetType lookup={lookup} />
+          )}
+        </WidgetWindow>
+      ),
+    };
+  };
+
+  if (panes.length === 0) {
+    return (
+      <div
+        className="tab-surface"
+        hidden={!visible}
+      >
+        <EmptyWorkspace />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="tab-surface"
+      hidden={!visible}
+      data-tab-title={tabTitle}
+    >
+      {mode === 'grid' ? (
+        <TiledLayout
+          items={panes.map(paneToItem)}
+          areas={areas}
+          onAreasChange={(next) => handlers.current.onAreasChange(next)}
+        />
+      ) : (
+        <CascadeLayout
+          items={panes.map(paneToItem)}
+          state={cascade}
+          onStateChange={(next) => handlers.current.onCascadeChange(next)}
+        />
+      )}
+    </div>
+  );
+}, tabSurfaceAreEqual);
 
 export default function App({
   widgetRegistry,
@@ -265,12 +543,6 @@ export default function App({
     }
   };
   const activePanes = activeTab ? (panesByTab[activeTab.id] ?? []) : [];
-  const visiblePanes = activePanes;
-  const effectiveActiveInstanceId = visiblePanes.some(
-    (pane) => pane.instanceId === activeInstanceId,
-  )
-    ? activeInstanceId
-    : (visiblePanes[0]?.instanceId ?? null);
   const isLastTab = workspace.tabs.length === 1;
 
   const catalogTypes = widgetRegistry.list();
@@ -446,53 +718,9 @@ export default function App({
     );
   };
 
-  // Подпись окна — производная при рендере: префикс экземпляра из label +
-  // актуальное название документа из метаданных (снимает trade-off
-  // устаревания подписи из design PBT-024 D2). Недоступный документ
-  // подписи названия не имеет — остаётся префикс.
-  const windowTitleOf = (pane: PaneInstance): string => {
-    const prefix = pane.label.split(' · ')[0] ?? pane.label;
-    if (!pane.documentId) {
-      return pane.label;
-    }
-    const document = documentService.get(pane.documentId);
-    return document ? `${prefix} · ${document.title}` : prefix;
-  };
-
-  const paneToItem = (pane: PaneInstance): CascadeItemInput => {
-    const lookup = widgetRegistry.get(pane.typeId);
-    const definition = lookup && !('kind' in lookup) ? lookup : undefined;
-    return {
-      instanceId: pane.instanceId,
-      constraints:
-        definition?.sizeConstraints ?? { minWidth: 3, minHeight: 3 },
-      collapsed: pane.collapsed === true,
-      node: (
-        <WidgetWindow
-          title={windowTitleOf(pane)}
-          icon={definition?.icon}
-          collapsed={pane.collapsed === true}
-          active={pane.instanceId === effectiveActiveInstanceId}
-          onActivate={() => activatePane(pane.instanceId)}
-          onToggleCollapse={() => toggleCollapse(pane.instanceId)}
-          onClose={() => closePane(pane.instanceId)}
-        >
-          {definition ? (
-            <WidgetPane
-              lookup={definition}
-              pane={pane}
-              documentService={documentService}
-              documents={allDocuments}
-              onPickDocument={replacePaneDocument}
-              onCreateDocument={createDocumentForPane}
-            />
-          ) : (
-            <UnknownWidgetType lookup={lookup} />
-          )}
-        </WidgetWindow>
-      ),
-    };
-  };
+  // Обработчики поверхности вкладок: стабильный ref с актуальными
+  // реализациями — TabSurface не перерендеривается от их пересоздания.
+  const paneHandlersRef = useRef<PaneHandlers>(null as unknown as PaneHandlers);
 
   // Снапшот рабочего пространства записывается с отложенной серией:
   // многократные изменения (например, перетаскивание) дают одну запись
@@ -685,6 +913,24 @@ export default function App({
       content: support.createContent(),
     });
     replacePaneDocument(instanceId, document.id);
+  };
+
+  paneHandlersRef.current = {
+    activatePane,
+    toggleCollapse,
+    closePane,
+    replacePaneDocument,
+    createDocumentForPane,
+    onAreasChange: (next) => {
+      if (activeTab) {
+        setAreasByTab((previous) => ({ ...previous, [activeTab.id]: next }));
+      }
+    },
+    onCascadeChange: (next) => {
+      if (activeTab) {
+        setCascadeByTab((previous) => ({ ...previous, [activeTab.id]: next }));
+      }
+    },
   };
 
   const openWithDocument =
@@ -955,46 +1201,26 @@ export default function App({
         aria-label={`Пространство: ${activeTab?.title ?? ''}`}
         role="tabpanel"
       >
-        {visiblePanes.length === 0 ? (
-          <EmptyWorkspace />
-        ) : (
-          <>
-            {layoutMode === 'grid' ? (
-              <TiledLayout
-                items={visiblePanes.map(paneToItem)}
-                areas={activeTab ? (areasByTab[activeTab.id] ?? {}) : {}}
-                onAreasChange={(next) => {
-                  if (activeTab) {
-                    setAreasByTab((previous) => ({
-                      ...previous,
-                      [activeTab.id]: next,
-                    }));
-                  }
-                }}
-              />
-            ) : (
-              <CascadeLayout
-                items={visiblePanes.map(paneToItem)}
-                state={
-                  activeTab
-                    ? (cascadeByTab[activeTab.id] ?? {
-                        areas: {},
-                        order: [],
-                      })
-                    : { areas: {}, order: [] }
-                }
-                onStateChange={(next) => {
-                  if (activeTab) {
-                    setCascadeByTab((previous) => ({
-                      ...previous,
-                      [activeTab.id]: next,
-                    }));
-                  }
-                }}
-              />
-            )}
-          </>
-        )}
+        {/* Keep-mounted (design D1): панели скрытых вкладок остаются
+            смонтированы в hidden-контейнерах, состояние представления живо. */}
+        {workspace.tabs.map((tab) => (
+          <TabSurface
+            key={tab.id}
+            tabTitle={tab.title}
+            visible={tab.id === workspace.activeId}
+            mode={modeByTab[tab.id] ?? 'grid'}
+            panes={panesByTab[tab.id] ?? []}
+            areas={areasByTab[tab.id] ?? {}}
+            cascade={
+              cascadeByTab[tab.id] ?? { areas: {}, order: [] }
+            }
+            activeInstanceId={activeInstanceId}
+            registry={widgetRegistry}
+            documentService={documentService}
+            documents={allDocuments}
+            handlers={paneHandlersRef}
+          />
+        ))}
       </section>
     </main>
   );

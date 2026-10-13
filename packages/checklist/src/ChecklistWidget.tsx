@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WidgetProps } from '@project-board/widget-sdk';
 import {
   addItem,
@@ -7,12 +7,14 @@ import {
   renameItem,
   setItemDone,
   type ChecklistContent,
+  type ChecklistItem,
 } from './model';
 
 export default function ChecklistWidget({
   widgetInstanceId,
   documentId,
   documentService,
+  visible,
 }: WidgetProps) {
   const [content, setContent] = useState<ChecklistContent>(() => ({
     items: [],
@@ -32,16 +34,26 @@ export default function ChecklistWidget({
     if (document) {
       setContent(parseChecklistContent(document.content));
     }
+    // Подписка сохраняется при hidden: возврат показывает актуальный документ.
     const unsubscribe = documentService.subscribe(documentId, (updated) => {
       setContent(parseChecklistContent(updated.content));
     });
     return unsubscribe;
   }, [documentId, documentService]);
 
-  const visibleItems = useMemo(
-    () => (hideDone ? content.items.filter((item) => !item.done) : content.items),
-    [content, hideDone],
-  );
+  // Уважение видимости (PBT-027): при hidden пересчёт фильтра не выполняется,
+  // возвращается последний результат; подписка на документ остаётся живой.
+  const visibleItemsRef = useRef<readonly ChecklistItem[]>([]);
+  const visibleItems = useMemo(() => {
+    if (visible === false) {
+      return visibleItemsRef.current;
+    }
+    const next = hideDone
+      ? content.items.filter((item) => !item.done)
+      : content.items;
+    visibleItemsRef.current = next;
+    return next;
+  }, [content, hideDone, visible]);
 
   if (!documentId || !documentService) {
     return (

@@ -43,14 +43,19 @@ test('режим принадлежит вкладке: смена не затр
 
   await switchMode(page, 'Каскад');
   await expect(page.locator('.cascade-layout')).toBeVisible();
-  await expect(page.locator('.tiled-grid')).toHaveCount(0);
+  // Keep-mounted (PBT-027): сетка скрытой вкладки остаётся в DOM, но скрыта.
+  await expect(
+    page.locator('.tab-surface:not([hidden]) .tiled-grid'),
+  ).toHaveCount(0);
 
   // Вторая вкладка остаётся в сетке, управление отражает её режим.
   await page
     .getByRole('tablist')
     .getByRole('tab', { name: /Чек-листы/ })
     .click();
-  await expect(page.locator('.tiled-grid')).toBeVisible();
+  await expect(
+    page.locator('.tab-surface:not([hidden]) .tiled-grid'),
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Сетка' }),
   ).toHaveAttribute('aria-pressed', 'true');

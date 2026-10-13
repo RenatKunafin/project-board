@@ -910,6 +910,54 @@ body {
   font-size: 13px;
 }
 
+/* Поверхность вкладки (PBT-027): скрытые вкладки остаются смонтированы. */
+.tab-surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.tab-surface[hidden] {
+  display: none;
+}
+
+.widget-pane__content {
+  height: 100%;
+}
+
+.widget-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.widget-error__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.widget-error__message {
+  margin: 0;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.widget-error__retry {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
 .pane-document-missing--choosing {
   align-items: flex-start;
 }

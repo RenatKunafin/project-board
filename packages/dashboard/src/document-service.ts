@@ -91,6 +91,8 @@ export interface AutosavingDocumentService extends DocumentService {
   listRecoveryIssues(): DocumentRecoveryIssue[];
   /** Документ записан версией новее поддерживаемой: запись запрещена. */
   isFutureVersion(documentId: string): boolean;
+  /** Активные подписки на документы — диагностика утечек (PBT-027). */
+  activeSubscriptionCount(): number;
 }
 
 /** Разрыв цепочки миграций: нет шага из хранимой версии. */
@@ -528,6 +530,13 @@ export function createDocumentService(
     },
     isFutureVersion(documentId: string): boolean {
       return futureVersionIds.has(documentId);
+    },
+    activeSubscriptionCount(): number {
+      let total = 0;
+      for (const record of documents.values()) {
+        total += record.handlers.length;
+      }
+      return total;
     },
     listDocuments(
       filter?: { readonly moduleId?: string; readonly documentType?: string },

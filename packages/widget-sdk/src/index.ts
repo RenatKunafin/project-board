@@ -7,6 +7,12 @@ import type {
 
 export type WidgetTypeSettings = Record<string, unknown>;
 
+/** Размер содержимого окна, доставляемый виджету платформой. */
+export interface WidgetSize {
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface WidgetProps {
   readonly widgetInstanceId: string;
   readonly settings: WidgetTypeSettings;
@@ -14,6 +20,17 @@ export interface WidgetProps {
   readonly documentId?: string;
   /** Сервис документов платформы (SDK-контракт; реализация — платформа). */
   readonly documentService?: DocumentService;
+  /**
+   * Видимость экземпляра: активная вкладка И окно не свёрнуто.
+   * Контракт: при false виджет приостанавливает тяжёлую отрисовку,
+   * сохраняя подписки на документ (ADR-6.5, PBT-027).
+   */
+  readonly visible: boolean;
+  /**
+   * Подписка на размеры содержимого окна (design D2): регистрирует слушателя,
+   * возвращает функцию отписки; платформа троттлит значения кадром.
+   */
+  readonly onResize?: (listener: (size: WidgetSize) => void) => () => void;
 }
 
 export interface WidgetSizeConstraints {
