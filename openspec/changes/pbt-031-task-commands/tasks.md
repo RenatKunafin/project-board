@@ -2,32 +2,32 @@
 
 ## 1. Календарь: предыдущий рабочий день
 
-- [ ] 1.1 `working-calendar.ts`: `prevWorkingDay(date)` — ближайший рабочий день перед указанной датой (симметрично `nextWorkingDay`); включить в frozen-интерфейс `WorkingCalendar`
-- [ ] 1.2 Unit-тесты: понедельник → пятница; пропуск праздников и выходных назад; рабочее исключение в субботу даёт саму субботу
+- [x] 1.1 `working-calendar.ts`: `prevWorkingDay(date)` — ближайший рабочий день перед указанной датой (симметрично `nextWorkingDay`); включить в frozen-интерфейс `WorkingCalendar`
+- [x] 1.2 Unit-тесты: понедельник → пятница; пропуск праздников и выходных назад; рабочее исключение в субботу даёт саму субботу
 
 ## 2. Типы команд и результат
 
-- [ ] 2.1 `plan-commands.ts`: `PlanCommand` (дискриминированное объединение `createTask` / `updateTask` / `setTaskDates` / `moveTask` / `setTaskDuration` / `deleteTask`), `PlanCommandResult`, `PlanCommandError` с кодами `unknown-task`, `unknown-group`, `unknown-resource`, `unknown-work-type`, `inverted-interval`, `invalid-duration` (design D1–D2)
+- [x] 2.1 `plan-commands.ts`: `PlanCommand` (дискриминированное объединение `createTask` / `updateTask` / `setTaskDates` / `moveTask` / `setTaskDuration` / `deleteTask`), `PlanCommandResult`, `PlanCommandError` с кодами `unknown-task`, `unknown-group`, `unknown-resource`, `unknown-work-type`, `inverted-interval`, `invalid-duration` (design D1–D2)
 
 ## 3. Операции создания, изменения, удаления
 
-- [ ] 3.1 `createTask`: генерация id (`crypto.randomUUID`), добавление в конец `tasks`, валидация `end ≥ start` и ссылок; unit: соседние задачи и зависимости не изменены, id уникален
-- [ ] 3.2 `updateTask`: частичный патч (title, groupId, assigneeIds, workTypeIds), `undefined` — не менять, пустой массив — очистить; валидация ссылок; unit: id и даты не изменяются, неизвестная задача → `unknown-task`
-- [ ] 3.3 `deleteTask`: удаление задачи и всех зависимостей с её участием; unit: `A→B→C` при удалении `B` — обе зависимости удалены, `A` и `C` целы; группа/ресурс/тип работы/недоступность не тронуты
+- [x] 3.1 `createTask`: генерация id (`crypto.randomUUID`), добавление в конец `tasks`, валидация `end ≥ start` и ссылок; unit: соседние задачи и зависимости не изменены, id уникален
+- [x] 3.2 `updateTask`: частичный патч (title, groupId, assigneeIds, workTypeIds), `undefined` — не менять, пустой массив — очистить; валидация ссылок; unit: id и даты не изменяются, неизвестная задача → `unknown-task`
+- [x] 3.3 `deleteTask`: удаление задачи и всех зависимостей с её участием; unit: `A→B→C` при удалении `B` — обе зависимости удалены, `A` и `C` целы; группа/ресурс/тип работы/недоступность не тронуты
 
 ## 4. Операции дат по ADR PBT-003
 
-- [ ] 4.1 `setTaskDates` (A3/A6): даты как введены, включая нерабочие; `end < start` → `inverted-interval` целиком; unit: сб–вс → длительность 0
-- [ ] 4.2 `moveTask` (A2): сохранение рабочей длительности; привязка начала к ближайшему рабочему дню в сторону переноса (вперёд `nextWorkingDay`, назад `prevWorkingDay`); вырожденный N=0 — календарная длина без привязки (design D3); unit: пн 12.10–пт 16.10 → пн 19.10–пт 23.10; перенос начала на вс → пн 19.10; перенос назад на сб → пт 16.10; связанная задача не сдвинулась
-- [ ] 4.3 `setTaskDuration` (A4): целое ≥ 1, иначе `invalid-duration`; формула окончания design D4; unit: пн 12.10, N=7 → вт 20.10; N=1 при рабочем начале → тот же день; N=1 при нерабочем начале → первый рабочий день; N=0 → отклонение
-- [ ] 4.4 Рабочая длительность как производная: `workingDaysBetween` по календарю плана; праздник внутри (пн–пт, среда праздник → 4); календарь создаётся один раз на операцию
+- [x] 4.1 `setTaskDates` (A3/A6): даты как введены, включая нерабочие; `end < start` → `inverted-interval` целиком; unit: сб–вс → длительность 0
+- [x] 4.2 `moveTask` (A2): сохранение рабочей длительности; привязка начала к ближайшему рабочему дню в сторону переноса (вперёд `nextWorkingDay`, назад `prevWorkingDay`); вырожденный N=0 — календарная длина без привязки (design D3); unit: пн 12.10–пт 16.10 → пн 19.10–пт 23.10; перенос начала на вс → пн 19.10; перенос назад на сб → пт 16.10; связанная задача не сдвинулась
+- [x] 4.3 `setTaskDuration` (A4): целое ≥ 1, иначе `invalid-duration`; формула окончания design D4; unit: пн 12.10, N=7 → вт 20.10; N=1 при рабочем начале → тот же день; N=1 при нерабочем начале → первый рабочий день; N=0 → отклонение
+- [x] 4.4 Рабочая длительность как производная: `workingDaysBetween` по календарю плана; праздник внутри (пн–пт, среда праздник → 4); календарь создаётся один раз на операцию
 
 ## 5. Диспетчер и экспорт
 
-- [ ] 5.1 `applyPlanCommand`: диспетчер по `command.type`, делегирование операциям; unit: каждая команда проходит через единый путь, отклонение возвращает `ok: false` без изменения плана
-- [ ] 5.2 Экспорт команд и типов из `packages/gantt/src/index.ts`; проверка ESLint-границ (gantt не импортирует UI-библиотеки и платформу)
+- [x] 5.1 `applyPlanCommand`: диспетчер по `command.type`, делегирование операциям; unit: каждая команда проходит через единый путь, отклонение возвращает `ok: false` без изменения плана
+- [x] 5.2 Экспорт команд и типов из `packages/gantt/src/index.ts`; проверка ESLint-границ (gantt не импортирует UI-библиотеки и платформу)
 
 ## 6. Проверки и завершение
 
-- [ ] 6.1 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-031-task-commands --strict`; результаты приложить к PR
-- [ ] 6.2 Отметить DoD-чекбоксы карточки PBT-031; реестр: статус `In review`, ссылка на PR
+- [x] 6.1 Прогнать `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:browser`, `openspec validate pbt-031-task-commands --strict`; результаты приложить к PR
+- [x] 6.2 Отметить DoD-чекбоксы карточки PBT-031; реестр: статус `In review`, ссылка на PR
