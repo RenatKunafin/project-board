@@ -227,7 +227,7 @@ function WidgetPane({
 }
 
 /** Обработчики поверхности вкладки: актуальные реализации через стабильный ref. */
-interface PaneHandlers {
+export interface PaneHandlers {
   activatePane(instanceId: string): void;
   toggleCollapse(instanceId: string): void;
   closePane(instanceId: string): void;
@@ -277,7 +277,24 @@ function cascadeEqual(
 ): boolean {
   const previousAreas = previous.areas ?? {};
   const nextAreas = next.areas ?? {};
-  if (!tiledAreasEqual(previousAreas, nextAreas)) {
+  const previousKeys = Object.keys(previousAreas);
+  if (previousKeys.length !== Object.keys(nextAreas).length) {
+    return false;
+  }
+  const sameAreas = previousKeys.every((key) => {
+    const a = previousAreas[key];
+    const b = nextAreas[key];
+    if (!a || !b) {
+      return a === b;
+    }
+    return (
+      a.x === b.x &&
+      a.y === b.y &&
+      a.width === b.width &&
+      a.height === b.height
+    );
+  });
+  if (!sameAreas) {
     return false;
   }
   const previousOrder = previous.order ?? [];

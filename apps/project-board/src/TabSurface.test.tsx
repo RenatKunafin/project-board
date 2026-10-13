@@ -45,7 +45,7 @@ let renders = 0;
 let lastVisible: boolean | null = null;
 const receivedSizes: WidgetSize[] = [];
 
-function CounterWidget({ visible, onResize }: WidgetProps): null {
+function CounterWidget({ visible, onResize }: WidgetProps): JSX.Element {
   renders += 1;
   lastVisible = visible;
   useEffect(() => onResize?.((size) => receivedSizes.push(size)), [onResize]);
