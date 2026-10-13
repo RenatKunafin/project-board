@@ -58,13 +58,12 @@ test('закрытие одного из двух представлений с�
     .getByRole('button', { name: /Чек-лист/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
-    .getByRole('button', { name: 'Без названия' })
-    .first()
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByRole('button', { name: 'Список 1' })
     .click();
 
   const reopened = page.getByRole('group', {
-    name: 'Чек-лист · Без названия',
+    name: 'Чек-лист · Список 1',
   });
   await expect(reopened).toBeVisible();
   await expect(reopened.getByText('Живёт во втором окне')).toBeVisible();

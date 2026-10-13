@@ -43,11 +43,11 @@ test('рабочее пространство восстанавливается
     .getByRole('button', { name: /План/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
-    .getByLabel('Название нового плана')
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByLabel('Название нового документа')
     .fill('ОКАД');
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
+    .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Создать' })
     .click();
   await expect(page.getByRole('group', { name: 'План · ОКАД' })).toBeVisible();

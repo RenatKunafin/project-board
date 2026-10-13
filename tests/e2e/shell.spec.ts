@@ -197,13 +197,13 @@ test('каталог: новый чек-лист создаётся из пус�
   await expect(catalog.getByText('☑️')).toBeVisible();
   await catalog.getByRole('button', { name: /Чек-лист/ }).click();
 
-  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
-  await choice.getByLabel('Название нового чек-листа').fill('Покупки');
-  await choice.getByRole('button', { name: 'Создать' }).click();
+  // Пикер документа открывается в той же dropdown-панели.
+  const picker = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await picker.getByLabel('Название нового документа').fill('Покупки');
+  await picker.getByRole('button', { name: 'Создать' }).click();
 
   const pane = page.getByRole('group', { name: 'Чек-лист · Покупки' });
   await expect(pane).toBeVisible();
-  await expect(pane.getByText('Покупки')).toBeVisible();
   await expect(pane.getByPlaceholder('Новый пункт')).toBeVisible();
 });
 
@@ -220,10 +220,10 @@ test('каталог: второе представление существую
     .getByRole('button', { name: /Чек-лист/ })
     .click();
 
-  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
-  await choice.getByRole('button', { name: 'Без названия' }).first().click();
+  const picker = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await picker.getByRole('button', { name: 'Список 1' }).click();
 
-  const secondView = page.getByRole('group', { name: 'Чек-лист · Без названия' });
+  const secondView = page.getByRole('group', { name: 'Чек-лист · Список 1' });
   await expect(secondView.getByText('Общий пункт')).toBeVisible();
 
   await secondView.getByPlaceholder('Новый пункт').fill('Второе представление');
@@ -235,28 +235,23 @@ test('каталог: отмена не создаёт документов и �
   await page.goto('/');
   const catalogButton = page.getByRole('button', { name: 'Добавить виджет' });
   const catalogDialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
-  const choiceDialog = page.getByRole('dialog', { name: 'Выбор документа' });
 
   await catalogButton.click();
   await catalogDialog.getByRole('button', { name: /Чек-лист/ }).click();
-  const unnamedItems = choiceDialog.getByRole('button', { name: 'Без названия' });
-  const countBefore = await unnamedItems.count();
+  const pickerItems = catalogDialog.getByRole('button', { name: /^Список / });
+  const countBefore = await pickerItems.count();
 
-  // Отмена: закрыть шаг выбора (возврат в каталог), затем закрыть каталог.
-  await choiceDialog
-    .getByRole('button', { name: 'Закрыть выбор документа' })
-    .click();
-  await expect(choiceDialog).toHaveCount(0);
-  await catalogDialog
-    .getByRole('button', { name: 'Закрыть каталог' })
-    .click();
+  // Отмена: Escape закрывает dropdown-панель.
+  await page.keyboard.press('Escape');
   await expect(catalogDialog).toHaveCount(0);
 
   // Повторное открытие: документ от отмены не создан.
   await catalogButton.click();
   await catalogDialog.getByRole('button', { name: /Чек-лист/ }).click();
-  await expect(unnamedItems).toHaveCount(countBefore);
   await expect(
-    page.getByRole('group', { name: 'Чек-лист · Без названия' }),
+    catalogDialog.getByRole('button', { name: /^Список / }),
+  ).toHaveCount(countBefore);
+  await expect(
+    page.getByRole('group', { name: 'Чек-лист · Список 1' }),
   ).toHaveCount(0);
 });

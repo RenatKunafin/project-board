@@ -29,9 +29,8 @@ async function addSecondChecklist(page: Page): Promise<void> {
     .getByRole('button', { name: /Чек-лист/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
-    .getByRole('button', { name: 'Без названия' })
-    .first()
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByRole('button', { name: 'Список 1' })
     .click();
 }
 
@@ -46,7 +45,7 @@ test('перенос за заголовок двигает окно, сосед
     'Экземпляр 1 · Список 1',
     'Экземпляр 2 · Список 1',
     'Экземпляр 3 · Список 2',
-    'Чек-лист · Без названия',
+    'Чек-лист · Список 1',
   ];
   const before = await Promise.all(labels.map((label) => paneBox(page, label)));
 
@@ -180,9 +179,8 @@ test('шесть окон прокручиваются; раскладка ви�
       .getByRole('button', { name: /Чек-лист/ })
       .click();
     await page
-      .getByRole('dialog', { name: 'Выбор документа' })
-      .getByRole('button', { name: 'Без названия' })
-      .first()
+      .getByRole('dialog', { name: 'Каталог виджетов' })
+      .getByRole('button', { name: 'Список 1' })
       .click();
     await page.waitForTimeout(150);
   }

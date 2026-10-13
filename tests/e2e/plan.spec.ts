@@ -10,9 +10,9 @@ test('план создаётся через каталог, переживае�
   await expect(catalog.getByText('📅')).toBeVisible();
   await catalog.getByRole('button', { name: /План/ }).click();
 
-  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
+  const choice = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await expect(choice.getByRole('heading', { name: 'План' })).toBeVisible();
-  await choice.getByLabel('Название нового плана').fill('ОКАД');
+  await choice.getByLabel('Название нового документа').fill('ОКАД');
   await choice.getByRole('button', { name: 'Создать' }).click();
 
   const pane = page.getByRole('group', { name: 'План · ОКАД' });
@@ -31,7 +31,7 @@ test('план создаётся через каталог, переживае�
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
     .click();
-  const reopened = page.getByRole('dialog', { name: 'Выбор документа' });
+  const reopened = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await reopened.getByRole('button', { name: 'ОКАД' }).click();
 
   const restored = page.getByRole('group', { name: 'План · ОКАД' });
@@ -50,8 +50,8 @@ test('второе представление существующего пла�
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
     .click();
-  const choice = page.getByRole('dialog', { name: 'Выбор документа' });
-  await choice.getByLabel('Название нового плана').fill('Ремонт');
+  const choice = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await choice.getByLabel('Название нового документа').fill('Ремонт');
   await choice.getByRole('button', { name: 'Создать' }).click();
   await expect(
     page.getByRole('group', { name: 'План · Ремонт' }),
@@ -65,7 +65,7 @@ test('второе представление существующего пла�
     .getByRole('button', { name: /План/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
+    .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ремонт' })
     .click();
 
