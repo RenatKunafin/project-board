@@ -30,6 +30,8 @@ interface GridLayoutItem {
   minH?: number;
   maxW?: number;
   maxH?: number;
+  /** Свёрнутое окно не ресайзится (PBT-027, правка владельца). */
+  isResizable?: boolean;
 }
 
 interface GridLayoutProps {
@@ -79,7 +81,10 @@ export function TiledLayout({ items, areas, onAreasChange }: TiledLayoutProps) {
       y: area.y,
       w: area.w,
       h: item.collapsed ? 1 : area.h,
-      ...areaBounds(item.constraints),
+      isResizable: !item.collapsed,
+      // Свёрнутое окно сжимается до заголовка: минимальные/максимальные
+      // границы типа не должны клампить высоту одной строки (PBT-027).
+      ...(item.collapsed ? {} : areaBounds(item.constraints)),
     };
   });
 

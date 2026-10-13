@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
 export interface WidgetWindowProps {
   readonly title: string;
@@ -68,8 +69,9 @@ export function WidgetWindow({
           </button>
         </span>
       </div>
+      {/* Boundary локален содержимому: кнопки рамки доступны при падении. */}
       <div className="widget-window__body" hidden={collapsed}>
-        {children}
+        <WidgetErrorBoundary>{children}</WidgetErrorBoundary>
       </div>
     </div>
   );

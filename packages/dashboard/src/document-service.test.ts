@@ -276,6 +276,37 @@ describe('автосохранение — конфликт двух окон', 
   });
 });
 
+describe('activeSubscriptionCount — диагностика подписок (PBT-027)', () => {
+  it('считает активные подписки; циклы подписки/отписки не умножают', () => {
+    const service = createDocumentService();
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Список',
+      content: 'v1',
+    });
+    expect(service.activeSubscriptionCount()).toBe(0);
+
+    const unsubscribes = Array.from({ length: 20 }, () =>
+      service.subscribe(doc.id, () => {}),
+    );
+    expect(service.activeSubscriptionCount()).toBe(20);
+    for (const unsubscribe of unsubscribes) {
+      unsubscribe();
+    }
+    expect(service.activeSubscriptionCount()).toBe(0);
+
+    // Цикл «монтирование → размонтирование» ×20: подписки освобождаются.
+    for (let cycle = 0; cycle < 20; cycle += 1) {
+      const unsubscribe = service.subscribe(doc.id, () => {});
+      expect(service.activeSubscriptionCount()).toBe(1);
+      unsubscribe();
+    }
+    expect(service.activeSubscriptionCount()).toBe(0);
+  });
+});
+
 describe('restoreAll', () => {
   it('восстанавливает документы из хранилища в память', async () => {
     const store = new FakeStore();

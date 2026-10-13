@@ -7,6 +7,7 @@ export type {
 export { UnknownWidgetType } from './UnknownWidgetType';
 export { WidgetWindow } from './WidgetWindow';
 export type { WidgetWindowProps } from './WidgetWindow';
+export { WidgetErrorBoundary } from './WidgetErrorBoundary';
 export { TiledLayout } from './TiledLayout';
 export type { TiledItemInput, TiledLayoutProps } from './TiledLayout';
 export {

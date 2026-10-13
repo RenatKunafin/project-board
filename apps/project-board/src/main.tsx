@@ -17,6 +17,12 @@ import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
 import './index.css';
 
+declare global {
+  interface Window {
+    __projectBoard?: { activeSubscriptionCount: () => number };
+  }
+}
+
 const store = createIndexedDbDocumentStore('project-board');
 // Поддержка миграций собирается приложением из зарегистрированных типов
 // (design D1): сервис остаётся независимым от реестра.
@@ -30,6 +36,12 @@ const workspaceStore = new WorkspaceStore('project-board');
 window.addEventListener('pagehide', () => {
   void documentService.flushAll();
 });
+
+// Диагностика e2e (design D4, PBT-027): счётчик активных подписок
+// для проверки «закрытие освобождает, повторное открытие не умножает».
+window.__projectBoard = {
+  activeSubscriptionCount: () => documentService.activeSubscriptionCount(),
+};
 
 // Технический маршрут самопроверки локального хранилища (не продуктовый UI):
 // открывается только по явному #storage-selftest, используется e2e и вручную.
