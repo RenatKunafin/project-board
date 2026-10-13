@@ -12,6 +12,7 @@ export interface WorkingCalendarDefinition {
 export interface WorkingCalendar {
   readonly isWorkingDay: (date: string) => boolean;
   readonly nextWorkingDay: (date: string) => string;
+  readonly prevWorkingDay: (date: string) => string;
   readonly addWorkingDays: (date: string, lagDays: number) => string;
   readonly workingDaysBetween: (start: string, end: string) => number;
 }
@@ -55,10 +56,20 @@ function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function addCalendarDays(isoDate: string, days: number): string {
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** Календарный сдвиг даты без учёта рабочести (нужен переносу задач с 0 раб. дней). */
+export function addCalendarDays(isoDate: string, days: number): string {
   const date = toUtcDate(isoDate);
   date.setUTCDate(date.getUTCDate() + days);
   return toIsoDate(date);
+}
+
+/** Календарная разница дат в днях (end − start), включая перевёрнутые интервалы. */
+export function calendarDaySpan(start: string, end: string): number {
+  const startDate = toUtcDate(start);
+  const endDate = toUtcDate(end);
+  return Math.round((endDate.getTime() - startDate.getTime()) / MS_PER_DAY);
 }
 
 function weekdayOf(isoDate: string): Weekday {
@@ -110,6 +121,15 @@ export function createWorkingCalendar(
     return cursor;
   };
 
+  const prevWorkingDay = (date: string): string => {
+    let cursor = addCalendarDays(date, -1);
+    // Календарь валиден (есть рабочие дни) — цикл конечен.
+    while (!isWorkingDay(cursor)) {
+      cursor = addCalendarDays(cursor, -1);
+    }
+    return cursor;
+  };
+
   const addWorkingDays = (date: string, lagDays: number): string => {
     if (!Number.isInteger(lagDays) || lagDays < 0) {
       throw new WorkingCalendarError(
@@ -147,6 +167,7 @@ export function createWorkingCalendar(
   return Object.freeze({
     isWorkingDay,
     nextWorkingDay,
+    prevWorkingDay,
     addWorkingDays,
     workingDaysBetween,
   });

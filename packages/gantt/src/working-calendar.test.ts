@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addCalendarDays,
+  calendarDaySpan,
   createWorkingCalendar,
   WorkingCalendarError,
   type WorkingCalendarDefinition,
@@ -61,6 +63,28 @@ describe('рабочий календарь — следующий рабочи�
   });
 });
 
+describe('рабочий календарь — предыдущий рабочий день', () => {
+  it('понедельник переходит в пятницу', () => {
+    expect(standard.prevWorkingDay('2026-10-12')).toBe('2026-10-09');
+  });
+
+  it('праздники пропускаются назад', () => {
+    const calendar = createWorkingCalendar({
+      workingDays: [1, 2, 3, 4, 5],
+      holidays: ['2026-10-08', '2026-10-09'],
+    });
+    expect(calendar.prevWorkingDay('2026-10-12')).toBe('2026-10-07');
+  });
+
+  it('рабочее исключение в субботу учитывается', () => {
+    const calendar = createWorkingCalendar({
+      workingDays: [1, 2, 3, 4, 5],
+      workingExceptions: ['2026-10-17'],
+    });
+    expect(calendar.prevWorkingDay('2026-10-19')).toBe('2026-10-17');
+  });
+});
+
 describe('рабочий календарь — прибавление лага', () => {
   it('лаг 0 после пятницы даёт понедельник', () => {
     expect(standard.addWorkingDays('2026-10-16', 0)).toBe('2026-10-19');
@@ -75,6 +99,31 @@ describe('рабочий календарь — прибавление лага'
       WorkingCalendarError,
     );
     expect(() => standard.addWorkingDays('2026-10-16', 1.5)).toThrowError(
+      WorkingCalendarError,
+    );
+  });
+});
+
+describe('календарные дни — утилиты', () => {
+  it('сдвиг без учёта рабочести, включая выходные', () => {
+    expect(addCalendarDays('2026-10-16', 1)).toBe('2026-10-17'); // пт → сб
+    expect(addCalendarDays('2026-10-17', 1)).toBe('2026-10-18');
+    expect(addCalendarDays('2026-10-31', 1)).toBe('2026-11-01'); // граница месяца
+    expect(addCalendarDays('2026-10-12', -1)).toBe('2026-10-11');
+  });
+
+  it('календарная разница интервала в днях', () => {
+    expect(calendarDaySpan('2026-10-12', '2026-10-16')).toBe(4);
+    expect(calendarDaySpan('2026-10-17', '2026-10-18')).toBe(1);
+    expect(calendarDaySpan('2026-10-12', '2026-10-12')).toBe(0);
+    expect(calendarDaySpan('2026-10-16', '2026-10-12')).toBe(-4);
+  });
+
+  it('несуществующая дата отклоняется', () => {
+    expect(() => addCalendarDays('2026-02-30', 1)).toThrowError(
+      WorkingCalendarError,
+    );
+    expect(() => calendarDaySpan('2026-02-30', '2026-03-01')).toThrowError(
       WorkingCalendarError,
     );
   });
