@@ -5,25 +5,33 @@ import type {
 import {
   addTab,
   createWorkspaceState,
+  DocumentCatalogPanel,
+  DocumentMissingPane,
+  DocumentPickerPanel,
+  DropdownPanel,
   EmptyWorkspace,
+  filterDocuments,
   moveTab,
   removeTab,
   renameTab,
   setActive,
+  documentTypeInfos,
+  sortDocumentsByRecency,
   UnknownWidgetType,
   WidgetWindow,
   TiledLayout,
   CascadeLayout,
   defaultArea,
   TILE_GRID_COLUMNS,
+  WidgetCatalogPanel,
+  widgetTypesForDocument,
   WorkspaceStore,
   type CascadeItemInput,
   type CascadeLayoutState,
+  type DocumentTypeInfo,
   type TiledLayoutState,
   type WorkspaceSnapshot,
 } from '@project-board/dashboard';
-import { checklistTitle } from '@project-board/checklist';
-import { planTitle } from '@project-board/gantt';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { WorkspaceState } from '@project-board/dashboard';
@@ -40,10 +48,13 @@ interface PaneInstance {
   readonly collapsed?: boolean;
 }
 
-const NEW_DOCUMENT_TITLE_BY_MODULE: Record<string, string> = {
-  checklist: 'чек-листа',
-  gantt: 'плана',
-};
+/** Панели шапки: каталог виджетов, каталог документов, пикер документа для типа. */
+type HeaderPanel =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'widgets' }
+  | { readonly kind: 'documents' }
+  | { readonly kind: 'picker'; readonly typeId: string }
+  | { readonly kind: 'open-with'; readonly documentId: string };
 
 export interface RestoredWorkspace {
   readonly tabs: readonly {
@@ -65,6 +76,8 @@ interface AppProps {
   list1Id: string;
   list2Id: string;
   restored?: RestoredWorkspace;
+  /** Ошибка восстановления документов при старте: каталог показывает её, а не «пусто». */
+  documentsLoadError?: boolean;
 }
 
 type CascadeByTab = { readonly [tabId: string]: CascadeLayoutState };
@@ -101,26 +114,39 @@ function workspaceReducer(
   }
 }
 
-type CatalogDialog =
-  | { readonly step: 'none' }
-  | { readonly step: 'document-choice'; readonly type: WidgetTypeDefinition };
-
 function WidgetPane({
   lookup,
   pane,
   documentService,
+  documents,
+  onPickDocument,
+  onCreateDocument,
 }: {
   lookup: WidgetTypeDefinition;
   pane: PaneInstance;
   documentService: AutosavingDocumentService;
+  documents: readonly ManagedDocument[];
+  onPickDocument: (instanceId: string, documentId: string) => void;
+  onCreateDocument: (instanceId: string) => void;
 }) {
-  // Восстановленное окно может ссылаться на недоступный документ:
-  // показываем определённое состояние вместо содержимого (PBT-024).
+  // Ссылка на недоступный документ (удалён или битая ссылка после восстановления):
+  // состояние с выбором другого документа того же типа (ADR-7 PBT-002).
   if (pane.documentId && !documentService.get(pane.documentId)) {
+    const support = lookup.documentSupport;
+    const sameType = support
+      ? documents.filter(
+          (document) =>
+            document.moduleId === support.moduleId &&
+            document.documentType === support.documentType,
+        )
+      : [];
     return (
-      <p className="pane-document-missing" role="status">
-        Документ недоступен.
-      </p>
+      <DocumentMissingPane
+        documents={sameType}
+        canCreate={support !== undefined}
+        onPick={(documentId) => onPickDocument(pane.instanceId, documentId)}
+        onCreate={() => onCreateDocument(pane.instanceId)}
+      />
     );
   }
   const WidgetComponent = lookup.component;
@@ -141,6 +167,7 @@ export default function App({
   list1Id,
   list2Id,
   restored,
+  documentsLoadError = false,
 }: AppProps) {
   const [workspace, dispatch] = useReducer(
     workspaceReducer,
@@ -184,9 +211,17 @@ export default function App({
       },
   );
 
-  const [catalogOpen, setCatalogOpen] = useState(false);
-  const [dialog, setDialog] = useState<CatalogDialog>({ step: 'none' });
-  const [newListTitle, setNewListTitle] = useState('');
+  const [headerPanel, setHeaderPanel] = useState<HeaderPanel>({ kind: 'none' });
+  const widgetsButtonRef = useRef<HTMLButtonElement>(null);
+  const documentsButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Версия структурных операций над документами (rename/delete/перепривязка):
+  // эти операции не меняют состояние App, редьюсер провоцирует перерендер,
+  // чтобы окна и каталог перечитали documentService (уведомлений нет, design D6).
+  const [, bumpDocumentsVersion] = useReducer(
+    (count: number) => count + 1,
+    0,
+  );
 
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
@@ -239,6 +274,11 @@ export default function App({
   const isLastTab = workspace.tabs.length === 1;
 
   const catalogTypes = widgetRegistry.list();
+
+  // Список читается на каждом рендере: create/update уже перерендеривают App
+  // через своё состояние, структурные операции — через bumpDocumentsVersion.
+  const allDocuments = documentService.listDocuments();
+  const documentTypes = documentTypeInfos(catalogTypes);
 
   const addPane = (type: WidgetTypeDefinition, documentId?: string, title?: string): void => {
     if (!activeTab) {
@@ -406,6 +446,19 @@ export default function App({
     );
   };
 
+  // Подпись окна — производная при рендере: префикс экземпляра из label +
+  // актуальное название документа из метаданных (снимает trade-off
+  // устаревания подписи из design PBT-024 D2). Недоступный документ
+  // подписи названия не имеет — остаётся префикс.
+  const windowTitleOf = (pane: PaneInstance): string => {
+    const prefix = pane.label.split(' · ')[0] ?? pane.label;
+    if (!pane.documentId) {
+      return pane.label;
+    }
+    const document = documentService.get(pane.documentId);
+    return document ? `${prefix} · ${document.title}` : prefix;
+  };
+
   const paneToItem = (pane: PaneInstance): CascadeItemInput => {
     const lookup = widgetRegistry.get(pane.typeId);
     const definition = lookup && !('kind' in lookup) ? lookup : undefined;
@@ -416,7 +469,7 @@ export default function App({
       collapsed: pane.collapsed === true,
       node: (
         <WidgetWindow
-          title={pane.label}
+          title={windowTitleOf(pane)}
           icon={definition?.icon}
           collapsed={pane.collapsed === true}
           active={pane.instanceId === effectiveActiveInstanceId}
@@ -429,6 +482,9 @@ export default function App({
               lookup={definition}
               pane={pane}
               documentService={documentService}
+              documents={allDocuments}
+              onPickDocument={replacePaneDocument}
+              onCreateDocument={createDocumentForPane}
             />
           ) : (
             <UnknownWidgetType lookup={lookup} />
@@ -501,17 +557,32 @@ export default function App({
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
     if (!type.documentSupport) {
       addPane(type);
-      setCatalogOpen(false);
+      setHeaderPanel({ kind: 'none' });
       return;
     }
-    setDialog({ step: 'document-choice', type });
+    setHeaderPanel({ kind: 'picker', typeId: type.id });
   };
 
-  const createNewDocument = (): void => {
-    if (dialog.step !== 'document-choice') {
-      return;
-    }
-    const support = dialog.type.documentSupport;
+  const pickerType =
+    headerPanel.kind === 'picker'
+      ? (() => {
+          const lookup = widgetRegistry.get(headerPanel.typeId);
+          return lookup && !('kind' in lookup) ? lookup : undefined;
+        })()
+      : undefined;
+
+  const pickerDocuments: readonly ManagedDocument[] = pickerType?.documentSupport
+    ? sortDocumentsByRecency(
+        filterDocuments(allDocuments, {
+          kind: 'type',
+          moduleId: pickerType.documentSupport.moduleId,
+          documentType: pickerType.documentSupport.documentType,
+        }),
+      )
+    : [];
+
+  const createDocumentForPicker = (title: string): void => {
+    const support = pickerType?.documentSupport;
     if (!support || !activeTab) {
       return;
     }
@@ -519,43 +590,116 @@ export default function App({
       moduleId: support.moduleId,
       documentType: support.documentType,
       schemaVersion: support.schemaVersion,
-      content: support.createContent(newListTitle.trim() || 'Без названия'),
+      title,
+      content: support.createContent(),
     });
-    addPane(
-      dialog.type,
-      document.id,
-      newListTitle.trim() || 'Без названия',
-    );
-    setDialog({ step: 'none' });
-    setNewListTitle('');
-    setCatalogOpen(false);
+    addPane(pickerType as WidgetTypeDefinition, document.id, title);
+    setHeaderPanel({ kind: 'none' });
   };
 
-  const openExistingDocument = (document: ManagedDocument): void => {
-    if (dialog.step !== 'document-choice') {
+  const openDocumentWithWidget = (
+    type: WidgetTypeDefinition,
+    document: ManagedDocument,
+  ): void => {
+    addPane(type, document.id, document.title);
+    setHeaderPanel({ kind: 'none' });
+  };
+
+  /** Открытие из каталога документов: подбор зарегистрированного типа по документу. */
+  const openFromCatalog = (document: ManagedDocument): void => {
+    const candidates = widgetTypesForDocument(
+      catalogTypes,
+      document.moduleId,
+      document.documentType,
+    );
+    if (candidates.length === 1) {
+      openDocumentWithWidget(candidates[0], document);
       return;
     }
-    const moduleId = dialog.type.documentSupport?.moduleId;
-    addPane(
-      dialog.type,
-      document.id,
-      moduleId === 'gantt'
-        ? planTitle(document.content)
-        : checklistTitle(document.content),
-    );
-    setDialog({ step: 'none' });
-    setCatalogOpen(false);
+    setHeaderPanel({ kind: 'open-with', documentId: document.id });
   };
 
-  const existingDocuments: readonly ManagedDocument[] =
-    dialog.step === 'document-choice' && dialog.type.documentSupport
-      ? documentService
-          .listDocuments({
-            moduleId: dialog.type.documentSupport.moduleId,
-            documentType: dialog.type.documentSupport.documentType,
-          })
-          .slice()
-          .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+  const createFromCatalog = (info: DocumentTypeInfo, title: string): void => {
+    const type = catalogTypes.find((entry) => entry.id === info.widgetTypeId);
+    const support = type?.documentSupport;
+    if (!support) {
+      return;
+    }
+    documentService.create({
+      moduleId: support.moduleId,
+      documentType: support.documentType,
+      schemaVersion: support.schemaVersion,
+      title,
+      content: support.createContent(),
+    });
+    bumpDocumentsVersion();
+  };
+
+  const renameDocument = (documentId: string, title: string): void => {
+    const document = documentService.get(documentId);
+    if (!document) {
+      return;
+    }
+    documentService.rename(documentId, document.revision, title);
+    bumpDocumentsVersion();
+  };
+
+  const deleteDocument = (documentId: string): void => {
+    void documentService.delete(documentId).then(() => bumpDocumentsVersion());
+  };
+
+  /** Перепривязка окна из состояния «документ недоступен» к выбранному документу. */
+  const replacePaneDocument = (instanceId: string, documentId: string): void => {
+    setPanesByTab((previous) => {
+      const next: Record<string, PaneInstance[]> = {};
+      for (const [tabId, panes] of Object.entries(previous)) {
+        next[tabId] = panes.map((pane) =>
+          pane.instanceId === instanceId
+            ? { ...pane, documentId }
+            : pane,
+        );
+      }
+      return next;
+    });
+    bumpDocumentsVersion();
+  };
+
+  /** Создание документа того же типа из состояния «документ недоступен». */
+  const createDocumentForPane = (instanceId: string): void => {
+    const pane = Object.values(panesByTab)
+      .flat()
+      .find((entry) => entry.instanceId === instanceId);
+    const lookup = pane
+      ? widgetRegistry.get(pane.typeId)
+      : undefined;
+    const definition = lookup && !('kind' in lookup) ? lookup : undefined;
+    const support = definition?.documentSupport;
+    if (!support) {
+      return;
+    }
+    const document = documentService.create({
+      moduleId: support.moduleId,
+      documentType: support.documentType,
+      schemaVersion: support.schemaVersion,
+      title: definition.title,
+      content: support.createContent(),
+    });
+    replacePaneDocument(instanceId, document.id);
+  };
+
+  const openWithDocument =
+    headerPanel.kind === 'open-with'
+      ? documentService.get(headerPanel.documentId)
+      : undefined;
+
+  // Документу подходит несколько зарегистрированных типов — выбираем в панели.
+  const openWithTypes =
+    headerPanel.kind === 'open-with' && openWithDocument
+      ? widgetTypesForDocument(
+          catalogTypes,
+          openWithDocument.moduleId,
+          openWithDocument.documentType,
+        )
       : [];
 
   const commitRename = (tabId: string, title: string) => {
@@ -711,14 +855,95 @@ export default function App({
               Каскад
             </button>
           </div>
-          <button
-            type="button"
-            className="add-widget-button"
-            aria-label="Добавить виджет"
-            onClick={() => setCatalogOpen(true)}
-          >
-            + Виджет
-          </button>
+          <span className="header-anchor">
+            <button
+              type="button"
+              ref={documentsButtonRef}
+              className="add-widget-button"
+              aria-label="Каталог документов"
+              aria-expanded={headerPanel.kind === 'documents' || headerPanel.kind === 'open-with'}
+              onClick={() =>
+                setHeaderPanel((current) =>
+                  current.kind === 'documents' || current.kind === 'open-with'
+                    ? { kind: 'none' }
+                    : { kind: 'documents' },
+                )
+              }
+            >
+              Документы
+            </button>
+            <DropdownPanel
+              open={headerPanel.kind === 'documents' || headerPanel.kind === 'open-with'}
+              onClose={() => setHeaderPanel({ kind: 'none' })}
+              anchorRef={documentsButtonRef}
+              ariaLabel="Каталог документов"
+            >
+              {headerPanel.kind === 'open-with' && openWithDocument ? (
+                <div className="open-with">
+                  <h2 className="dropdown-panel__title">
+                    Открыть «{openWithDocument.title}» в:
+                  </h2>
+                  {openWithTypes.map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      className="open-with__item"
+                      onClick={() => openDocumentWithWidget(type, openWithDocument)}
+                    >
+                      <span aria-hidden="true">{type.icon ?? '🧩'}</span>
+                      {type.title}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <DocumentCatalogPanel
+                  documents={allDocuments}
+                  typeInfos={documentTypes}
+                  loadError={documentsLoadError}
+                  onOpen={openFromCatalog}
+                  onCreate={createFromCatalog}
+                  onRename={renameDocument}
+                  onDelete={deleteDocument}
+                />
+              )}
+            </DropdownPanel>
+          </span>
+          <span className="header-anchor">
+            <button
+              type="button"
+              ref={widgetsButtonRef}
+              className="add-widget-button"
+              aria-label="Добавить виджет"
+              aria-expanded={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}
+              onClick={() =>
+                setHeaderPanel((current) =>
+                  current.kind === 'widgets' || current.kind === 'picker'
+                    ? { kind: 'none' }
+                    : { kind: 'widgets' },
+                )
+              }
+            >
+              + Виджет
+            </button>
+            <DropdownPanel
+              open={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}
+              onClose={() => setHeaderPanel({ kind: 'none' })}
+              anchorRef={widgetsButtonRef}
+              ariaLabel="Каталог виджетов"
+            >
+              {headerPanel.kind === 'picker' && pickerType ? (
+                <DocumentPickerPanel
+                  type={pickerType}
+                  documents={pickerDocuments}
+                  onCreate={createDocumentForPicker}
+                  onOpen={(document) => openDocumentWithWidget(pickerType, document)}
+                  onCancel={() => setHeaderPanel({ kind: 'widgets' })}
+                />
+              ) : (
+                <WidgetCatalogPanel types={catalogTypes} onPick={handleCatalogPick} />
+              )}
+            </DropdownPanel>
+          </span>
         </div>
       </header>
 
@@ -768,117 +993,6 @@ export default function App({
           </>
         )}
       </section>
-
-      {catalogOpen && (
-        <div
-          className="overlay"
-          role="dialog"
-          aria-label="Каталог виджетов"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setCatalogOpen(false);
-            }
-          }}
-        >
-          <div className="catalog-dialog">
-            <div className="catalog-dialog__head">
-              <h2 className="catalog-dialog__title">Добавить виджет</h2>
-              <button
-                type="button"
-                className="tab__close"
-                aria-label="Закрыть каталог"
-                onClick={() => setCatalogOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="catalog-dialog__grid">
-              {catalogTypes.map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  className="catalog-dialog__item"
-                  onClick={() => handleCatalogPick(type)}
-                >
-                  <span className="catalog-dialog__icon" aria-hidden="true">
-                    {type.icon ?? '🧩'}
-                  </span>
-                  <span className="catalog-dialog__name">{type.title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {dialog.step === 'document-choice' && (
-        <div
-          className="overlay"
-          role="dialog"
-          aria-label="Выбор документа"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setDialog({ step: 'none' });
-            }
-          }}
-        >
-          <div className="catalog-dialog">
-            <div className="catalog-dialog__head">
-              <h2 className="catalog-dialog__title">{dialog.type.title}</h2>
-              <button
-                type="button"
-                className="tab__close"
-                aria-label="Закрыть выбор документа"
-                onClick={() => setDialog({ step: 'none' })}
-              >
-                ×
-              </button>
-            </div>
-            <form
-              className="doc-choice__new"
-              onSubmit={(event) => {
-                event.preventDefault();
-                createNewDocument();
-              }}
-            >
-              <input
-                className="checklist__input"
-                placeholder={`Название нового ${NEW_DOCUMENT_TITLE_BY_MODULE[
-                  dialog.type.documentSupport?.moduleId ?? ''
-                ] ?? 'документа'}`}
-                aria-label={`Название нового ${NEW_DOCUMENT_TITLE_BY_MODULE[
-                  dialog.type.documentSupport?.moduleId ?? ''
-                ] ?? 'документа'}`}
-                value={newListTitle}
-                onChange={(event) => setNewListTitle(event.target.value)}
-              />
-              <button type="submit" className="checklist__add">
-                Создать
-              </button>
-            </form>
-            <p className="doc-choice__caption">Или открыть существующий:</p>
-            {existingDocuments.length === 0 ? (
-              <p className="checklist__hint">Существующих документов нет.</p>
-            ) : (
-              <ul className="doc-choice__list">
-                {existingDocuments.map((document) => (
-                  <li key={document.id}>
-                    <button
-                      type="button"
-                      className="doc-choice__item"
-                      onClick={() => openExistingDocument(document)}
-                    >
-                      {dialog.type.documentSupport?.moduleId === 'gantt'
-                        ? planTitle(document.content)
-                        : checklistTitle(document.content)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }

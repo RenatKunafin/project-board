@@ -5,7 +5,10 @@ import type {
   ManagedDocument,
   Unsubscribe,
 } from '@project-board/widget-sdk';
-import { DocumentConflictError } from '@project-board/widget-sdk';
+import {
+  DocumentConflictError,
+  assertDocumentTitle,
+} from '@project-board/widget-sdk';
 
 export type DocumentSaveStatus = 'saved' | 'saving' | 'error' | 'conflict';
 
@@ -24,6 +27,7 @@ export interface DocumentStoreLike {
   ): Promise<void>;
   get(documentId: string): Promise<ManagedDocument | undefined>;
   listAll(): Promise<ManagedDocument[]>;
+  delete(documentId: string): Promise<void>;
 }
 
 export interface PersistenceHooks {
@@ -197,6 +201,7 @@ export function createDocumentService(
         id: crypto.randomUUID(),
         moduleId: input.moduleId,
         documentType: input.documentType,
+        title: assertDocumentTitle(input.title),
         schemaVersion: input.schemaVersion,
         revision: 1,
         createdAt: now,
@@ -266,6 +271,69 @@ export function createDocumentService(
       return () => {
         record.handlers = record.handlers.filter((h) => h !== handler);
       };
+    },
+
+    rename(
+      documentId: string,
+      expectedRevision: number,
+      title: string,
+    ): ManagedDocument {
+      if (notifyingDocumentId === documentId) {
+        throw new Error(
+          `Недопустимо обновлять документ "${documentId}" во время доставки его уведомлений.`,
+        );
+      }
+      const record = documents.get(documentId);
+      if (!record) {
+        throw new DocumentConflictError(documentId, 0, expectedRevision);
+      }
+      const actualRevision = record.document.revision;
+      if (actualRevision !== expectedRevision) {
+        throw new DocumentConflictError(
+          documentId,
+          actualRevision,
+          expectedRevision,
+        );
+      }
+      const renamed: ManagedDocument = {
+        ...record.document,
+        title: assertDocumentTitle(title),
+        revision: actualRevision + 1,
+        updatedAt: new Date().toISOString(),
+      };
+      record.document = renamed;
+      enqueue(renamed);
+      notifyingDocumentId = documentId;
+      try {
+        for (const handler of [...record.handlers]) {
+          handler(renamed);
+        }
+      } finally {
+        notifyingDocumentId = null;
+      }
+      return renamed;
+    },
+
+    async delete(documentId: string): Promise<void> {
+      // Отложенная запись снимается первой: незавершённый таймер не должен
+      // вернуть документ в хранилище после удаления. Сама запись очереди
+      // удаляется после успеха store.delete: при сбое lastSavedRevision
+      // сохраняется для следующей операции над живым документом.
+      const entry = queue.get(documentId);
+      if (entry) {
+        if (entry.timer !== null) {
+          clearTimeout(entry.timer);
+          entry.timer = null;
+        }
+        entry.pending = null;
+      }
+      if (store) {
+        await store.delete(documentId);
+      }
+      queue.delete(documentId);
+      documents.delete(documentId);
+      saveStates.delete(documentId);
+      saveStateHandlers.delete(documentId);
     },
 
     getViewSettings(

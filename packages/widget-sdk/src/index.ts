@@ -24,7 +24,8 @@ export interface WidgetDocumentSupport {
   readonly moduleId: string;
   readonly documentType: string;
   readonly schemaVersion: number;
-  readonly createContent: (title: string) => Record<string, unknown>;
+  /** Название документа задаётся пользователем и передаётся сервису документов. */
+  readonly createContent: () => Record<string, unknown>;
 }
 
 export interface WidgetTypeDefinition {
@@ -63,4 +64,7 @@ export type {
   ManagedDocument,
   Unsubscribe,
 } from './documents';
-export { DocumentConflictError } from './documents';
+export {
+  DocumentConflictError,
+  assertDocumentTitle,
+} from './documents';

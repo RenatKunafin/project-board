@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react';
-import type { WidgetProps } from '@project-board/widget-sdk';
-import { parsePlanContent, planTitle, type PlanIssue } from './plan-document';
+import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
+import { parsePlanContent, type PlanIssue } from './plan-document';
 
 export default function PlanPlaceholderWidget({
   widgetInstanceId,
   documentId,
   documentService,
 }: WidgetProps) {
-  const [rawContent, setRawContent] = useState<unknown>(undefined);
+  // Название плана — метаданные оболочки документа (ADR-5 PBT-002, PBT-025):
+  // содержимое названия не содержит и платформой не интерпретируется.
+  const [document, setDocument] = useState<ManagedDocument | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     if (!documentId || !documentService) {
       return;
     }
-    const document = documentService.get(documentId);
-    if (document) {
-      setRawContent(document.content);
+    const current = documentService.get(documentId);
+    if (current) {
+      setDocument(current);
     }
     const unsubscribe = documentService.subscribe(documentId, (updated) => {
-      setRawContent(updated.content);
+      setDocument(updated);
     });
     return unsubscribe;
   }, [documentId, documentService]);
@@ -31,7 +35,7 @@ export default function PlanPlaceholderWidget({
     );
   }
 
-  if (rawContent === undefined) {
+  if (document === undefined) {
     return (
       <section className="plan-placeholder" data-widget-instance={widgetInstanceId}>
         <p className="plan-placeholder__hint">Загрузка плана…</p>
@@ -39,7 +43,7 @@ export default function PlanPlaceholderWidget({
     );
   }
 
-  const validation = parsePlanContent(rawContent);
+  const validation = parsePlanContent(document.content);
   if (!validation.ok) {
     return (
       <section
@@ -65,8 +69,8 @@ export default function PlanPlaceholderWidget({
 
   const plan = validation.plan;
   return (
-    <section className="plan-placeholder" data-widget-instance={widgetInstanceId} data-plan-title={planTitle(plan)}>
-      <h3 className="plan-placeholder__title">{planTitle(plan)}</h3>
+    <section className="plan-placeholder" data-widget-instance={widgetInstanceId} data-plan-title={document.title}>
+      <h3 className="plan-placeholder__title">{document.title}</h3>
       <ul className="plan-placeholder__summary">
         <li>Задачи: {plan.tasks.length}</li>
         <li>Группы: {plan.groups.length}</li>

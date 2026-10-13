@@ -15,7 +15,9 @@ const SAVE_DELAY = 250;
 class FakeStore implements DocumentStoreLike {
   docs = new Map<string, ManagedDocument>();
   failWritesLeft = 0;
+  failDeletesLeft = 0;
   saveCalls: Array<{ id: string; revision: number; expected: number }> = [];
+  deleteCalls: string[] = [];
 
   async save(
     document: ManagedDocument,
@@ -45,13 +47,27 @@ class FakeStore implements DocumentStoreLike {
   async listAll(): Promise<ManagedDocument[]> {
     return [...this.docs.values()];
   }
+
+  async delete(documentId: string): Promise<void> {
+    this.deleteCalls.push(documentId);
+    if (this.failDeletesLeft > 0) {
+      this.failDeletesLeft -= 1;
+      throw new Error('boom: удаление недоступно');
+    }
+    this.docs.delete(documentId);
+  }
 }
 
-function makeDocument(id: string, revision: number, content: string): ManagedDocument {
+function makeDocument(
+  id: string,
+  revision: number,
+  content: string,
+): ManagedDocument {
   return {
     id,
     moduleId: 'checklist',
     documentType: 'list',
+    title: 'Список',
     schemaVersion: 1,
     revision,
     createdAt: '2026-10-07T10:00:00.000Z',
@@ -77,6 +93,7 @@ describe('автосохранение — очередь', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     service.update(doc.id, 1, 'v2');
@@ -97,6 +114,7 @@ describe('автосохранение — очередь', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     await vi.advanceTimersByTimeAsync(SAVE_DELAY);
@@ -108,8 +126,8 @@ describe('автосохранение — очередь', () => {
     const store = new FakeStore();
     const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
 
-    const a = service.create({ moduleId: 'checklist', documentType: 'list', schemaVersion: 1, content: 'A1' });
-    const b = service.create({ moduleId: 'gantt', documentType: 'plan', schemaVersion: 1, content: 'B1' });
+    const a = service.create({ moduleId: 'checklist', documentType: 'list', schemaVersion: 1, title: 'Список', content: 'A1' });
+    const b = service.create({ moduleId: 'gantt', documentType: 'plan', schemaVersion: 1, title: 'Список', content: 'B1' });
     service.update(a.id, 1, 'A2');
 
     await vi.advanceTimersByTimeAsync(SAVE_DELAY);
@@ -130,6 +148,7 @@ describe('автосохранение — очередь', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     service.subscribe(doc.id, () => {});
@@ -153,6 +172,7 @@ describe('автосохранение — сбои и повторы', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     service.subscribeSaveState(doc.id, () => {});
@@ -179,6 +199,7 @@ describe('автосохранение — сбои и повторы', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     service.update(doc.id, 1, 'v2');
@@ -202,6 +223,7 @@ describe('автосохранение — конфликт двух окон', 
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     const changeHandler = vi.fn();
@@ -247,10 +269,140 @@ describe('без store — прежнее поведение', () => {
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: 'Список',
       content: 'v1',
     });
     service.update(doc.id, 1, 'v2');
     expect(service.get(doc.id)).toMatchObject({ revision: 2, content: 'v2' });
     expect(service.getSaveState(doc.id)).toBeUndefined();
+  });
+});
+
+describe('rename — название в метаданных', () => {
+  it('переименование меняет только название и фиксирует новую редакцию', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: { items: [] },
+    });
+    const changeHandler = vi.fn();
+    service.subscribe(doc.id, changeHandler);
+
+    const renamed = service.rename(doc.id, 1, 'Продукты');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(renamed).toMatchObject({
+      title: 'Продукты',
+      revision: 2,
+      content: { items: [] },
+    });
+    expect(service.get(doc.id)?.title).toBe('Продукты');
+    expect(changeHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Продукты', revision: 2 }),
+    );
+    expect(store.docs.get(doc.id)).toMatchObject({ title: 'Продукты', revision: 2 });
+  });
+
+  it('устаревшая редакция отклоняется конфликтом', () => {
+    const service = createDocumentService();
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: { items: [] },
+    });
+    expect(() => service.rename(doc.id, 5, 'Продукты')).toThrow(
+      DocumentConflictError,
+    );
+    expect(service.get(doc.id)).toMatchObject({ title: 'Покупки', revision: 1 });
+  });
+
+  it('пустое название отклоняется', () => {
+    const service = createDocumentService();
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: { items: [] },
+    });
+    expect(() => service.rename(doc.id, 1, '   ')).toThrow(
+      'Название документа не может быть пустым.',
+    );
+    expect(service.get(doc.id)).toMatchObject({ title: 'Покупки', revision: 1 });
+  });
+});
+
+describe('delete — удаление документа', () => {
+  it('снимает отложенную запись: незавершённый таймер не сохранит документ', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: 'v1',
+    });
+
+    await service.delete(doc.id);
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY * 4);
+
+    expect(store.saveCalls).toHaveLength(0);
+    expect(store.docs.has(doc.id)).toBe(false);
+    expect(service.get(doc.id)).toBeUndefined();
+  });
+
+  it('удаляет из хранилища и очищает состояние сохранения', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: 'v1',
+    });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+    expect(service.getSaveState(doc.id)?.status).toBe('saved');
+
+    await service.delete(doc.id);
+
+    expect(store.deleteCalls).toEqual([doc.id]);
+    expect(store.docs.has(doc.id)).toBe(false);
+    expect(service.get(doc.id)).toBeUndefined();
+    expect(service.getSaveState(doc.id)).toBeUndefined();
+  });
+
+  it('удаление отсутствующего документа не считается ошибкой', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    await expect(service.delete('missing-id')).resolves.toBeUndefined();
+  });
+
+  it('ошибка хранилища наружу: документ остаётся в памяти', async () => {
+    const store = new FakeStore();
+    store.failDeletesLeft = 1;
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    const doc = service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title: 'Покупки',
+      content: 'v1',
+    });
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    await expect(service.delete(doc.id)).rejects.toThrow('удаление недоступно');
+    expect(service.get(doc.id)).toMatchObject({ title: 'Покупки' });
+    // Очередь снята, но документ жив: следующая операция снова сохраняет.
+    service.update(doc.id, 1, 'v2');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+    expect(store.docs.get(doc.id)?.content).toBe('v2');
   });
 });

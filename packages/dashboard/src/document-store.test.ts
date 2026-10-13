@@ -15,6 +15,7 @@ function makeDocument(
     id,
     moduleId: 'checklist',
     documentType: 'list',
+    title: 'Список',
     schemaVersion: 1,
     revision: 1,
     createdAt: '2026-10-07T10:00:00.000Z',

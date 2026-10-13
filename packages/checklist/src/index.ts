@@ -18,7 +18,7 @@ export function createChecklistModule() {
           moduleId: 'checklist',
           documentType: 'list',
           schemaVersion: 1,
-          createContent: (title: string) => ({ title, items: [] }),
+          createContent: () => ({ items: [] }),
         },
       }),
     ],
