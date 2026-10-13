@@ -26,11 +26,18 @@ export class PersistenceError extends Error {
   }
 }
 
+export interface DocumentStoreSaveEntry {
+  readonly document: ManagedDocument;
+  readonly expectedStoredRevision: number;
+}
+
 export interface DocumentStore {
   save(
     document: ManagedDocument,
     expectedStoredRevision: number,
   ): Promise<void>;
+  /** Пакетная фиксация в одной транзакции: сбой любой записи откатывает всё. */
+  saveAll(entries: readonly DocumentStoreSaveEntry[]): Promise<void>;
   get(documentId: string): Promise<ManagedDocument | undefined>;
   listByModule(moduleId: string): Promise<ManagedDocument[]>;
   listByType(documentType: string): Promise<ManagedDocument[]>;
@@ -98,6 +105,33 @@ export class IndexedDbDocumentStore implements DocumentStore {
           );
         }
         await this.documents.put(document);
+      });
+    } catch (error) {
+      if (error instanceof DocumentConflictError) {
+        throw error;
+      }
+      throw toPersistenceError(error);
+    }
+  }
+
+  async saveAll(
+    entries: readonly DocumentStoreSaveEntry[],
+  ): Promise<void> {
+    try {
+      await this.openOnce();
+      await this.db.transaction('rw', this.documents, async () => {
+        for (const entry of entries) {
+          const stored = await this.documents.get(entry.document.id);
+          const storedRevision = stored?.revision ?? 0;
+          if (storedRevision !== entry.expectedStoredRevision) {
+            throw new DocumentConflictError(
+              entry.document.id,
+              storedRevision,
+              entry.expectedStoredRevision,
+            );
+          }
+          await this.documents.put(entry.document);
+        }
       });
     } catch (error) {
       if (error instanceof DocumentConflictError) {

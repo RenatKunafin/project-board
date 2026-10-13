@@ -41,12 +41,17 @@ export type {
 } from './cascade-layout';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
+export {
+  collectDocumentMigrations,
+  DocumentFutureVersionError,
+} from '@project-board/widget-sdk';
 export type {
   AutosavingDocumentService,
+  DocumentRecoveryIssue,
   DocumentSaveState,
   DocumentSaveStatus,
-  SaveStateHandler,
   DocumentStoreLike,
+  SaveStateHandler,
 } from './document-service';
 export { createWorkspaceState, addTab, renameTab, moveTab, removeTab, setActive } from './workspace';
 export type {

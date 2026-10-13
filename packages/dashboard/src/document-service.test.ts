@@ -16,7 +16,9 @@ class FakeStore implements DocumentStoreLike {
   docs = new Map<string, ManagedDocument>();
   failWritesLeft = 0;
   failDeletesLeft = 0;
+  failSaveAllLeft = 0;
   saveCalls: Array<{ id: string; revision: number; expected: number }> = [];
+  saveAllCalls: string[][] = [];
   deleteCalls: string[] = [];
 
   async save(
@@ -38,6 +40,36 @@ class FakeStore implements DocumentStoreLike {
       throw new DocumentConflictError(document.id, storedRevision, expectedStoredRevision);
     }
     this.docs.set(document.id, document);
+  }
+
+  async saveAll(
+    entries: readonly {
+      readonly document: ManagedDocument;
+      readonly expectedStoredRevision: number;
+    }[],
+  ): Promise<void> {
+    this.saveAllCalls.push(entries.map((entry) => entry.document.id));
+    if (this.failSaveAllLeft > 0) {
+      this.failSaveAllLeft -= 1;
+      throw new Error('boom: пакетная фиксация недоступна');
+    }
+    // Валидация всех записей до изменений — эмуляция транзакции.
+    const updates: ManagedDocument[] = [];
+    for (const entry of entries) {
+      const stored = this.docs.get(entry.document.id);
+      const storedRevision = stored?.revision ?? 0;
+      if (storedRevision !== entry.expectedStoredRevision) {
+        throw new DocumentConflictError(
+          entry.document.id,
+          storedRevision,
+          entry.expectedStoredRevision,
+        );
+      }
+      updates.push(entry.document);
+    }
+    for (const document of updates) {
+      this.docs.set(document.id, document);
+    }
   }
 
   async get(documentId: string): Promise<ManagedDocument | undefined> {

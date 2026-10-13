@@ -900,6 +900,9 @@ export default function App({
                   documents={allDocuments}
                   typeInfos={documentTypes}
                   loadError={documentsLoadError}
+                  isFutureVersion={(documentId) =>
+                    documentService.isFutureVersion(documentId)
+                  }
                   onOpen={openFromCatalog}
                   onCreate={createFromCatalog}
                   onRename={renameDocument}

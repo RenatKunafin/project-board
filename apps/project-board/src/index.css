@@ -738,6 +738,15 @@ body {
   color: var(--color-text-faint);
 }
 
+.doc-catalog__badge {
+  flex: none;
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-text-faint);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+}
+
 .doc-catalog__row-actions {
   display: flex;
   gap: 4px;
