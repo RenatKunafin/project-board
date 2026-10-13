@@ -30,11 +30,11 @@ test('режим принадлежит вкладке: смена не затр
     .getByRole('button', { name: /Чек-лист/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
-    .getByLabel('Название нового чек-листа')
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByLabel('Название нового документа')
     .fill('Вторая вкладка');
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
+    .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Создать' })
     .click();
   await expect(
@@ -94,12 +94,11 @@ test('тайлинг → каскад → изменение состава → 
     .getByRole('button', { name: /Чек-лист/ })
     .click();
   await page
-    .getByRole('dialog', { name: 'Выбор документа' })
-    .getByRole('button', { name: 'Без названия' })
-    .first()
+    .getByRole('dialog', { name: 'Каталог виджетов' })
+    .getByRole('button', { name: 'Список 1' })
     .click();
   await expect(
-    page.getByRole('group', { name: 'Чек-лист · Без названия' }),
+    page.getByRole('group', { name: 'Чек-лист · Список 1' }),
   ).toBeVisible();
 
   await page
@@ -118,7 +117,7 @@ test('тайлинг → каскад → изменение состава → 
   await expect(
     page.getByRole('group', { name: 'Экземпляр 2 · Список 1' }),
   ).toHaveCount(0);
-  const newPane = page.getByRole('group', { name: 'Чек-лист · Без названия' });
+  const newPane = page.getByRole('group', { name: 'Чек-лист · Список 1' });
   await expect(newPane).toBeVisible();
   const newBox = await newPane.boundingBox();
   expect(newBox?.width).toBeGreaterThan(100);

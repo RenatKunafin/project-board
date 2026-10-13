@@ -9,6 +9,8 @@ import {
   type CascadeLayoutState,
   type TiledLayoutState,
 } from '@project-board/dashboard';
+import { checklistTitle } from '@project-board/checklist';
+import { planTitle } from '@project-board/gantt';
 import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
 import './index.css';
@@ -35,10 +37,23 @@ if (window.location.hash === '#storage-selftest') {
 }
 
 async function bootstrap(): Promise<void> {
-  await documentService.restoreAll();
+  // Сбой восстановления не выдаётся за пустой каталог: флаг доходит до App,
+  // каталог показывает состояние ошибки загрузки (DoD PBT-025).
+  let documentsLoadError = false;
+  try {
+    await documentService.restoreAll();
+  } catch (error) {
+    documentsLoadError = true;
+    console.error('document restore failed', error);
+  }
   const saved = await workspaceStore.load();
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
+
+  // Ленивое дополнение названия старым записям (design D2): название —
+  // метаданные оболочки (ADR-5), у записей до PBT-025 его нет. Приложение
+  // (composition root) вычисляет его зарегистрированными функциями модулей.
+  fixupDocumentTitles(widgetRegistry);
 
   // Восстановление сохранённого рабочего пространства: вкладки, окна,
   // раскладки и режимы. Документы уже в сервисе (restoreAll).
@@ -53,6 +68,7 @@ async function bootstrap(): Promise<void> {
           list1Id={firstChecklistId()}
           list2Id={secondChecklistId()}
           restored={restored}
+          documentsLoadError={documentsLoadError}
         />
       </React.StrictMode>,
     );
@@ -70,9 +86,41 @@ async function bootstrap(): Promise<void> {
         workspaceStore={workspaceStore}
         list1Id={list1Id}
         list2Id={list2Id}
+        documentsLoadError={documentsLoadError}
       />
     </React.StrictMode>,
   );
+}
+
+const DOCUMENT_TITLE_BY_MODULE: Record<string, (content: unknown) => string> = {
+  checklist: checklistTitle,
+  gantt: planTitle,
+};
+
+function fixupDocumentTitles(widgetRegistry: ReturnType<typeof createWidgetRegistry>): void {
+  for (const document of documentService.listDocuments()) {
+    if (document.title) {
+      continue;
+    }
+    const lookup = widgetRegistry.get(
+      widgetTypes.find(
+        (type) =>
+          type.documentSupport?.moduleId === document.moduleId &&
+          type.documentSupport?.documentType === document.documentType,
+      )?.id ?? '',
+    );
+    const support = 'kind' in lookup ? undefined : lookup.documentSupport;
+    if (!support) {
+      continue;
+    }
+    const derived = DOCUMENT_TITLE_BY_MODULE[document.moduleId];
+    const title = derived ? derived(document.content) : 'Без названия';
+    try {
+      documentService.rename(document.id, document.revision, title);
+    } catch (error) {
+      console.error('document title fixup failed', document.id, error);
+    }
+  }
 }
 
 function firstChecklistId(): string {
@@ -102,13 +150,14 @@ function ensureTwoChecklists(): [string, string] {
     );
   let documents = restored;
   while (documents.length < 2) {
-    const created = documentService.create({
+    const createdDocument = documentService.create({
       moduleId: 'checklist',
       documentType: 'list',
       schemaVersion: 1,
+      title: `Список ${documents.length + 1}`,
       content: { items: [] },
     });
-    documents = [...documents, created];
+    documents = [...documents, createdDocument];
   }
   return [documents[0].id, documents[1].id];
 }

@@ -26,7 +26,7 @@ export function createGanttModule() {
           moduleId: PLAN_MODULE_ID,
           documentType: PLAN_DOCUMENT_TYPE,
           schemaVersion: PLAN_SCHEMA_VERSION,
-          createContent: (title: string) => ({ ...createPlanContent(title) }),
+          createContent: () => ({ ...createPlanContent() }),
         },
       }),
     ],

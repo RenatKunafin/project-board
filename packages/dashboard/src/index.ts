@@ -55,6 +55,28 @@ export type {
   WorkspaceError,
 } from './workspace';
 export { EmptyWorkspace } from './EmptyWorkspace';
+export { DropdownPanel } from './DropdownPanel';
+export type { DropdownPanelProps } from './DropdownPanel';
+export { DocumentCatalogPanel } from './DocumentCatalogPanel';
+export type { DocumentCatalogPanelProps } from './DocumentCatalogPanel';
+export { WidgetCatalogPanel } from './WidgetCatalogPanel';
+export type { WidgetCatalogPanelProps } from './WidgetCatalogPanel';
+export { DocumentPickerPanel } from './DocumentPickerPanel';
+export type { DocumentPickerPanelProps } from './DocumentPickerPanel';
+export { DocumentMissingPane } from './DocumentMissingPane';
+export type { DocumentMissingPaneProps } from './DocumentMissingPane';
+export {
+  documentTypeInfos,
+  filterDocuments,
+  filterKey,
+  matchesFilter,
+  sortDocumentsByRecency,
+  widgetTypesForDocument,
+} from './document-catalog';
+export type {
+  DocumentFilter,
+  DocumentTypeInfo,
+} from './document-catalog';
 export {
   createIndexedDbDocumentStore,
   IndexedDbDocumentStore,

@@ -44,6 +44,7 @@ export function StorageSelfTest() {
         id: 'selftest-doc',
         moduleId: 'selftest',
         documentType: 'probe',
+        title: 'Самопроверка хранилища',
         schemaVersion: 1,
         revision: 1,
         createdAt: new Date().toISOString(),
