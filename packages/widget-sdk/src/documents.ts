@@ -9,6 +9,22 @@ export interface DocumentCreateInput {
   readonly content: DocumentContent;
 }
 
+/** Шаг миграции содержимого: чистое преобразование формата «от версии → к версии». */
+export interface DocumentMigration {
+  readonly from: number;
+  readonly to: number;
+  readonly migrate: (content: DocumentContent) => DocumentContent;
+}
+
+/** Зарегистрированная поддержка миграций одного типа документов (собирает приложение). */
+export interface DocumentMigrationsSupport {
+  readonly moduleId: string;
+  readonly documentType: string;
+  /** Актуальная версия содержимого; совпадает с последним шагом цепочки. */
+  readonly actualVersion: number;
+  readonly steps: readonly DocumentMigration[];
+}
+
 export interface ManagedDocument {
   readonly id: string;
   readonly moduleId: string;
@@ -19,6 +35,27 @@ export interface ManagedDocument {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly content: DocumentContent;
+}
+
+/** Ошибка записи в документ версии новее поддерживаемой приложением. */
+export class DocumentFutureVersionError extends Error {
+  readonly documentId: string;
+  readonly documentVersion: number;
+  readonly supportedVersion: number;
+
+  constructor(
+    documentId: string,
+    documentVersion: number,
+    supportedVersion: number,
+  ) {
+    super(
+      `Документ "${documentId}" записан версией схемы ${documentVersion}, приложение поддерживает ${supportedVersion}: запись запрещена, чтобы не разрушить данные. Обновите приложение.`,
+    );
+    this.name = 'DocumentFutureVersionError';
+    this.documentId = documentId;
+    this.documentVersion = documentVersion;
+    this.supportedVersion = supportedVersion;
+  }
 }
 
 export class DocumentConflictError extends Error {

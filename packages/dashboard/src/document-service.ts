@@ -1,12 +1,14 @@
 import type {
   DocumentChangeHandler,
   DocumentCreateInput,
+  DocumentMigrationsSupport,
   DocumentService,
   ManagedDocument,
   Unsubscribe,
 } from '@project-board/widget-sdk';
 import {
   DocumentConflictError,
+  DocumentFutureVersionError,
   assertDocumentTitle,
 } from '@project-board/widget-sdk';
 
@@ -19,11 +21,29 @@ export interface DocumentSaveState {
 
 export type SaveStateHandler = (state: DocumentSaveState) => void;
 
+/** Проблема восстановления документа: миграция не выполнена, документ нетронут. */
+export interface DocumentRecoveryIssue {
+  readonly documentId: string;
+  readonly moduleId: string;
+  readonly documentType: string;
+  readonly storedVersion: number;
+  readonly targetVersion: number;
+  readonly reason: 'chain-gap' | 'step-failed';
+  readonly detail?: string;
+}
+
 /** Минимальный контракт хранилища, необходимый сервису. */
 export interface DocumentStoreLike {
   save(
     document: ManagedDocument,
     expectedStoredRevision: number,
+  ): Promise<void>;
+  /** Пакетная фиксация в одной транзакции: сбой любой записи откатывает всё. */
+  saveAll(
+    entries: readonly {
+      readonly document: ManagedDocument;
+      readonly expectedStoredRevision: number;
+    }[],
   ): Promise<void>;
   get(documentId: string): Promise<ManagedDocument | undefined>;
   listAll(): Promise<ManagedDocument[]>;
@@ -33,6 +53,8 @@ export interface DocumentStoreLike {
 export interface PersistenceHooks {
   readonly store: DocumentStoreLike;
   readonly saveDelayMs?: number;
+  /** Поддержка миграций: собирается приложением из зарегистрированных типов. */
+  readonly migrations?: readonly DocumentMigrationsSupport[];
 }
 
 interface DocumentRecord {
@@ -65,7 +87,14 @@ export interface AutosavingDocumentService extends DocumentService {
     documentId: string,
     handler: SaveStateHandler,
   ): Unsubscribe;
+  /** Проблемы миграций последнего восстановления (design D2). */
+  listRecoveryIssues(): DocumentRecoveryIssue[];
+  /** Документ записан версией новее поддерживаемой: запись запрещена. */
+  isFutureVersion(documentId: string): boolean;
 }
+
+/** Разрыв цепочки миграций: нет шага из хранимой версии. */
+class MigrationChainGapError extends Error {}
 
 export function createDocumentService(
   persistence?: Partial<PersistenceHooks>,
@@ -79,6 +108,55 @@ export function createDocumentService(
   const saveStates = new Map<string, DocumentSaveState>();
   const saveStateHandlers = new Map<string, Set<SaveStateHandler>>();
   let notifyingDocumentId: string | null = null;
+
+  // Индекс поддержки миграций и результаты последнего восстановления.
+  const migrationsIndex = new Map<string, DocumentMigrationsSupport>();
+  for (const support of persistence?.migrations ?? []) {
+    migrationsIndex.set(
+      `${support.moduleId}/${support.documentType}`,
+      support,
+    );
+  }
+  const futureVersionIds = new Set<string>();
+  const recoveryIssues: DocumentRecoveryIssue[] = [];
+
+  const supportKey = (
+    document: Pick<ManagedDocument, 'moduleId' | 'documentType'>,
+  ): string => `${document.moduleId}/${document.documentType}`;
+
+  /** Записи в документ версии новее поддерживаемой запрещены (design D3). */
+  function assertNotFutureVersion(document: ManagedDocument): void {
+    const support = migrationsIndex.get(supportKey(document));
+    if (support && document.schemaVersion > support.actualVersion) {
+      throw new DocumentFutureVersionError(
+        document.id,
+        document.schemaVersion,
+        support.actualVersion,
+      );
+    }
+  }
+
+  /** Цепочка шагов «от хранимой версии к актуальной»; разрыв — исключение. */
+  function buildChain(
+    support: DocumentMigrationsSupport,
+    fromVersion: number,
+  ): { step: DocumentMigrationsSupport['steps'][number] }[] {
+    const chain: { step: DocumentMigrationsSupport['steps'][number] }[] = [];
+    let current = fromVersion;
+    while (current < support.actualVersion) {
+      const step = support.steps.find(
+        (candidate) => candidate.from === current,
+      );
+      if (!step) {
+        throw new MigrationChainGapError(
+          `разрыв цепочки миграций: нет шага из версии ${current} (актуальная ${support.actualVersion})`,
+        );
+      }
+      chain.push({ step });
+      current = step.to;
+    }
+    return chain;
+  }
 
   function setSaveState(documentId: string, status: DocumentSaveStatus): void {
     const state: DocumentSaveState = {
@@ -232,6 +310,7 @@ export function createDocumentService(
       if (!record) {
         throw new DocumentConflictError(documentId, 0, expectedRevision);
       }
+      assertNotFutureVersion(record.document);
 
       const actualRevision = record.document.revision;
       if (actualRevision !== expectedRevision) {
@@ -287,6 +366,7 @@ export function createDocumentService(
       if (!record) {
         throw new DocumentConflictError(documentId, 0, expectedRevision);
       }
+      assertNotFutureVersion(record.document);
       const actualRevision = record.document.revision;
       if (actualRevision !== expectedRevision) {
         throw new DocumentConflictError(
@@ -315,6 +395,10 @@ export function createDocumentService(
     },
 
     async delete(documentId: string): Promise<void> {
+      const existing = documents.get(documentId)?.document;
+      if (existing) {
+        assertNotFutureVersion(existing);
+      }
       // Отложенная запись снимается первой: незавершённый таймер не должен
       // вернуть документ в хранилище после удаления. Сама запись очереди
       // удаляется после успеха store.delete: при сбое lastSavedRevision
@@ -362,18 +446,88 @@ export function createDocumentService(
         return [];
       }
       const all = await store.listAll();
+
+      // Классификация (design D2): actual / outdated / future / unknown.
+      const recovered: {
+        document: ManagedDocument;
+        expectedStoredRevision: number;
+      }[] = [];
+      futureVersionIds.clear();
+      recoveryIssues.length = 0;
+
+      for (const stored of all) {
+        const support = migrationsIndex.get(supportKey(stored));
+        if (!support) {
+          continue; // unknown: модуль не зарегистрирован — документ не трогаем.
+        }
+        if (stored.schemaVersion === support.actualVersion) {
+          continue; // actual: миграции не выполняются (однократность, D5).
+        }
+        if (stored.schemaVersion > support.actualVersion) {
+          futureVersionIds.add(stored.id); // future: чтение без записи (D3).
+          continue;
+        }
+        // outdated: цепочка миграций от хранимой версии к актуальной.
+        try {
+          const chain = buildChain(support, stored.schemaVersion);
+          let content = stored.content;
+          for (const { step } of chain) {
+            content = step.migrate(content);
+          }
+          recovered.push({
+            document: {
+              ...stored,
+              schemaVersion: support.actualVersion,
+              content,
+            },
+            expectedStoredRevision: stored.revision,
+          });
+        } catch (error) {
+          // Сбой шага/разрыв: документ остаётся нетронутым, восстановление
+          // продолжается (spec «Сбой преобразования не повреждает документ»).
+          const isChainGap = error instanceof MigrationChainGapError;
+          recoveryIssues.push({
+            documentId: stored.id,
+            moduleId: stored.moduleId,
+            documentType: stored.documentType,
+            storedVersion: stored.schemaVersion,
+            targetVersion: support.actualVersion,
+            reason: isChainGap ? 'chain-gap' : 'step-failed',
+            detail: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      // Атомарная фиксация одной транзакцией: сбой отклоняется целиком,
+      // хранилище остаётся в исходном состоянии.
+      if (recovered.length > 0) {
+        await store.saveAll(recovered);
+      }
+
       for (const document of all) {
-        documents.set(document.id, { document, handlers: [] });
+        const migrated = recovered.find(
+          (entry) => entry.document.id === document.id,
+        );
+        const finalDocument = migrated?.document ?? document;
+        documents.set(finalDocument.id, { document: finalDocument, handlers: [] });
         const entry: SaveQueueEntry = {
           pending: null,
-          lastSavedRevision: document.revision,
+          lastSavedRevision: finalDocument.revision,
           inFlight: false,
           timer: null,
           retryAttempt: 0,
         };
-        queue.set(document.id, entry);
+        queue.set(finalDocument.id, entry);
       }
-      return all;
+      return all.map(
+        (document) => documents.get(document.id)?.document ?? document,
+      );
+    },
+    listRecoveryIssues(): DocumentRecoveryIssue[] {
+      return [...recoveryIssues];
+    },
+    isFutureVersion(documentId: string): boolean {
+      return futureVersionIds.has(documentId);
     },
     listDocuments(
       filter?: { readonly moduleId?: string; readonly documentType?: string },

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import {
+  collectDocumentMigrations,
   createDocumentService,
   createIndexedDbDocumentStore,
   createWidgetRegistry,
@@ -11,12 +12,18 @@ import {
 } from '@project-board/dashboard';
 import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
+import type { ManagedDocument } from '@project-board/widget-sdk';
 import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
 import './index.css';
 
 const store = createIndexedDbDocumentStore('project-board');
-const documentService = createDocumentService({ store });
+// Поддержка миграций собирается приложением из зарегистрированных типов
+// (design D1): сервис остаётся независимым от реестра.
+const documentService = createDocumentService({
+  store,
+  migrations: collectDocumentMigrations(widgetTypes),
+});
 const workspaceStore = new WorkspaceStore('project-board');
 
 // Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
@@ -45,6 +52,15 @@ async function bootstrap(): Promise<void> {
   } catch (error) {
     documentsLoadError = true;
     console.error('document restore failed', error);
+  }
+  // Проблемы миграций доступны приложению (spec PBT-026): документ остаётся
+  // нетронутым в хранилище, показываем диагностику в консоли.
+  for (const issue of documentService.listRecoveryIssues()) {
+    console.warn(
+      `[миграция] документ ${issue.documentId} (${issue.moduleId}/${issue.documentType}): ` +
+        `версия ${issue.storedVersion} → ${issue.targetVersion}, причина: ${issue.reason}` +
+        (issue.detail ? ` — ${issue.detail}` : ''),
+    );
   }
   const saved = await workspaceStore.load();
 
@@ -133,33 +149,46 @@ function secondChecklistId(): string {
 
 function ensureTwoChecklists(): [string, string] {
   // Сопоставление панелей с документами должно быть стабильным между
-  // перезагрузками: сортируем (createdAt, затем id) и ПОСЛЕ создания
-  // недостающих — иначе при создании двух документов в одну миллисекунду
-  // панели после перезагрузки ссылаются на другие документы.
-  const restored = documentService
-    .listDocuments({ moduleId: 'checklist', documentType: 'list' })
-    .sort(
-      (a, b) =>
-        a.createdAt < b.createdAt
+  // перезагрузками: позиции и названия определяются финальной сортировкой
+  // (createdAt, затем id). Названия присваиваются по отсортированной позиции
+  // после создания недостающих — иначе при совпадении createdAt в одну
+  // миллисекунду порядок создания и сортировки расходятся (UUID-тайбрейк)
+  // и после перезагрузки панели ссылаются на другие названия.
+  const byCreationOrder = (
+    a: ManagedDocument,
+    b: ManagedDocument,
+  ): number =>
+    a.createdAt < b.createdAt
+      ? -1
+      : a.createdAt > b.createdAt
+        ? 1
+        : a.id < b.id
           ? -1
-          : a.createdAt > b.createdAt
-            ? 1
-            : a.id < b.id
-              ? -1
-              : 1,
+          : 1;
+  const restored = documentService.listDocuments({
+    moduleId: 'checklist',
+    documentType: 'list',
+  });
+  const created: ManagedDocument[] = [];
+  while (restored.length + created.length < 2) {
+    created.push(
+      documentService.create({
+        moduleId: 'checklist',
+        documentType: 'list',
+        schemaVersion: 1,
+        title: 'Чек-лист',
+        content: { items: [] },
+      }),
     );
-  let documents = restored;
-  while (documents.length < 2) {
-    const createdDocument = documentService.create({
-      moduleId: 'checklist',
-      documentType: 'list',
-      schemaVersion: 1,
-      title: `Список ${documents.length + 1}`,
-      content: { items: [] },
-    });
-    documents = [...documents, createdDocument];
   }
-  return [documents[0].id, documents[1].id];
+  const sorted = [...restored, ...created].sort(byCreationOrder);
+  for (const document of created) {
+    const expectedTitle = `Список ${sorted.indexOf(document) + 1}`;
+    if (document.title !== expectedTitle) {
+      documentService.rename(document.id, document.revision, expectedTitle);
+    }
+  }
+  return [sorted[0].id, sorted[1].id];
 }
 
 function restoreWorkspace(

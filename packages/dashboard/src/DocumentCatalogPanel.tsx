@@ -13,6 +13,8 @@ export interface DocumentCatalogPanelProps {
   readonly typeInfos: readonly DocumentTypeInfo[];
   /** Ошибка восстановления хранилища при старте: не выдаётся за пустой каталог. */
   readonly loadError: boolean;
+  /** Документ записан версией новее поддерживаемой: запись запрещена (design D4). */
+  readonly isFutureVersion: (documentId: string) => boolean;
   readonly onOpen: (document: ManagedDocument) => void;
   readonly onCreate: (info: DocumentTypeInfo, title: string) => void;
   readonly onRename: (documentId: string, title: string) => void;
@@ -24,6 +26,7 @@ export function DocumentCatalogPanel({
   documents,
   typeInfos,
   loadError,
+  isFutureVersion,
   onOpen,
   onCreate,
   onRename,
@@ -221,15 +224,25 @@ export function DocumentCatalogPanel({
                     onClick={() => onOpen(document)}
                   >
                     <span className="doc-catalog__title">{document.title}</span>
-                    <span className="doc-catalog__kind">
-                      {typeInfos.find(
-                        (info) =>
-                          info.moduleId === document.moduleId &&
-                          info.documentType === document.documentType,
-                      )?.label ?? `${document.moduleId}/${document.documentType}`}
-                    </span>
+                    {isFutureVersion(document.id) ? (
+                      <span
+                        className="doc-catalog__badge"
+                        title="Документ записан версией приложения новее текущей: доступен только для чтения"
+                      >
+                        Версия {document.schemaVersion} — новее поддерживаемой
+                      </span>
+                    ) : (
+                      <span className="doc-catalog__kind">
+                        {typeInfos.find(
+                          (info) =>
+                            info.moduleId === document.moduleId &&
+                            info.documentType === document.documentType,
+                        )?.label ?? `${document.moduleId}/${document.documentType}`}
+                      </span>
+                    )}
                   </button>
-                  <span className="doc-catalog__row-actions">
+                  {!isFutureVersion(document.id) && (
+                    <span className="doc-catalog__row-actions">
                     <button
                       type="button"
                       className="doc-catalog__action"
@@ -253,7 +266,8 @@ export function DocumentCatalogPanel({
                     >
                       🗑
                     </button>
-                  </span>
+                    </span>
+                  )}
                 </>
               )}
             </li>

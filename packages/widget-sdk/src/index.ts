@@ -1,5 +1,9 @@
 import type { ComponentType } from 'react';
-import type { DocumentService } from './documents';
+import type {
+  DocumentMigration,
+  DocumentMigrationsSupport,
+  DocumentService,
+} from './documents';
 
 export type WidgetTypeSettings = Record<string, unknown>;
 
@@ -26,6 +30,32 @@ export interface WidgetDocumentSupport {
   readonly schemaVersion: number;
   /** Название документа задаётся пользователем и передаётся сервису документов. */
   readonly createContent: () => Record<string, unknown>;
+  /** Миграции содержимого «от версии → к версии» до актуальной schemaVersion. */
+  readonly migrations?: readonly DocumentMigration[];
+}
+
+/** Собирает поддержку миграций из зарегистрированных типов виджетов. */
+export function collectDocumentMigrations(
+  types: readonly WidgetTypeDefinition[],
+): DocumentMigrationsSupport[] {
+  const byKey = new Map<string, DocumentMigrationsSupport>();
+  for (const type of types) {
+    const support = type.documentSupport;
+    if (!support) {
+      continue;
+    }
+    const key = `${support.moduleId}/${support.documentType}`;
+    if (byKey.has(key)) {
+      continue;
+    }
+    byKey.set(key, {
+      moduleId: support.moduleId,
+      documentType: support.documentType,
+      actualVersion: support.schemaVersion,
+      steps: support.migrations ?? [],
+    });
+  }
+  return [...byKey.values()];
 }
 
 export interface WidgetTypeDefinition {
@@ -60,11 +90,14 @@ export type {
   DocumentContent,
   DocumentCreateInput,
   DocumentChangeHandler,
+  DocumentMigration,
+  DocumentMigrationsSupport,
   DocumentService,
   ManagedDocument,
   Unsubscribe,
 } from './documents';
 export {
   DocumentConflictError,
+  DocumentFutureVersionError,
   assertDocumentTitle,
 } from './documents';
