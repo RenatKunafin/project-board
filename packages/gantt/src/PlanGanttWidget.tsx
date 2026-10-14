@@ -629,13 +629,51 @@ export default function PlanGanttWidget({
     };
   }, [applyGestureRules, persistGesture]);
 
+  // ─── Стабилизация props SVAR (мерцание чарта, уточнение 2026-10-14) ─────
+  // Обёртка SVAR при каждом изменении ссылок props перезаливает стор целиком
+  // (P.init в эффекте обёртки) — полная перерисовка чарта, включая столбцы
+  // календаря. При собственной записи жеста стор уже синхронен документу
+  // (точечный update-task), поэтому props продолжают отдавать прежнюю версию
+  // данных: перезаливки нет. Новые props — только при внешних изменениях
+  // (второй экземпляр, формы) и при изменении сворачивания.
+  const svarSourceRef = useRef<{
+    plan: PlanContent;
+    collapsed: ReadonlySet<string>;
+  } | null>(null);
+  const ownWrite =
+    document !== undefined &&
+    localRevisionRef.current !== null &&
+    document.revision === localRevisionRef.current;
+  // Стабильная версия данных, отданная в SVAR: при собственной записи
+  // жеста возвращается прежний объект (ссылки props не меняются —
+  // перезаливки нет), при внешних изменениях создаётся новый.
+  const source = useMemo(
+    () =>
+      svarSourceRef.current !== null && ownWrite
+        ? svarSourceRef.current
+        : plan !== undefined
+          ? { plan, collapsed: collapsedGroups }
+          : null,
+    // svarSourceRef намеренно вне deps: это «данные, уже залитые в стор».
+    [ownWrite, plan, collapsedGroups],
+  );
+  useEffect(() => {
+    svarSourceRef.current = source;
+  }, [source]);
   const tasks = useMemo(
     // Раскрытие групп — состояние экземпляра (B4): свёрнутые группы
     // передаются адаптеру (open: false), при пересборке представления
     // после записи документа раскрытие не сбрасывается.
-    () => (plan ? planToGanttTasks(plan, collapsedGroups) : []),
-    [plan, collapsedGroups],
+    () => (source ? planToGanttTasks(source.plan, source.collapsed) : []),
+    [source],
   );
+  const links = useMemo(
+    () => (source ? planToGanttLinks(source.plan) : []),
+    [source],
+  );
+  useEffect(() => {
+    svarSourceRef.current = source;
+  }, [source]);
   // Ревизия своей записи жеста продолжает прежний ключ: пересборка чарта
   // на неё не нужна (стор уже синхронен документу). Внешние ревизии
   // (второй экземпляр, формы) меняют ключ и пересобирают представление.
@@ -647,10 +685,6 @@ export default function PlanGanttWidget({
         ? remountKeyRef.current
         : String(document.revision);
   remountKeyRef.current = chartRemountKey;
-  const links = useMemo(
-    () => (plan ? planToGanttLinks(plan) : []),
-    [plan],
-  );
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -696,20 +730,22 @@ export default function PlanGanttWidget({
         cell: ({ row }) => workingDaysCell(String(row.id)),
       },
     ];
-  }, [plan]);
+    // Своя запись жеста не меняет колонки: SVAR перерисовывает ячейку
+    // строки при update-task, значение читается из свежего planRef.
+  }, [source]);
 
   const highlightTime = useCallback(
     (date: Date, unit: 'day' | 'hour') => {
-      if (unit !== 'day' || plan === undefined) {
+      if (unit !== 'day' || source === null) {
         return '';
       }
-      const kind = nonWorkingDayKind(plan, ganttDayIso(date));
+      const kind = nonWorkingDayKind(source.plan, ganttDayIso(date));
       if (kind === 'holiday') {
         return 'gantt-holiday';
       }
       return kind === 'weekend' ? 'gantt-weekend' : '';
     },
-    [plan],
+    [source],
   );
 
   if (!documentId || !documentService) {
@@ -797,8 +833,8 @@ export default function PlanGanttWidget({
                   Своя запись жеста подавляет remount (D7 PBT-039). */}
               <Gantt
                 key={chartRemountKey}
-                tasks={[...tasks]}
-                links={[...links]}
+                tasks={tasks}
+                links={links}
                 columns={columns}
                 inclusiveEnd={true}
                 init={initApi}

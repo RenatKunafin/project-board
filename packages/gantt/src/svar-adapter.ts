@@ -78,7 +78,7 @@ function orderedGroups(plan: PlanContent): readonly PlanGroup[] {
 export function planToGanttTasks(
   plan: PlanContent,
   collapsedGroups?: ReadonlySet<string>,
-): readonly GanttTask[] {
+): GanttTask[] {
   const tasks: GanttTask[] = [];
   for (const group of orderedGroups(plan)) {
     tasks.push({
@@ -103,7 +103,7 @@ export function planToGanttTasks(
 }
 
 /** FS-зависимости плана → связи SVAR «окончание → начало» с лагом. */
-export function planToGanttLinks(plan: PlanContent): readonly GanttLink[] {
+export function planToGanttLinks(plan: PlanContent): GanttLink[] {
   return plan.dependencies.map((dependency) => ({
     id: dependency.id,
     source: dependency.fromTaskId,
