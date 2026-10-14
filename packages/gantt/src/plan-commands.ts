@@ -1,4 +1,9 @@
 import type { PlanContent, PlanTask } from './plan-document';
+import type {
+  GroupCreateInput,
+  GroupUpdatePatch,
+} from './plan-hierarchy';
+import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import {
   addCalendarDays,
   calendarDaySpan,
@@ -12,7 +17,8 @@ export type PlanCommandErrorCode =
   | 'unknown-resource'
   | 'unknown-work-type'
   | 'inverted-interval'
-  | 'invalid-duration';
+  | 'invalid-duration'
+  | 'circular-group';
 
 export interface PlanCommandError {
   readonly code: PlanCommandErrorCode;
@@ -59,7 +65,14 @@ export type PlanCommand =
       readonly taskId: string;
       readonly durationDays: number;
     }
-  | { readonly type: 'deleteTask'; readonly taskId: string };
+  | { readonly type: 'deleteTask'; readonly taskId: string }
+  | { readonly type: 'createGroup'; readonly input: GroupCreateInput }
+  | {
+      readonly type: 'updateGroup';
+      readonly groupId: string;
+      readonly patch: GroupUpdatePatch;
+    }
+  | { readonly type: 'deleteGroup'; readonly groupId: string };
 
 function fail(
   code: PlanCommandErrorCode,
@@ -327,5 +340,11 @@ export function applyPlanCommand(
       return setTaskDuration(plan, command.taskId, command.durationDays);
     case 'deleteTask':
       return deleteTask(plan, command.taskId);
+    case 'createGroup':
+      return createGroup(plan, command.input);
+    case 'updateGroup':
+      return updateGroup(plan, command.groupId, command.patch);
+    case 'deleteGroup':
+      return deleteGroup(plan, command.groupId);
   }
 }
