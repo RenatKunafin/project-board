@@ -10,6 +10,7 @@ import {
 export { default as PlanPlaceholderWidget } from './PlanPlaceholderWidget';
 export * from './plan-document';
 export * from './plan-commands';
+export * from './plan-hierarchy';
 
 export const GANTT_PACKAGE = '@project-board/gantt' as const;
 
