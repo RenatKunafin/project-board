@@ -203,10 +203,11 @@ test('drag полосы переносит задачу с сохранение�
     .not.toBe(before);
   const after = await rowA.textContent();
   // Начало пн 12 → сб 10 привязывается к рабочей пятнице 09 (A2, назад);
-  // рабочая длительность сохранена: пт 09–чт 15 (9,12,13,14,15) = 5 дней.
+  // рабочая длительность сохранена: 09,12,13,15 (14.10 — праздник) = 4 дня,
+  // окончание включительно чт 15.
   expect(after).toContain('09-10-2026');
   expect(after).toContain('15-10-2026');
-  expect(after).toContain('5');
+  expect(after).toContain('4');
   const revisionAfter = await page.evaluate(
     (id) => window.__projectBoard?.readDocument?.(id)?.revision ?? null,
     documentId,

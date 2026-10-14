@@ -3,7 +3,7 @@ import { Gantt, Willow } from '@svar-ui/react-gantt';
 import type { IApi, IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
-import { parsePlanContent, type PlanIssue } from './plan-document';
+import { parsePlanContent, type PlanContent, type PlanIssue } from './plan-document';
 import { createWorkingCalendar } from './working-calendar';
 import {
   ganttDate,
@@ -76,6 +76,22 @@ export default function PlanGanttWidget({
   planRef.current = plan;
   const documentRef = useRef(document);
   documentRef.current = document;
+  // Dev-реестр api экземпляров (отладка жестов и e2e, прецедент
+  // writeDocumentContent): id документа → SVAR api.
+  const documentIdRef = useRef(documentId);
+  documentIdRef.current = documentId;
+  // Своя запись жеста не пересобирает чарт: стор синхронизирован точечным
+  // update-task, remount по этой ревизии подавляется (плавность, D7).
+  // Внешние записи (второй экземпляр, формы) remount'ят как прежде.
+  const localRevisionRef = useRef<number | null>(null);
+  const remountKeyRef = useRef<string>('init');
+  // Ожидаемые даты задач после применённых правил жеста (база сравнения
+  // сверток): собственная коррекция стора не должна переклассифицироваться
+  // следующей сверкой как новый факт (механика спайка PBT-014: стор
+  // сверяется с обновлённой моделью, а не с исходным документом).
+  const gestureExpectedRef = useRef<Map<string, { start: string; end: string }>>(
+    new Map(),
+  );
 
   // Форма задачи (PBT-038): перерисовка чарта после записи происходит
   // по revision (remount key) — состояние формы хранить в документе не нужно.
@@ -308,6 +324,10 @@ export default function PlanGanttWidget({
     }
     blockedApis.add(instance);
     apiRef.current = instance;
+    const registry = ((window as unknown as Record<string, unknown>).__ganttApiRegistry ??
+      {}) as Record<string, IApi>;
+    registry[String(documentIdRef.current)] = instance;
+    (window as unknown as Record<string, unknown>).__ganttApiRegistry = registry;
     // Сводные полосы не двигаются (B2, design D3): задача документа
     // перетаскивается, строка группы — нет.
     instance.intercept('drag-task', (event: unknown) => {
@@ -370,12 +390,15 @@ export default function PlanGanttWidget({
     [openEditor, openGroupEditor],
   );
 
-  // ─── Жесты drag/resize (ADR-5, PBT-039) ────────────────────────────────
-  // Payload жестов SVAR ненадёжен: после mouseup стор сверяется с
-  // документом, расхождение краёв классифицируется и применяется
-  // командами ядра (спайк PBT-014). Знаковая дельта в календарных днях.
-  const commitGesture = useCallback(
-    (taskId: string, storeStart: string, storeEndInc: string) => {
+  // ─── Жесты drag/resize (ADR-5, PBT-039; плавность — уточнение владельца
+  // от 2026-10-14, design PBT-039 D7) ─────────────────────────────────────
+  // Payload жестов SVAR ненадёжен: после отпускания кнопки стор сверяется
+  // с документом, расхождение краёв классифицируется и применяется
+  // правилами ядра (спайк PBT-014). Исправленные даты немедленно
+  // возвращаются в стор точечным update-task — полоса встаёт по правилам
+  // (привязка к рабочим дням) в момент жеста, а не после remount.
+  const applyGestureRules = useCallback(
+    (taskId: string, storeStart: string, storeEndInc: string, persist: boolean) => {
       if (!documentId || !documentService) {
         return;
       }
@@ -392,9 +415,16 @@ export default function PlanGanttWidget({
         if (current === undefined) {
           return;
         }
-        // Стор уже соответствует документу (записал второй экземпляр
-        // либо откат) — жест уже применён или отменён.
-        if (current.start === storeStart && current.end === storeEndInc) {
+        // База классификации — ожидаемые даты после предыдущих коррекций
+        // этой же свертки (в начале жеста равны документу).
+        const expected =
+          gestureExpectedRef.current.get(taskId) ?? {
+            start: current.start,
+            end: current.end,
+          };
+        // Стор уже соответствует ожиданию (применено, отменено или
+        // доанимировано до правила) — применять нечего.
+        if (expected.start === storeStart && expected.end === storeEndInc) {
           return;
         }
         const daysDelta = (fromIso: string, toIso: string): number =>
@@ -403,24 +433,24 @@ export default function PlanGanttWidget({
               Date.parse(`${fromIso}T00:00:00Z`)) /
               86_400_000,
           );
-        const dStart = daysDelta(current.start, storeStart);
-        const dEnd = daysDelta(current.end, storeEndInc);
+        const dStart = daysDelta(expected.start, storeStart);
+        const dEnd = daysDelta(expected.end, storeEndInc);
         const result =
           dStart !== 0 && dStart === dEnd
             ? moveTask(parsed.plan, taskId, storeStart)
             : dStart !== 0
               ? setTaskDates(parsed.plan, taskId, {
                   start: storeStart,
-                  end: current.end,
+                  end: expected.end,
                 })
               : setTaskDates(parsed.plan, taskId, {
-                  start: current.start,
+                  start: expected.start,
                   end: storeEndInc,
                 });
+        const api = apiRef.current;
         if (!result.ok) {
           // Отклонение ядром (например, перевёрнутый интервал) —
           // отмена жеста: полоса возвращается к датам документа.
-          const api = apiRef.current;
           api?.exec('update-task', {
             id: taskId,
             task: {
@@ -430,8 +460,45 @@ export default function PlanGanttWidget({
           });
           return;
         }
+        const next = result.plan.tasks.find((task) => task.id === taskId);
+        if (next === undefined) {
+          return;
+        }
+        // Ожидание обновляется результатом правил: дальнейшие свертки
+        // сверяются с ним, собственная коррекция не «новый факт».
+        gestureExpectedRef.current.set(taskId, {
+          start: next.start,
+          end: next.end,
+        });
+        // Немедленная коррекция стора исправленными датами: правило ядра
+        // (привязка начала к рабочему дню, пересчёт длительности) видно
+        // сразу. Повторные свертки при доанимации стора идемпотентны.
+        api?.exec('update-task', {
+          id: taskId,
+          task: {
+            start: ganttDate(next.start),
+            end: ganttDate(addCalendarDays(next.end, 1)),
+          },
+        });
+        if (!persist) {
+          // Промежуточная сверка: только визуальная коррекция, документ
+          // запишет финальная сверка (одна ревизия на жест).
+          return;
+        }
+        if (next.start === current.start && next.end === current.end) {
+          // Правило вернуло те же даты — холостая ревизия исключена;
+          // стор уже приведён к документу коррекцией выше.
+          return;
+        }
         try {
-          documentService.update(documentId, latest.revision, result.plan);
+          const saved = documentService.update(
+            documentId,
+            latest.revision,
+            result.plan,
+          );
+          // Своя запись жеста не пересобирает чарт: стор уже синхронен
+          // документу (точечный update-task выше).
+          localRevisionRef.current = saved.revision;
           return;
         } catch {
           // Конфликт ревизии (записал второй экземпляр) — перечитываем
@@ -442,22 +509,69 @@ export default function PlanGanttWidget({
     [documentId, documentService],
   );
 
+  // Финальная фиксация жеста: стор уже приведён правилами (сверка с
+  // expected совпадает), записать результат в документ, если он отличается.
+  const persistGesture = useCallback(
+    (taskId: string) => {
+      const expected = gestureExpectedRef.current.get(taskId);
+      if (expected === undefined || !documentId || !documentService) {
+        return;
+      }
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const latest = documentService.get(documentId) ?? documentRef.current;
+        if (latest === undefined) {
+          return;
+        }
+        const parsed = parsePlanContent(latest.content);
+        if (!parsed.ok) {
+          return;
+        }
+        const current = parsed.plan.tasks.find((task) => task.id === taskId);
+        if (current === undefined) {
+          return;
+        }
+        if (current.start === expected.start && current.end === expected.end) {
+          return; // документ уже содержит результат жеста
+        }
+        const plan: PlanContent = {
+          ...parsed.plan,
+          tasks: parsed.plan.tasks.map((task) =>
+            task.id === taskId
+              ? { ...task, start: expected.start, end: expected.end }
+              : task,
+          ),
+        };
+        try {
+          const saved = documentService.update(
+            documentId,
+            latest.revision,
+            plan,
+          );
+          localRevisionRef.current = saved.revision;
+          return;
+        } catch {
+          // Конфликт ревизии — перечитываем и повторяем.
+        }
+      }
+    },
+    [documentId, documentService],
+  );
+
   useEffect(() => {
-    // Стор применяет жест с нестабильной задержкой и анимацией подлёта:
-    // промежуточные чтения только запоминают факт, запись документа —
-    // по последней сверке (иначе remount после ранней записи теряет
-    // финальное положение полосы — найдено в e2e PBT-039).
+    // Стор применяет жест с нестабильной задержкой и анимацией подлёта.
+    // Сверки 250/700 мс немедленно корректируют полосу правилами ядра
+    // (update-task, без записи); запись документа — по последней сверке
+    // (1500 мс): одна ревизия на жест, промежуточная доанимация стора
+    // подхватывается следующей сверкой.
     const scheduleGestureSync = () => {
-      let observed: {
-        taskId: string;
-        storeStart: string;
-        storeEndInc: string;
-      } | null = null;
+      // Новый жест: база сравнения — текущие даты документа (expected
+      // заполняется правилами по мере сверок).
+      gestureExpectedRef.current.clear();
       const readOnce = () => {
         const api = apiRef.current;
         const planNow = planRef.current;
         if (api === null || planNow === undefined) {
-          return;
+          return null;
         }
         for (const task of planNow.tasks) {
           let stored: { start?: unknown; end?: unknown };
@@ -474,40 +588,46 @@ export default function PlanGanttWidget({
           endDate.setDate(endDate.getDate() - 1);
           const storeEndInc = ganttDayIso(endDate);
           if (storeStart !== task.start || storeEndInc !== task.end) {
-            observed = { taskId: task.id, storeStart, storeEndInc };
-            break;
+            return { taskId: task.id, storeStart, storeEndInc };
           }
         }
+        return null;
       };
-      window.setTimeout(readOnce, 250);
-      window.setTimeout(readOnce, 700);
-      window.setTimeout(() => {
-        readOnce();
+      const correct = (persist: boolean) => {
+        const observed = readOnce();
         if (observed !== null) {
-          commitGesture(observed.taskId, observed.storeStart, observed.storeEndInc);
+          applyGestureRules(
+            observed.taskId,
+            observed.storeStart,
+            observed.storeEndInc,
+            persist,
+          );
         }
-      }, 1500);
+        if (persist && gestureExpectedRef.current.size > 0) {
+          // Финальная фиксация: правила уже применены к стору промежуточными
+          // сверками (или этой сверкой) — записать ожидание, если документ
+          // ещё отличается (persistGesture идемпотентен, двойной записи нет).
+          const [taskId] = gestureExpectedRef.current.keys();
+          persistGesture(taskId);
+        }
+      };
+      window.setTimeout(() => correct(false), 250);
+      window.setTimeout(() => correct(false), 700);
+      window.setTimeout(() => correct(true), 1500);
     };
-    const handler = () => scheduleGestureSync();
-    // Capture-фаза на документе: SVAR останавливает всплытие mouseup
-    // внутри чарта (bubble до контейнера не доходит), а ранние
-    // состояния виджета (загрузка/ошибка) не содержат чарта — привязка
-    // к контейнеру через ref ненадёжна (PBT-039).
-    const captureHandler = (event: Event) => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest('.plan-gantt__chart') !== null
-      ) {
-        handler();
-      }
-    };
+    // Capture-фаза на документе без фильтра по чарту: SVAR останавливает
+    // всплытие mouseup внутри чарта, а отпускание кнопки ВНЕ чарта тоже
+    // обязано применять факт — иначе полоса застывает в брошенном
+    // положении до следующего remount (дефект отладки 2026-10-14).
+    // Свертка идемпотентна: без расхождения это только чтения.
+    const captureHandler = () => scheduleGestureSync();
     window.document.addEventListener('mouseup', captureHandler, true);
     window.document.addEventListener('touchend', captureHandler, true);
     return () => {
       window.document.removeEventListener('mouseup', captureHandler, true);
       window.document.removeEventListener('touchend', captureHandler, true);
     };
-  }, [commitGesture]);
+  }, [applyGestureRules, persistGesture]);
 
   const tasks = useMemo(
     // Раскрытие групп — состояние экземпляра (B4): свёрнутые группы
@@ -516,6 +636,17 @@ export default function PlanGanttWidget({
     () => (plan ? planToGanttTasks(plan, collapsedGroups) : []),
     [plan, collapsedGroups],
   );
+  // Ревизия своей записи жеста продолжает прежний ключ: пересборка чарта
+  // на неё не нужна (стор уже синхронен документу). Внешние ревизии
+  // (второй экземпляр, формы) меняют ключ и пересобирают представление.
+  const chartRemountKey =
+    document === undefined
+      ? 'init'
+      : localRevisionRef.current !== null &&
+          document.revision === localRevisionRef.current
+        ? remountKeyRef.current
+        : String(document.revision);
+  remountKeyRef.current = chartRemountKey;
   const links = useMemo(
     () => (plan ? planToGanttLinks(plan) : []),
     [plan],
@@ -660,12 +791,12 @@ export default function PlanGanttWidget({
           </div>
           <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
             <Willow>
-              {/* Ключ по редакции: SVAR не синхронизирует стор с новыми
+              {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
                   документа применяются пересозданием представления.
-                  При PBT-039 заменяется точечными update-task (ADR-5). */}
+                  Своя запись жеста подавляет remount (D7 PBT-039). */}
               <Gantt
-                key={document.revision}
+                key={chartRemountKey}
                 tasks={[...tasks]}
                 links={[...links]}
                 columns={columns}
