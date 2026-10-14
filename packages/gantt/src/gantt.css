@@ -23,6 +23,14 @@
   overflow: auto;
 }
 
+.plan-gantt__inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
 .plan-gantt__chart {
   flex: 1;
   min-height: 200px;

@@ -1,0 +1,153 @@
+/* Форма задачи PBT-038. Только токены :root (хекс-коды запрещены до PBT-066). */
+
+.plan-gantt .task-editor__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 39, 51, 0.35);
+}
+
+.plan-gantt .task-editor {
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(28, 39, 51, 0.2);
+}
+
+.plan-gantt .task-editor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan-gantt .task-editor__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-gantt .task-editor__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .task-editor__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.plan-gantt .task-editor__row {
+  display: flex;
+  gap: 12px;
+}
+
+.plan-gantt .task-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.plan-gantt .task-editor__field--narrow {
+  flex: 0 0 110px;
+}
+
+.plan-gantt .task-editor__label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt .task-editor__field input,
+.plan-gantt .task-editor__field select {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--color-surface);
+  color: inherit;
+}
+
+.plan-gantt .task-editor__error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.plan-gantt .task-editor__preview {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt .task-editor__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.plan-gantt .task-editor__foot-spacer {
+  flex: 1;
+}
+
+.plan-gantt .task-editor__button {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .task-editor__button--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.plan-gantt .task-editor__button--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.plan-gantt .plan-gantt__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan-gantt .plan-gantt__add-button {
+  padding: 5px 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.plan-gantt .plan-gantt__count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}

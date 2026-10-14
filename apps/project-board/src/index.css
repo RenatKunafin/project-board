@@ -8,6 +8,9 @@
   --color-text-muted: #5a6b7b;
   --color-text-faint: #8a99a8;
   --color-accent: #2f6fed;
+  --color-on-accent: #ffffff;
+  --color-danger: #b02a1d;
+  --radius-sm: 6px;
   /* Подсветка нерабочих дней проектного Гантта (PBT-037). */
   --color-gantt-weekend: #e3e7ec;
   --color-gantt-holiday: #f8d3d3;
