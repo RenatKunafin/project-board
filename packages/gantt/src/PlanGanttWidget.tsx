@@ -12,19 +12,23 @@ import {
   planToGanttLinks,
   planToGanttTasks,
 } from './svar-adapter';
+import { createTask, deleteTask, moveTask, setTaskDates, updateTask } from './plan-commands';
+import type { PlanCommandError, PlanCommandResult } from './plan-commands';
 import {
-  createTask,
-  deleteTask,
-  moveTask,
-  setTaskDates,
-  updateTask,
-} from './plan-commands';
+  createResource,
+  createWorkType,
+  deleteResource,
+  deleteWorkType,
+  updateResource,
+  updateWorkType,
+} from './plan-catalogs';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm } from './task-editor';
 import type { GroupFormIssue } from './group-editor';
 import TaskEditorDialog, { type TaskEditorSubmit } from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
+import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
 import './gantt.css';
 
 type EditorState =
@@ -102,6 +106,8 @@ export default function PlanGanttWidget({
   const [groupEditor, setGroupEditor] = useState<GroupEditorState | undefined>(
     undefined,
   );
+  // Редактор справочников (PBT-041).
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   // Сворачивание групп — состояние экземпляра (B4): множество свёрнутых
   // id в памяти виджета, переживает remount чарта по ревизии, в документ
@@ -118,6 +124,20 @@ export default function PlanGanttWidget({
         ? window.document.activeElement
         : null;
     setEditor(next);
+  }, []);
+
+  const openCatalog = useCallback(() => {
+    focusAnchorRef.current =
+      window.document.activeElement instanceof HTMLElement
+        ? window.document.activeElement
+        : null;
+    setCatalogOpen(true);
+  }, []);
+
+  const closeCatalog = useCallback(() => {
+    setCatalogOpen(false);
+    focusAnchorRef.current?.focus();
+    focusAnchorRef.current = null;
   }, []);
 
   const openGroupEditor = useCallback((next: GroupEditorState) => {
@@ -303,6 +323,55 @@ export default function PlanGanttWidget({
     });
     closeGroupEditor();
   }, [groupEditor, commitPlan, closeGroupEditor]);
+
+  // Команды справочников (PBT-041): делегирование функциям ядра
+  // plan-catalogs; ошибка ядра возвращается диалогу (показ по месту).
+  const applyCatalogCommand = useCallback(
+    (command: CatalogCommand): PlanCommandError | undefined => {
+      let error: PlanCommandError | undefined;
+      commitPlan((latest) => {
+        const validationNow = parsePlanContent(latest.content);
+        if (!validationNow.ok) {
+          return undefined;
+        }
+        const base = validationNow.plan;
+        const result = ((): PlanCommandResult => {
+          switch (command.type) {
+            case 'createResource':
+              return createResource(base, { title: command.title });
+            case 'renameResource':
+              return updateResource(base, command.resourceId, {
+                title: command.title,
+              });
+            case 'deleteResource':
+              return deleteResource(base, command.resourceId);
+            case 'createWorkType':
+              return createWorkType(base, {
+                title: command.title,
+                allowsParallel: command.allowsParallel,
+              });
+            case 'renameWorkType':
+              return updateWorkType(base, command.workTypeId, {
+                title: command.title,
+              });
+            case 'toggleWorkTypeParallel':
+              return updateWorkType(base, command.workTypeId, {
+                allowsParallel: command.allowsParallel,
+              });
+            case 'deleteWorkType':
+              return deleteWorkType(base, command.workTypeId);
+          }
+        })();
+        if (!result.ok) {
+          error = result.error;
+          return undefined;
+        }
+        return result.plan;
+      });
+      return error;
+    },
+    [commitPlan],
+  );
 
   // Read-only сводных (B2): строки задач двигаются, сводные полосы
   // определяются дочерними задачами. Специфика обёртки SVAR
@@ -923,6 +992,14 @@ export default function PlanGanttWidget({
             >
               + Группа
             </button>
+            <button
+              type="button"
+              className="plan-gantt__add-button"
+              data-catalogs
+              onClick={openCatalog}
+            >
+              Справочники
+            </button>
             <span className="plan-gantt__count" data-task-count>
               Задач: {plan?.tasks.length ?? 0}
             </span>
@@ -969,6 +1046,13 @@ export default function PlanGanttWidget({
               onSubmit={submitGroupForm}
               onDelete={deleteCurrentGroup}
               onClose={closeGroupEditor}
+            />
+          )}
+          {catalogOpen && plan !== undefined && (
+            <ResourceCatalogDialog
+              plan={plan}
+              applyCommand={applyCatalogCommand}
+              onClose={closeCatalog}
             />
           )}
         </div>

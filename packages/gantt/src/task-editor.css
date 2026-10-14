@@ -151,3 +151,61 @@
   font-size: 12px;
   color: var(--color-text-muted);
 }
+
+/* Редактор справочников PBT-041 (общие стили диалогов task-editor__). */
+
+.plan-gantt .catalog {
+  width: min(600px, calc(100% - 32px));
+}
+
+.plan-gantt .catalog__section-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.plan-gantt .catalog__list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-gantt .catalog__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-gantt .catalog__title {
+  flex: 1;
+  min-width: 120px;
+}
+
+.plan-gantt .catalog__flag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt .catalog__add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.plan-gantt .catalog__add input[type='text'] {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+}
