@@ -14,6 +14,7 @@ export * from './plan-hierarchy';
 export * from './plan-catalogs';
 export * from './plan-assignments';
 export * from './plan-dependencies';
+export * from './plan-conflicts';
 
 export const GANTT_PACKAGE = '@project-board/gantt' as const;
 
