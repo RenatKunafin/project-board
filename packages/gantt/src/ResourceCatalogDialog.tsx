@@ -11,7 +11,21 @@ export type CatalogCommand =
   | { readonly type: 'createWorkType'; readonly title: string; readonly allowsParallel: boolean }
   | { readonly type: 'renameWorkType'; readonly workTypeId: string; readonly title: string }
   | { readonly type: 'toggleWorkTypeParallel'; readonly workTypeId: string; readonly allowsParallel: boolean }
-  | { readonly type: 'deleteWorkType'; readonly workTypeId: string };
+  | { readonly type: 'deleteWorkType'; readonly workTypeId: string }
+  | {
+      readonly type: 'createUnavailability';
+      readonly resourceId: string;
+      readonly start: string;
+      readonly end: string;
+    }
+  | {
+      readonly type: 'updateUnavailability';
+      readonly unavailabilityId: string;
+      readonly resourceId: string;
+      readonly start: string;
+      readonly end: string;
+    }
+  | { readonly type: 'deleteUnavailability'; readonly unavailabilityId: string };
 
 interface ResourceCatalogDialogProps {
   readonly plan: PlanContent;
@@ -46,6 +60,19 @@ export default function ResourceCatalogDialog({
   const [addError, setAddError] = useState<string | null>(null);
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
   const newResourceRef = useRef<HTMLInputElement>(null);
+  // Отпуска (PBT-043): форма добавления и инлайн-редактирование периода.
+  const [newAbsence, setNewAbsence] = useState({
+    resourceId: '',
+    start: '',
+    end: '',
+  });
+  const [editingAbsence, setEditingAbsence] = useState<{
+    id: string;
+    resourceId: string;
+    start: string;
+    end: string;
+  } | null>(null);
+  const [absenceError, setAbsenceError] = useState<string | null>(null);
 
   useEffect(() => {
     newResourceRef.current?.focus();
@@ -114,6 +141,75 @@ export default function ResourceCatalogDialog({
       onClose();
     }
   };
+
+  const validateAbsence = (
+    resourceId: string,
+    start: string,
+    end: string,
+  ): string | null => {
+    if (resourceId === '') {
+      return 'Выберите ресурс.';
+    }
+    if (start === '' || end === '') {
+      return 'Укажите даты отпуска.';
+    }
+    return null;
+  };
+
+  const submitNewAbsence = () => {
+    const problem = validateAbsence(
+      newAbsence.resourceId,
+      newAbsence.start,
+      newAbsence.end,
+    );
+    if (problem !== null) {
+      setAbsenceError(problem);
+      return;
+    }
+    const error = applyCommand({
+      type: 'createUnavailability',
+      resourceId: newAbsence.resourceId,
+      start: newAbsence.start,
+      end: newAbsence.end,
+    });
+    if (error !== undefined) {
+      setAbsenceError(error.message);
+      return;
+    }
+    setNewAbsence({ resourceId: '', start: '', end: '' });
+    setAbsenceError(null);
+  };
+
+  const submitAbsenceEdit = () => {
+    if (editingAbsence === null) {
+      return;
+    }
+    const problem = validateAbsence(
+      editingAbsence.resourceId,
+      editingAbsence.start,
+      editingAbsence.end,
+    );
+    if (problem !== null) {
+      setRowError({ id: editingAbsence.id, message: problem });
+      return;
+    }
+    const error = applyCommand({
+      type: 'updateUnavailability',
+      unavailabilityId: editingAbsence.id,
+      resourceId: editingAbsence.resourceId,
+      start: editingAbsence.start,
+      end: editingAbsence.end,
+    });
+    if (error !== undefined) {
+      setRowError({ id: editingAbsence.id, message: error.message });
+      return;
+    }
+    setEditingAbsence(null);
+    setRowError(null);
+  };
+
+  const absenceTitle = (resourceId: string): string =>
+    plan.resources.find((entry) => entry.id === resourceId)?.title ?? '—';
 
   const handleFieldKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -397,6 +493,173 @@ export default function ResourceCatalogDialog({
                 Добавить
               </button>
             </div>
+          </section>
+          <section aria-label="Отпуска">
+            <h4 className="catalog__section-title">Отпуска</h4>
+            {plan.unavailability.length === 0 && (
+              <p className="task-editor__preview">Периодов недоступности нет.</p>
+            )}
+            <ul className="catalog__list">
+              {plan.unavailability.map((absence) => (
+                <li key={absence.id} className="catalog__row">
+                  {editingAbsence?.id === absence.id ? (
+                    <>
+                      <select
+                        value={editingAbsence.resourceId}
+                        data-absence-edit="resource"
+                        onChange={(event) =>
+                          setEditingAbsence({
+                            ...editingAbsence,
+                            resourceId: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Выберите ресурс</option>
+                        {plan.resources.map((resource) => (
+                          <option key={resource.id} value={resource.id}>
+                            {resource.title}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="date"
+                        value={editingAbsence.start}
+                        data-absence-edit="start"
+                        onChange={(event) =>
+                          setEditingAbsence({
+                            ...editingAbsence,
+                            start: event.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="date"
+                        value={editingAbsence.end}
+                        data-absence-edit="end"
+                        onChange={(event) =>
+                          setEditingAbsence({
+                            ...editingAbsence,
+                            end: event.target.value,
+                          })
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="task-editor__button"
+                        aria-label="Сохранить период"
+                        onClick={submitAbsenceEdit}
+                      >
+                        ✓
+                      </button>
+                      <button
+                        type="button"
+                        className="task-editor__button"
+                        aria-label="Отменить изменение периода"
+                        onClick={() => setEditingAbsence(null)}
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="catalog__title">
+                        {absenceTitle(absence.resourceId)}: {absence.start} —{' '}
+                        {absence.end}
+                      </span>
+                      <button
+                        type="button"
+                        className="task-editor__button"
+                        aria-label="Изменить период"
+                        onClick={() => {
+                          setEditingAbsence({
+                            id: absence.id,
+                            resourceId: absence.resourceId,
+                            start: absence.start,
+                            end: absence.end,
+                          });
+                          setRowError(null);
+                        }}
+                      >
+                        Изменить
+                      </button>
+                      <button
+                        type="button"
+                        className="task-editor__button task-editor__button--danger"
+                        aria-label="Удалить период"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Удалить отпуск «${absenceTitle(absence.resourceId)}: ${absence.start} — ${absence.end}»?`,
+                            )
+                          ) {
+                            applyCommand({
+                              type: 'deleteUnavailability',
+                              unavailabilityId: absence.id,
+                            });
+                            setRowError(null);
+                          }
+                        }}
+                      >
+                        Удалить
+                      </button>
+                    </>
+                  )}
+                  {rowError?.id === absence.id && (
+                    <span className="task-editor__error" role="alert">
+                      {rowError.message}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className="catalog__add">
+              <select
+                value={newAbsence.resourceId}
+                data-absence-new="resource"
+                onChange={(event) =>
+                  setNewAbsence({
+                    ...newAbsence,
+                    resourceId: event.target.value,
+                  })
+                }
+              >
+                <option value="">Выберите ресурс</option>
+                {plan.resources.map((resource) => (
+                  <option key={resource.id} value={resource.id}>
+                    {resource.title}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={newAbsence.start}
+                data-absence-new="start"
+                onChange={(event) =>
+                  setNewAbsence({ ...newAbsence, start: event.target.value })
+                }
+              />
+              <input
+                type="date"
+                value={newAbsence.end}
+                data-absence-new="end"
+                onChange={(event) =>
+                  setNewAbsence({ ...newAbsence, end: event.target.value })
+                }
+              />
+              <button
+                type="button"
+                className="task-editor__button"
+                data-absence-add
+                onClick={submitNewAbsence}
+              >
+                Добавить
+              </button>
+            </div>
+            {absenceError !== null && (
+              <p className="task-editor__error" role="alert" data-absence-error>
+                {absenceError}
+              </p>
+            )}
           </section>
           {addError !== null && (
             <p className="task-editor__error" role="alert" data-catalog-error>

@@ -22,6 +22,11 @@ import {
   updateResource,
   updateWorkType,
 } from './plan-catalogs';
+import {
+  createUnavailability,
+  deleteUnavailability,
+  updateUnavailability,
+} from './plan-assignments';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm, type TaskFormIssue } from './task-editor';
@@ -383,6 +388,20 @@ export default function PlanGanttWidget({
               });
             case 'deleteWorkType':
               return deleteWorkType(base, command.workTypeId);
+            case 'createUnavailability':
+              return createUnavailability(base, {
+                resourceId: command.resourceId,
+                start: command.start,
+                end: command.end,
+              });
+            case 'updateUnavailability':
+              return updateUnavailability(base, command.unavailabilityId, {
+                resourceId: command.resourceId,
+                start: command.start,
+                end: command.end,
+              });
+            case 'deleteUnavailability':
+              return deleteUnavailability(base, command.unavailabilityId);
           }
         })();
         if (!result.ok) {

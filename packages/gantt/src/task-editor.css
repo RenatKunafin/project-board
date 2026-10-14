@@ -217,12 +217,19 @@
   margin-bottom: 8px;
 }
 
-.plan-gantt .catalog__add input[type='text'] {
-  flex: 1;
+.plan-gantt .catalog__add input[type='text'],
+.plan-gantt .catalog__add input[type='date'],
+.plan-gantt .catalog__add select,
+.plan-gantt .catalog__row select,
+.plan-gantt .catalog__row input[type='date'] {
   padding: 6px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: inherit;
   font: inherit;
+}
+
+.plan-gantt .catalog__add input[type='text'] {
+  flex: 1;
 }
