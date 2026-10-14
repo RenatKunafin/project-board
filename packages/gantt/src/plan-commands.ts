@@ -3,7 +3,21 @@ import type {
   GroupCreateInput,
   GroupUpdatePatch,
 } from './plan-hierarchy';
+import type {
+  ResourceCreateInput,
+  ResourceUpdatePatch,
+  WorkTypeCreateInput,
+  WorkTypeUpdatePatch,
+} from './plan-catalogs';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
+import {
+  createResource,
+  createWorkType,
+  deleteResource,
+  deleteWorkType,
+  updateResource,
+  updateWorkType,
+} from './plan-catalogs';
 import {
   addCalendarDays,
   calendarDaySpan,
@@ -18,6 +32,7 @@ export type PlanCommandErrorCode =
   | 'unknown-work-type'
   | 'inverted-interval'
   | 'invalid-duration'
+  | 'invalid-title'
   | 'circular-group';
 
 export interface PlanCommandError {
@@ -72,7 +87,21 @@ export type PlanCommand =
       readonly groupId: string;
       readonly patch: GroupUpdatePatch;
     }
-  | { readonly type: 'deleteGroup'; readonly groupId: string };
+  | { readonly type: 'deleteGroup'; readonly groupId: string }
+  | { readonly type: 'createResource'; readonly input: ResourceCreateInput }
+  | {
+      readonly type: 'updateResource';
+      readonly resourceId: string;
+      readonly patch: ResourceUpdatePatch;
+    }
+  | { readonly type: 'deleteResource'; readonly resourceId: string }
+  | { readonly type: 'createWorkType'; readonly input: WorkTypeCreateInput }
+  | {
+      readonly type: 'updateWorkType';
+      readonly workTypeId: string;
+      readonly patch: WorkTypeUpdatePatch;
+    }
+  | { readonly type: 'deleteWorkType'; readonly workTypeId: string };
 
 function fail(
   code: PlanCommandErrorCode,
@@ -346,5 +375,17 @@ export function applyPlanCommand(
       return updateGroup(plan, command.groupId, command.patch);
     case 'deleteGroup':
       return deleteGroup(plan, command.groupId);
+    case 'createResource':
+      return createResource(plan, command.input);
+    case 'updateResource':
+      return updateResource(plan, command.resourceId, command.patch);
+    case 'deleteResource':
+      return deleteResource(plan, command.resourceId);
+    case 'createWorkType':
+      return createWorkType(plan, command.input);
+    case 'updateWorkType':
+      return updateWorkType(plan, command.workTypeId, command.patch);
+    case 'deleteWorkType':
+      return deleteWorkType(plan, command.workTypeId);
   }
 }
