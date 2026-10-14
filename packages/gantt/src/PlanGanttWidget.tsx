@@ -19,14 +19,21 @@ import {
   setTaskDates,
   updateTask,
 } from './plan-commands';
+import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm } from './task-editor';
+import type { GroupFormIssue } from './group-editor';
 import TaskEditorDialog, { type TaskEditorSubmit } from './TaskEditorDialog';
+import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import './gantt.css';
 
 type EditorState =
   | { readonly mode: 'create' }
   | { readonly mode: 'edit'; readonly taskId: string };
+
+type GroupEditorState =
+  | { readonly mode: 'group-create' }
+  | { readonly mode: 'group-edit'; readonly groupId: string };
 
 /**
  * Перехватчики вешаются один раз на экземпляр api: React StrictMode
@@ -75,6 +82,20 @@ export default function PlanGanttWidget({
   const [editor, setEditor] = useState<EditorState | undefined>(undefined);
   const focusAnchorRef = useRef<HTMLElement | null>(null);
 
+  // Форма группы (PBT-040) — тот же механизм фокуса возврата.
+  const [groupEditor, setGroupEditor] = useState<GroupEditorState | undefined>(
+    undefined,
+  );
+
+  // Сворачивание групп — состояние экземпляра (B4): множество свёрнутых
+  // id в памяти виджета, переживает remount чарта по ревизии, в документ
+  // не попадает. Слушается перехватчиком open-task (design D4).
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    ReadonlySet<string>
+  >(new Set());
+  const collapsedRef = useRef(collapsedGroups);
+  collapsedRef.current = collapsedGroups;
+
   const openEditor = useCallback((next: EditorState) => {
     focusAnchorRef.current =
       window.document.activeElement instanceof HTMLElement
@@ -83,8 +104,22 @@ export default function PlanGanttWidget({
     setEditor(next);
   }, []);
 
+  const openGroupEditor = useCallback((next: GroupEditorState) => {
+    focusAnchorRef.current =
+      window.document.activeElement instanceof HTMLElement
+        ? window.document.activeElement
+        : null;
+    setGroupEditor(next);
+  }, []);
+
   const closeEditor = useCallback(() => {
     setEditor(undefined);
+    focusAnchorRef.current?.focus();
+    focusAnchorRef.current = null;
+  }, []);
+
+  const closeGroupEditor = useCallback(() => {
+    setGroupEditor(undefined);
     focusAnchorRef.current?.focus();
     focusAnchorRef.current = null;
   }, []);
@@ -192,6 +227,67 @@ export default function PlanGanttWidget({
     closeEditor();
   }, [editor, commitPlan, closeEditor]);
 
+  // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
+  // Клиентскую валидацию выполняет форма; ошибка ядра (circular-group
+  // и т.п.) возвращается форме — показывается под полем родителя.
+  const submitGroupForm = useCallback(
+    (submit: GroupEditorSubmit): GroupFormIssue | undefined => {
+      const current = planRef.current;
+      if (current === undefined) {
+        return undefined;
+      }
+      const input = {
+        title: submit.title,
+        ...(submit.parentId === '' ? {} : { parentId: submit.parentId }),
+      };
+      const editingGroupId =
+        groupEditor?.mode === 'group-edit' ? groupEditor.groupId : undefined;
+      let coreError: GroupFormIssue | undefined;
+      commitPlan((latest) => {
+        const validationNow = parsePlanContent(latest.content);
+        if (!validationNow.ok) {
+          return undefined;
+        }
+        const base = validationNow.plan;
+        const result =
+          editingGroupId === undefined
+            ? createGroup(base, input)
+            : updateGroup(base, editingGroupId, {
+                title: input.title,
+                parentId:
+                  submit.parentId === '' ? undefined : submit.parentId,
+              });
+        if (!result.ok) {
+          coreError = { field: 'parent', message: result.error.message };
+          return undefined;
+        }
+        return result.plan;
+      });
+      if (coreError !== undefined) {
+        return coreError;
+      }
+      closeGroupEditor();
+      return undefined;
+    },
+    [groupEditor, commitPlan, closeGroupEditor],
+  );
+
+  const deleteCurrentGroup = useCallback(() => {
+    if (groupEditor?.mode !== 'group-edit') {
+      return;
+    }
+    const groupId = groupEditor.groupId;
+    commitPlan((latest) => {
+      const validationNow = parsePlanContent(latest.content);
+      if (!validationNow.ok) {
+        return undefined;
+      }
+      const removed = deleteGroup(validationNow.plan, groupId);
+      return removed.ok ? removed.plan : undefined;
+    });
+    closeGroupEditor();
+  }, [groupEditor, commitPlan, closeGroupEditor]);
+
   // Read-only сводных (B2): строки задач двигаются, сводные полосы
   // определяются дочерними задачами. Специфика обёртки SVAR
   // (прод-сборка, PBT-037): при первом эффекте вызывается пользовательский
@@ -215,7 +311,6 @@ export default function PlanGanttWidget({
     // Сводные полосы не двигаются (B2, design D3): задача документа
     // перетаскивается, строка группы — нет.
     instance.intercept('drag-task', (event: unknown) => {
-      console.info('[pbt039dbg] drag-task ev', JSON.stringify(event));
       const rawId = (event as { id?: unknown } | undefined)?.id;
       if (typeof rawId !== 'string') {
         return false;
@@ -230,9 +325,30 @@ export default function PlanGanttWidget({
       }
       return planNow.tasks.some((task) => task.id === rowId);
     });
+    // Сворачивание/раскрытие — состояние экземпляра (B4, design D4):
+    // стор применяет действие сам, наблюдатель запоминает свёрнутые
+    // группы для восстановления при пересборке представления.
+    instance.intercept('open-task', (event: unknown) => {
+      const { id, mode } = (event as { id?: unknown; mode?: unknown }) ?? {};
+      if (typeof id !== 'string') {
+        return undefined;
+      }
+      const rowId = id.startsWith(':') ? id.slice(1) : id;
+      setCollapsedGroups((previous) => {
+        const next = new Set(previous);
+        if (mode === false) {
+          next.add(rowId);
+        } else {
+          next.delete(rowId);
+        }
+        return next;
+      });
+      return undefined;
+    });
   }, []);
 
-  // Двойной клик по строке задачи открывает форму редактирования.
+  // Двойной клик по строке открывает форму: задачи — редактирование
+  // задачи (PBT-038), группы — редактирование группы (PBT-040).
   // SVAR помечает строки data-id с префиксом «:» (:t-… задачи, :g-… группы).
   const onChartDoubleClick = useCallback(
     (event: React.MouseEvent) => {
@@ -245,9 +361,13 @@ export default function PlanGanttWidget({
       }
       if (planRef.current.tasks.some((task) => task.id === rowId)) {
         openEditor({ mode: 'edit', taskId: rowId });
+        return;
+      }
+      if (planRef.current.groups.some((group) => group.id === rowId)) {
+        openGroupEditor({ mode: 'group-edit', groupId: rowId });
       }
     },
-    [openEditor],
+    [openEditor, openGroupEditor],
   );
 
   // ─── Жесты drag/resize (ADR-5, PBT-039) ────────────────────────────────
@@ -390,8 +510,11 @@ export default function PlanGanttWidget({
   }, [commitGesture]);
 
   const tasks = useMemo(
-    () => (plan ? planToGanttTasks(plan) : []),
-    [plan],
+    // Раскрытие групп — состояние экземпляра (B4): свёрнутые группы
+    // передаются адаптеру (open: false), при пересборке представления
+    // после записи документа раскрытие не сбрасывается.
+    () => (plan ? planToGanttTasks(plan, collapsedGroups) : []),
+    [plan, collapsedGroups],
   );
   const links = useMemo(
     () => (plan ? planToGanttLinks(plan) : []),
@@ -523,6 +646,14 @@ export default function PlanGanttWidget({
             >
               + Задача
             </button>
+            <button
+              type="button"
+              className="plan-gantt__add-button"
+              data-add-group
+              onClick={() => openGroupEditor({ mode: 'group-create' })}
+            >
+              + Группа
+            </button>
             <span className="plan-gantt__count" data-task-count>
               Задач: {plan?.tasks.length ?? 0}
             </span>
@@ -552,6 +683,20 @@ export default function PlanGanttWidget({
               onSubmit={submitTaskForm}
               onDelete={deleteCurrentTask}
               onClose={closeEditor}
+            />
+          )}
+          {groupEditor !== undefined && plan !== undefined && (
+            <GroupEditorDialog
+              plan={plan}
+              mode={groupEditor.mode === 'group-create' ? 'create' : 'edit'}
+              group={
+                groupEditor.mode === 'group-edit'
+                  ? plan.groups.find((group) => group.id === groupEditor.groupId)
+                  : undefined
+              }
+              onSubmit={submitGroupForm}
+              onDelete={deleteCurrentGroup}
+              onClose={closeGroupEditor}
             />
           )}
         </div>
