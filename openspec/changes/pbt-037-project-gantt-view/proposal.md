@@ -36,6 +36,7 @@
 ## Impact
 
 - Новые файлы: `packages/gantt/src/svar-adapter.ts`, `packages/gantt/src/svar-adapter.test.ts`, `packages/gantt/src/PlanGanttWidget.tsx`, `packages/gantt/src/gantt.css` (только var()-токены), e2e `tests/e2e/plan-gantt.spec.ts`.
-- Изменённые: `packages/gantt/src/index.ts` (экспорт, замена заглушки), `packages/gantt/package.json` (+`@svar-ui/react-gantt@2.8.0`), контрольный фикстурный файл переносится в тесты пакета; заглушка `PlanPlaceholderWidget` удаляется.
+- Изменённые: `packages/gantt/src/index.ts` (экспорт, замена заглушки), `packages/gantt/package.json` (+`@svar-ui/react-gantt@2.8.0`), `apps/project-board/src/index.css` (токены `--color-gantt-weekend` / `--color-gantt-holiday`, удаление мёртвых стилей заглушки), `apps/project-board/src/main.tsx` (dev-хук `__projectBoard.writeDocumentContent` — контрольные данные e2e без формы редактирования), `apps/project-board/src/App.tsx` (`data-document-id` на панели — источник documentId для e2e), `tests/e2e/plan.spec.ts` (ожидания заглушки → чарта), контрольный фикстурный переносится в тесты пакета; заглушка `PlanPlaceholderWidget` удаляется.
 - `tests/fixtures/gantt/small-plan.json` (PBT-012) — golden-источник unit-тестов адаптера (перенос стал тривиальным — design D1 PBT-030).
+- Внимание к процессу: e2e гоняется на прод-сборке (`npm run preview`), поэтому перед `test:browser` обязателен `npm run build` — иначе тесты проверяют устаревшую сборку (здесь это маскировало отсутствие данных).
 - Разблокирует: PBT-038 (форма поверх этого представления), PBT-039 (drag по стратегии ADR-5), PBT-040 (дерево групп).

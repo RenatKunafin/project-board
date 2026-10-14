@@ -17,8 +17,12 @@ test('план создаётся через каталог, переживае�
 
   const pane = page.getByRole('group', { name: 'План · ОКАД' });
   await expect(pane).toBeVisible();
-  await expect(pane.getByText('ОКАД')).toBeVisible();
-  await expect(pane.getByText('Задачи: 0')).toBeVisible();
+  // План открывается в представлении Гантта (PBT-037).
+  await expect(pane.locator('.plan-gantt__chart')).toBeVisible();
+  await expect(pane.locator('[data-plan-title]')).toHaveAttribute(
+    'data-plan-title',
+    'ОКАД',
+  );
 
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
@@ -38,7 +42,7 @@ test('план создаётся через каталог, переживае�
   // Перезагрузка восстанавливает сохранённое окно плана (PBT-024),
   // открытие из каталога добавляет второе представление того же документа.
   await expect(restored).toHaveCount(2);
-  await expect(restored.first().getByText('ОКАД', { exact: true })).toBeVisible();
+  await expect(restored.first().locator('.plan-gantt__chart')).toBeVisible();
 });
 
 test('второе представление существующего плана показывает тот же документ', async ({
@@ -71,6 +75,6 @@ test('второе представление существующего пла�
 
   const panes = page.getByRole('group', { name: 'План · Ремонт' });
   await expect(panes).toHaveCount(2);
-  await expect(panes.first().getByText('Задачи: 0')).toBeVisible();
-  await expect(panes.nth(1).getByText('Задачи: 0')).toBeVisible();
+  await expect(panes.first().locator('.plan-gantt__chart')).toBeVisible();
+  await expect(panes.nth(1).locator('.plan-gantt__chart')).toBeVisible();
 });
