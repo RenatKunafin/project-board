@@ -48,7 +48,7 @@ test('создание QA и QA2, переименование, удаление
   page.on('dialog', (dialog) => void dialog.accept());
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
-  const documentId = await createPlan(page, 'Справочники');
+  await createPlan(page, 'Справочники');
   const dialog = await openCatalog(page, 'Справочники');
 
   await dialog.locator('[data-catalog-new="resource"]').fill('QA');

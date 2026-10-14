@@ -268,6 +268,15 @@ export function createTask(
   return { ok: true, plan: { ...plan, tasks: [...plan.tasks, task] } };
 }
 
+function withoutField<K extends keyof PlanTask>(
+  task: PlanTask,
+  field: K,
+): PlanTask {
+  const copy = { ...task };
+  delete (copy as Record<string, unknown>)[field as string];
+  return copy;
+}
+
 function withoutGroup(task: PlanTask): PlanTask {
   return {
     id: task.id,
@@ -297,13 +306,21 @@ export function updateTask(
   let nextTask: PlanTask = {
     ...task,
     ...(patch.title !== undefined ? { title: patch.title } : {}),
-    ...(patch.assigneeIds !== undefined
-      ? { assigneeIds: [...patch.assigneeIds] }
-      : {}),
-    ...(patch.workTypeIds !== undefined
-      ? { workTypeIds: [...patch.workTypeIds] }
-      : {}),
   };
+  // Контракт PBT-034 «опустевший массив убирается»: пустое множество
+  // в патче снимает все назначения (поле отсутствует), не-пустое — заменяет.
+  if (patch.assigneeIds !== undefined) {
+    nextTask =
+      patch.assigneeIds.length > 0
+        ? { ...nextTask, assigneeIds: [...patch.assigneeIds] }
+        : withoutField(nextTask, 'assigneeIds');
+  }
+  if (patch.workTypeIds !== undefined) {
+    nextTask =
+      patch.workTypeIds.length > 0
+        ? { ...nextTask, workTypeIds: [...patch.workTypeIds] }
+        : withoutField(nextTask, 'workTypeIds');
+  }
   if ('groupId' in patch) {
     nextTask =
       patch.groupId !== undefined

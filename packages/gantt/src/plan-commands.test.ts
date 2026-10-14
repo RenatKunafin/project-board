@@ -113,17 +113,28 @@ describe('createTask', () => {
 });
 
 describe('updateTask', () => {
-  it('патч заменяет присутствующие поля, id и даты не меняются', () => {
+  it('пустое множество в патче снимает все назначения (поле убирается, контракт PBT-034)', () => {
     const plan = buildPlan();
     const next = expectOk(
       updateTask(plan, 't-a', { title: 'Анализ 2', assigneeIds: [] }),
     );
     const task = next.tasks.find((entry) => entry.id === 't-a');
     expect(task?.title).toBe('Анализ 2');
-    expect(task?.assigneeIds).toEqual([]);
+    expect(task?.assigneeIds).toBeUndefined();
+    expect(task?.workTypeIds).toEqual(['wt-dev']);
     expect(task?.id).toBe('t-a');
     expect(task?.start).toBe('2026-10-12');
     expect(task?.end).toBe('2026-10-16');
+  });
+
+  it('непустое множество в патче заменяет назначения целиком', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateTask(plan, 't-a', { workTypeIds: ['wt-psi'] }),
+    );
+    const task = next.tasks.find((entry) => entry.id === 't-a');
+    expect(task?.workTypeIds).toEqual(['wt-psi']);
+    expect(task?.assigneeIds).toEqual(['r-qa']);
   });
 
   it('отсутствующие свойства патча не меняют поля', () => {

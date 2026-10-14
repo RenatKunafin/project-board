@@ -95,6 +95,23 @@
   color: var(--color-text-muted);
 }
 
+/* Назначения задачи PBT-042: чекбоксы справочников. */
+
+.plan-gantt .task-editor__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 96px;
+  overflow: auto;
+}
+
+.plan-gantt .task-editor__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
 .plan-gantt .task-editor__foot {
   display: flex;
   align-items: center;

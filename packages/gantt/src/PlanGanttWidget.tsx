@@ -24,7 +24,7 @@ import {
 } from './plan-catalogs';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
-import { buildTaskDates, validateTaskForm } from './task-editor';
+import { buildTaskDates, validateTaskForm, type TaskFormIssue } from './task-editor';
 import type { GroupFormIssue } from './group-editor';
 import TaskEditorDialog, { type TaskEditorSubmit } from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
@@ -192,10 +192,10 @@ export default function PlanGanttWidget({
   );
 
   const submitTaskForm = useCallback(
-    (submit: TaskEditorSubmit) => {
+    (submit: TaskEditorSubmit): TaskFormIssue | undefined => {
       const current = planRef.current;
       if (current === undefined) {
-        return;
+        return undefined;
       }
       const input = {
         title: submit.title,
@@ -205,44 +205,67 @@ export default function PlanGanttWidget({
       };
       const issue = validateTaskForm(input, current);
       if (issue !== undefined) {
-        return;
+        return issue;
       }
       const dates = buildTaskDates(input, current);
       const currentTask =
         editor?.mode === 'edit'
           ? current.tasks.find((task) => task.id === editor.taskId)
           : undefined;
+      let coreError: TaskFormIssue | undefined;
       commitPlan((latest) => {
         const validationNow = parsePlanContent(latest.content);
         if (!validationNow.ok) {
           return undefined;
         }
         const base = validationNow.plan;
-        if (currentTask === undefined) {
-          const created = createTask(base, {
+        // Назначения (PBT-042): пустое множество снимает все (поле убирается).
+        const assignments = {
+          ...(submit.assigneeIds.length > 0
+            ? { assigneeIds: submit.assigneeIds }
+            : { assigneeIds: [] as readonly string[] }),
+          ...(submit.workTypeIds.length > 0
+            ? { workTypeIds: submit.workTypeIds }
+            : { workTypeIds: [] as readonly string[] }),
+        };
+        const result = ((): PlanCommandResult => {
+          if (currentTask === undefined) {
+            return createTask(base, {
+              title: input.title,
+              start: dates.start,
+              end: dates.end,
+              ...(input.groupId === undefined
+                ? {}
+                : { groupId: input.groupId }),
+              ...assignments,
+            });
+          }
+          const updated = updateTask(base, currentTask.id, {
             title: input.title,
+            ...(input.groupId === undefined
+              ? { groupId: undefined }
+              : { groupId: input.groupId }),
+            ...assignments,
+          });
+          if (!updated.ok) {
+            return updated;
+          }
+          return setTaskDates(updated.plan, currentTask.id, {
             start: dates.start,
             end: dates.end,
-            ...(input.groupId === undefined ? {} : { groupId: input.groupId }),
           });
-          return created.ok ? created.plan : undefined;
-        }
-        const updated = updateTask(base, currentTask.id, {
-          title: input.title,
-          ...(input.groupId === undefined
-            ? { groupId: undefined }
-            : { groupId: input.groupId }),
-        });
-        if (!updated.ok) {
+        })();
+        if (!result.ok) {
+          coreError = { field: 'assignments', message: result.error.message };
           return undefined;
         }
-        const dated = setTaskDates(updated.plan, currentTask.id, {
-          start: dates.start,
-          end: dates.end,
-        });
-        return dated.ok ? dated.plan : undefined;
+        return result.plan;
       });
+      if (coreError !== undefined) {
+        return coreError;
+      }
       closeEditor();
+      return undefined;
     },
     [editor, commitPlan, closeEditor],
   );
@@ -899,6 +922,56 @@ export default function PlanGanttWidget({
         header: 'Раб. дни',
         width: 80,
         cell: ({ row }) => workingDaysCell(String(row.id)),
+      },
+      {
+        id: 'assignees',
+        header: 'Исполнители',
+        width: 130,
+        cell: ({ row }) => {
+          const current = planRef.current;
+          if (!current) {
+            return null;
+          }
+          const rowId = String(row.id);
+          const task = current.tasks.find((entry) => entry.id === rowId);
+          if (task === undefined) {
+            return null;
+          }
+          if (task.assigneeIds === undefined || task.assigneeIds.length === 0) {
+            return '—';
+          }
+          return task.assigneeIds
+            .map(
+              (id) =>
+                current.resources.find((entry) => entry.id === id)?.title ?? '—',
+            )
+            .join(', ');
+        },
+      },
+      {
+        id: 'work-types',
+        header: 'Типы',
+        width: 110,
+        cell: ({ row }) => {
+          const current = planRef.current;
+          if (!current) {
+            return null;
+          }
+          const rowId = String(row.id);
+          const task = current.tasks.find((entry) => entry.id === rowId);
+          if (task === undefined || task.workTypeIds === undefined) {
+            return null;
+          }
+          if (task.workTypeIds.length === 0) {
+            return '—';
+          }
+          return task.workTypeIds
+            .map(
+              (id) =>
+                current.workTypes.find((entry) => entry.id === id)?.title ?? '—',
+            )
+            .join(', ');
+        },
       },
     ];
     // Своя запись жеста не меняет колонки: SVAR перерисовывает ячейку

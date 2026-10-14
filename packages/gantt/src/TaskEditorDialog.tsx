@@ -13,13 +13,16 @@ export interface TaskEditorSubmit {
   readonly groupId?: string;
   readonly start: string;
   readonly durationDays: number;
+  readonly assigneeIds: readonly string[];
+  readonly workTypeIds: readonly string[];
 }
 
 interface TaskEditorDialogProps {
   readonly plan: PlanContent;
   readonly mode: 'create' | 'edit';
   readonly task?: PlanTask;
-  readonly onSubmit: (submit: TaskEditorSubmit) => void;
+  /** Возвращает ошибку ядра (например, назначение несуществующей записи) — форма остаётся открытой. */
+  readonly onSubmit: (submit: TaskEditorSubmit) => TaskFormIssue | undefined;
   readonly onDelete?: () => void;
   readonly onClose: () => void;
 }
@@ -45,6 +48,19 @@ export default function TaskEditorDialog({
   );
   const [issue, setIssue] = useState<TaskFormIssue | undefined>();
   const titleRef = useRef<HTMLInputElement>(null);
+  // Назначения (PBT-042): множества id из справочников текущего плана.
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task?.assigneeIds ? [...task.assigneeIds] : [],
+  );
+  const [workTypeIds, setWorkTypeIds] = useState<string[]>(
+    task?.workTypeIds ? [...task.workTypeIds] : [],
+  );
+
+  const toggleId = (list: string[], setList: (next: string[]) => void, id: string) => {
+    setList(
+      list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id],
+    );
+  };
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -77,8 +93,16 @@ export default function TaskEditorDialog({
       setIssue(validation);
       return;
     }
+    const coreIssue = onSubmit({
+      ...input,
+      assigneeIds,
+      workTypeIds,
+    });
+    if (coreIssue !== undefined) {
+      setIssue(coreIssue);
+      return;
+    }
     setIssue(undefined);
-    onSubmit(input);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -158,6 +182,56 @@ export default function TaskEditorDialog({
               </span>
             )}
           </label>
+          <div className="task-editor__row">
+            <label className="task-editor__field">
+              <span className="task-editor__label">Исполнители</span>
+              {plan.resources.length === 0 ? (
+                <span className="task-editor__preview">
+                  Справочник пуст — добавьте в «Справочниках».
+                </span>
+              ) : (
+                <div className="task-editor__checks" data-task-assignees>
+                  {plan.resources.map((resource) => (
+                    <label key={resource.id} className="task-editor__check">
+                      <input
+                        type="checkbox"
+                        checked={assigneeIds.includes(resource.id)}
+                        data-task-assignee={resource.title}
+                        onChange={() =>
+                          toggleId(assigneeIds, setAssigneeIds, resource.id)
+                        }
+                      />
+                      {resource.title}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </label>
+            <label className="task-editor__field">
+              <span className="task-editor__label">Типы работы</span>
+              {plan.workTypes.length === 0 ? (
+                <span className="task-editor__preview">
+                  Справочник пуст — добавьте в «Справочниках».
+                </span>
+              ) : (
+                <div className="task-editor__checks" data-task-worktypes>
+                  {plan.workTypes.map((workType) => (
+                    <label key={workType.id} className="task-editor__check">
+                      <input
+                        type="checkbox"
+                        checked={workTypeIds.includes(workType.id)}
+                        data-task-worktype={workType.title}
+                        onChange={() =>
+                          toggleId(workTypeIds, setWorkTypeIds, workType.id)
+                        }
+                      />
+                      {workType.title}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </label>
+          </div>
           <div className="task-editor__row">
             <label className="task-editor__field">
               <span className="task-editor__label">Дата начала</span>
