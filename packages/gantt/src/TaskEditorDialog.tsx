@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PlanContent, PlanTask } from './plan-document';
+import type { PlanCommandError } from './plan-commands';
+import type { PlanContent, PlanDependency, PlanTask } from './plan-document';
 import { createWorkingCalendar } from './working-calendar';
 import {
   buildTaskDates,
@@ -17,12 +18,31 @@ export interface TaskEditorSubmit {
   readonly workTypeIds: readonly string[];
 }
 
+/** Команды редактора зависимостей (PBT-045) — родитель исполняет ядром. */
+export type DependencyCommand =
+  | {
+      readonly type: 'createDependency';
+      readonly fromTaskId: string;
+      readonly toTaskId: string;
+      readonly lagDays: number;
+    }
+  | {
+      readonly type: 'updateDependencyLag';
+      readonly dependencyId: string;
+      readonly lagDays: number;
+    }
+  | { readonly type: 'deleteDependency'; readonly dependencyId: string };
+
 interface TaskEditorDialogProps {
   readonly plan: PlanContent;
   readonly mode: 'create' | 'edit';
   readonly task?: PlanTask;
   /** Возвращает ошибку ядра (например, назначение несуществующей записи) — форма остаётся открытой. */
   readonly onSubmit: (submit: TaskEditorSubmit) => TaskFormIssue | undefined;
+  /** Команды зависимостей исполняются немедленно; ошибка — по месту. */
+  readonly applyDependencyCommand?: (
+    command: DependencyCommand,
+  ) => PlanCommandError | undefined;
   readonly onDelete?: () => void;
   readonly onClose: () => void;
 }
@@ -37,6 +57,7 @@ export default function TaskEditorDialog({
   mode,
   task,
   onSubmit,
+  applyDependencyCommand,
   onDelete,
   onClose,
 }: TaskEditorDialogProps) {
@@ -60,6 +81,77 @@ export default function TaskEditorDialog({
     setList(
       list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id],
     );
+  };
+
+  // Предшественники (PBT-045): инлайн-лаг, добавление, удаление.
+  const predecessors: readonly PlanDependency[] =
+    task !== undefined
+      ? plan.dependencies.filter((entry) => entry.toTaskId === task.id)
+      : [];
+  const [editingDep, setEditingDep] = useState<{
+    id: string;
+    lag: string;
+  } | null>(null);
+  const [depError, setDepError] = useState<string | null>(null);
+  const [newDepFrom, setNewDepFrom] = useState('');
+  const [newDepLag, setNewDepLag] = useState('0');
+
+  const depLagValid = (lag: string): number | null => {
+    const value = Number(lag);
+    if (lag === '' || !Number.isInteger(value) || value < 0) {
+      return null;
+    }
+    return value;
+  };
+
+  const submitNewDependency = () => {
+    if (task === undefined || applyDependencyCommand === undefined) {
+      return;
+    }
+    if (newDepFrom === '') {
+      setDepError('Выберите задачу-предшественника.');
+      return;
+    }
+    const lag = depLagValid(newDepLag);
+    if (lag === null) {
+      setDepError('Лаг — целое число рабочих дней не меньше нуля.');
+      return;
+    }
+    const error = applyDependencyCommand({
+      type: 'createDependency',
+      fromTaskId: newDepFrom,
+      toTaskId: task.id,
+      lagDays: lag,
+    });
+    if (error !== undefined) {
+      setDepError(error.message);
+      return;
+    }
+    setNewDepFrom('');
+    setNewDepLag('0');
+    setDepError(null);
+  };
+
+  const submitDepLag = () => {
+    if (editingDep === null || applyDependencyCommand === undefined) {
+      return;
+    }
+    const lag = depLagValid(editingDep.lag);
+    if (lag === null) {
+      setDepError('Лаг — целое число рабочих дней не меньше нуля.');
+      return;
+    }
+    const error = applyDependencyCommand({
+      type: 'updateDependencyLag',
+      dependencyId: editingDep.id,
+      lagDays: lag,
+    });
+    if (error !== undefined) {
+      setDepError(error.message);
+      return;
+    }
+    setEditingDep(null);
+    setDepError(null);
   };
 
   useEffect(() => {
@@ -113,6 +205,21 @@ export default function TaskEditorDialog({
   };
 
   // Enter в поле ввода — подтверждение формы (дизайн D4); Esc — отмена.
+  // Инпут лага предшественника: Enter — сохранить, Esc — отмена редактирования.
+  const handleDepInputKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      submitDepLag();
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setEditingDep(null);
+      setDepError(null);
+    }
+  };
+
   const handleFieldKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -232,6 +339,134 @@ export default function TaskEditorDialog({
               )}
             </label>
           </div>
+          {mode === 'edit' && task !== undefined && (
+            <div className="task-editor__field">
+              <span className="task-editor__label">Предшественники (FS)</span>
+              {predecessors.length === 0 && (
+                <span className="task-editor__preview">Нет предшественников.</span>
+              )}
+              <ul className="catalog__list" data-dep-list>
+                {predecessors.map((dependency) => {
+                  const from = plan.tasks.find(
+                    (entry) => entry.id === dependency.fromTaskId,
+                  );
+                  return (
+                    <li key={dependency.id} className="catalog__row">
+                      {editingDep?.id === dependency.id ? (
+                        <>
+                          <span className="catalog__title">
+                            {from?.title ?? '—'}
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={editingDep.lag}
+                            data-dep-lag-input
+                            onKeyDown={handleDepInputKeyDown}
+                            onChange={(event) =>
+                              setEditingDep({
+                                ...editingDep,
+                                lag: event.target.value,
+                              })
+                            }
+                          />
+                          <span className="task-editor__label">дн.</span>
+                          <button
+                            type="button"
+                            className="task-editor__button"
+                            aria-label="Сохранить лаг"
+                            onClick={submitDepLag}
+                          >
+                            ✓
+                          </button>
+                          <button
+                            type="button"
+                            className="task-editor__button"
+                            aria-label="Отменить изменение лага"
+                            onClick={() => setEditingDep(null)}
+                          >
+                            ×
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="catalog__title">
+                            {from?.title ?? '—'} · лаг {dependency.lagDays} дн.
+                          </span>
+                          <button
+                            type="button"
+                            className="task-editor__button"
+                            aria-label="Изменить лаг"
+                            onClick={() => {
+                              setEditingDep({
+                                id: dependency.id,
+                                lag: String(dependency.lagDays),
+                              });
+                              setDepError(null);
+                            }}
+                          >
+                            Изменить
+                          </button>
+                          <button
+                            type="button"
+                            className="task-editor__button task-editor__button--danger"
+                            aria-label={`Удалить связь от ${from?.title ?? ''}`}
+                            onClick={() => {
+                              applyDependencyCommand?.({
+                                type: 'deleteDependency',
+                                dependencyId: dependency.id,
+                              });
+                              setDepError(null);
+                            }}
+                          >
+                            Удалить
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="catalog__add">
+                <select
+                  value={newDepFrom}
+                  data-dep-new-from
+                  onChange={(event) => setNewDepFrom(event.target.value)}
+                >
+                  <option value="">Задача-предшественник</option>
+                  {plan.tasks.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.title}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={newDepLag}
+                  data-dep-new-lag
+                  title="Лаг, рабочих дней"
+                  onChange={(event) => setNewDepLag(event.target.value)}
+                />
+                <span className="task-editor__label">дн.</span>
+                <button
+                  type="button"
+                  className="task-editor__button"
+                  data-dep-add
+                  onClick={submitNewDependency}
+                >
+                  Добавить
+                </button>
+              </div>
+              {depError !== null && (
+                <p className="task-editor__error" role="alert" data-dep-error>
+                  {depError}
+                </p>
+              )}
+            </div>
+          )}
           <div className="task-editor__row">
             <label className="task-editor__field">
               <span className="task-editor__label">Дата начала</span>

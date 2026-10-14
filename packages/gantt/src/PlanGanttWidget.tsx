@@ -27,12 +27,20 @@ import {
   deleteUnavailability,
   updateUnavailability,
 } from './plan-assignments';
+import {
+  createDependency,
+  deleteDependency,
+  updateDependency,
+} from './plan-dependencies';
 import { updateCalendar } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm, type TaskFormIssue } from './task-editor';
 import type { GroupFormIssue } from './group-editor';
-import TaskEditorDialog, { type TaskEditorSubmit } from './TaskEditorDialog';
+import TaskEditorDialog, {
+  type DependencyCommand,
+  type TaskEditorSubmit,
+} from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
 import './gantt.css';
@@ -410,6 +418,43 @@ export default function PlanGanttWidget({
                 command.holidays,
                 command.workingExceptions,
               );
+          }
+        })();
+        if (!result.ok) {
+          error = result.error;
+          return undefined;
+        }
+        return result.plan;
+      });
+      return error;
+    },
+    [commitPlan],
+  );
+
+  // Команды зависимостей (PBT-045): делегирование ядру plan-dependencies.
+  const applyDependencyCommand = useCallback(
+    (command: DependencyCommand): PlanCommandError | undefined => {
+      let error: PlanCommandError | undefined;
+      commitPlan((latest) => {
+        const validationNow = parsePlanContent(latest.content);
+        if (!validationNow.ok) {
+          return undefined;
+        }
+        const base = validationNow.plan;
+        const result = ((): PlanCommandResult => {
+          switch (command.type) {
+            case 'createDependency':
+              return createDependency(base, {
+                fromTaskId: command.fromTaskId,
+                toTaskId: command.toTaskId,
+                lagDays: command.lagDays,
+              });
+            case 'updateDependencyLag':
+              return updateDependency(base, command.dependencyId, {
+                lagDays: command.lagDays,
+              });
+            case 'deleteDependency':
+              return deleteDependency(base, command.dependencyId);
           }
         })();
         if (!result.ok) {
@@ -1130,6 +1175,7 @@ export default function PlanGanttWidget({
               mode={editor.mode}
               task={editingTask}
               onSubmit={submitTaskForm}
+              applyDependencyCommand={applyDependencyCommand}
               onDelete={deleteCurrentTask}
               onClose={closeEditor}
             />
