@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@project-board/widget-sdk": "*"
+    "@project-board/widget-sdk": "*",
+    "@svar-ui/react-gantt": "2.8.0"
   }
 }

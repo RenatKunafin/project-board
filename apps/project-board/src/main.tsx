@@ -19,7 +19,11 @@ import './index.css';
 
 declare global {
   interface Window {
-    __projectBoard?: { activeSubscriptionCount: () => number };
+    __projectBoard?: {
+      activeSubscriptionCount: () => number;
+      /** Запись содержимого документа для контрольных данных e2e (PBT-037). */
+      writeDocumentContent: (documentId: string, content: unknown) => void;
+    };
   }
 }
 
@@ -39,8 +43,16 @@ window.addEventListener('pagehide', () => {
 
 // Диагностика e2e (design D4, PBT-027): счётчик активных подписок
 // для проверки «закрытие освобождает, повторное открытие не умножает».
+// writeDocumentContent (PBT-037): контрольные данные плана без формы
+// редактирования — записи идут через общий контракт сервиса.
 window.__projectBoard = {
   activeSubscriptionCount: () => documentService.activeSubscriptionCount(),
+  writeDocumentContent: (documentId, content) => {
+    const document = documentService.get(documentId);
+    if (document) {
+      documentService.update(documentId, document.revision, content);
+    }
+  },
 };
 
 // Технический маршрут самопроверки локального хранилища (не продуктовый UI):

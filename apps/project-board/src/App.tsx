@@ -213,7 +213,12 @@ function WidgetPane({
   }
   const WidgetComponent = lookup.component;
   return (
-    <div className="widget-pane__content" ref={contentRef}>
+    <div
+      className="widget-pane__content"
+      ref={contentRef}
+      // documentId в DOM для контрольных данных e2e (PBT-037).
+      data-document-id={pane.documentId}
+    >
       <WidgetComponent
         widgetInstanceId={pane.instanceId}
         settings={lookup.startSettings}

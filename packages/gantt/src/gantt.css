@@ -1,0 +1,60 @@
+.plan-gantt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+}
+
+.plan-gantt__hint {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt__issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt--error {
+  overflow: auto;
+}
+
+.plan-gantt__chart {
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+/* SVAR растягивается на высоту контейнера (спайк PBT-014). */
+.plan-gantt__chart .wx-theme {
+  height: 100%;
+}
+
+/* Нерабочие дни: сплошная вертикальная заливка колонки на всю высоту
+   (по образцу OnlineGantt); SVAR рисует слой с нулевой высотой —
+   растягиваем слой и элементы. */
+.plan-gantt .wx-gantt-holidays {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.plan-gantt .wx-gantt-holidays > * {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
+.plan-gantt .gantt-weekend {
+  background: var(--color-gantt-weekend);
+}
+
+.plan-gantt .gantt-holiday {
+  background: var(--color-gantt-holiday);
+}
