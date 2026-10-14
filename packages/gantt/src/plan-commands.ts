@@ -18,6 +18,19 @@ import {
   updateResource,
   updateWorkType,
 } from './plan-catalogs';
+import type {
+  UnavailabilityCreateInput,
+  UnavailabilityUpdatePatch,
+} from './plan-assignments';
+import {
+  assignResource,
+  assignWorkType,
+  createUnavailability,
+  deleteUnavailability,
+  unassignResource,
+  unassignWorkType,
+  updateUnavailability,
+} from './plan-assignments';
 import {
   addCalendarDays,
   calendarDaySpan,
@@ -30,6 +43,7 @@ export type PlanCommandErrorCode =
   | 'unknown-group'
   | 'unknown-resource'
   | 'unknown-work-type'
+  | 'unknown-unavailability'
   | 'inverted-interval'
   | 'invalid-duration'
   | 'invalid-title'
@@ -101,7 +115,40 @@ export type PlanCommand =
       readonly workTypeId: string;
       readonly patch: WorkTypeUpdatePatch;
     }
-  | { readonly type: 'deleteWorkType'; readonly workTypeId: string };
+  | { readonly type: 'deleteWorkType'; readonly workTypeId: string }
+  | {
+      readonly type: 'assignResource';
+      readonly taskId: string;
+      readonly resourceId: string;
+    }
+  | {
+      readonly type: 'unassignResource';
+      readonly taskId: string;
+      readonly resourceId: string;
+    }
+  | {
+      readonly type: 'assignWorkType';
+      readonly taskId: string;
+      readonly workTypeId: string;
+    }
+  | {
+      readonly type: 'unassignWorkType';
+      readonly taskId: string;
+      readonly workTypeId: string;
+    }
+  | {
+      readonly type: 'createUnavailability';
+      readonly input: UnavailabilityCreateInput;
+    }
+  | {
+      readonly type: 'updateUnavailability';
+      readonly unavailabilityId: string;
+      readonly patch: UnavailabilityUpdatePatch;
+    }
+  | {
+      readonly type: 'deleteUnavailability';
+      readonly unavailabilityId: string;
+    };
 
 function fail(
   code: PlanCommandErrorCode,
@@ -387,5 +434,19 @@ export function applyPlanCommand(
       return updateWorkType(plan, command.workTypeId, command.patch);
     case 'deleteWorkType':
       return deleteWorkType(plan, command.workTypeId);
+    case 'assignResource':
+      return assignResource(plan, command.taskId, command.resourceId);
+    case 'unassignResource':
+      return unassignResource(plan, command.taskId, command.resourceId);
+    case 'assignWorkType':
+      return assignWorkType(plan, command.taskId, command.workTypeId);
+    case 'unassignWorkType':
+      return unassignWorkType(plan, command.taskId, command.workTypeId);
+    case 'createUnavailability':
+      return createUnavailability(plan, command.input);
+    case 'updateUnavailability':
+      return updateUnavailability(plan, command.unavailabilityId, command.patch);
+    case 'deleteUnavailability':
+      return deleteUnavailability(plan, command.unavailabilityId);
   }
 }
