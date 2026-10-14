@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPlanContent, type PlanContent } from './plan-document';
+import { createPlanContent, parsePlanContent, type PlanContent } from './plan-document';
 import {
   applyPlanCommand,
   createTask,
@@ -251,6 +251,28 @@ describe('moveTask — перенос (A2)', () => {
     const task = next.tasks.find((entry) => entry.id === 't-b');
     expect(task?.start).toBe('2026-10-16');
     expect(task?.end).toBe('2026-10-22');
+  });
+
+  it('перенос однодневной задачи сохраняет длительность 1 (особый случай addWorkingDays(x,0))', () => {
+    // Регрессия PBT-039: пн 12–пн 12 (1 раб. день) → пн 19 должно
+    // остаться 19–19, а не 19–20.
+    const oneDay = parsePlanContent({
+      title: 'Однодневная',
+      calendar: { workingDays: [1, 2, 3, 4, 5], holidays: [], workingExceptions: [] },
+      workTypes: [],
+      resources: [],
+      groups: [],
+      tasks: [{ id: 't-1', title: 'День', start: '2026-10-12', end: '2026-10-12' }],
+      dependencies: [],
+      unavailability: [],
+    });
+    if (!oneDay.ok) {
+      throw new Error('фикстура не прошла валидацию');
+    }
+    const next = expectOk(moveTask(oneDay.plan, 't-1', '2026-10-19'));
+    const task = next.tasks.find((entry) => entry.id === 't-1');
+    expect(task?.start).toBe('2026-10-19');
+    expect(task?.end).toBe('2026-10-19');
   });
 
   it('связанная задача не сдвигается', () => {

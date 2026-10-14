@@ -6,6 +6,7 @@ import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
 import { parsePlanContent, type PlanIssue } from './plan-document';
 import { createWorkingCalendar } from './working-calendar';
 import {
+  ganttDate,
   ganttDayIso,
   nonWorkingDayKind,
   planToGanttLinks,
@@ -14,9 +15,11 @@ import {
 import {
   createTask,
   deleteTask,
+  moveTask,
   setTaskDates,
   updateTask,
 } from './plan-commands';
+import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm } from './task-editor';
 import TaskEditorDialog, { type TaskEditorSubmit } from './TaskEditorDialog';
 import './gantt.css';
@@ -189,25 +192,44 @@ export default function PlanGanttWidget({
     closeEditor();
   }, [editor, commitPlan, closeEditor]);
 
-  // Read-only жестов сохраняется до PBT-039; правка задач — через форму.
-  // Специфика обёртки SVAR (прод-сборка, PBT-037): при первом эффекте
-  // вызывается пользовательский init (наш перехватчик) ВМЕСТО внутреннего
-  // заливания props в стор; заливка (P.init) происходит при повторном
-  // запуске эффекта, а его deps стабильны — в prod второй запуск не
-  // наступает и таблица остаётся пустой (в dev его даёт StrictMode).
-  // Поэтому после монтирования форсируется второй рендер: tasks/links
-  // передаются новыми массивами, deps эффекта меняются, внутренний init
-  // заливает данные.
+  // Read-only сводных (B2): строки задач двигаются, сводные полосы
+  // определяются дочерними задачами. Специфика обёртки SVAR
+  // (прод-сборка, PBT-037): при первом эффекте вызывается пользовательский
+  // init ВМЕСТО внутреннего заливания props в стор; заливка (P.init)
+  // происходит при повторном запуске эффекта, а его deps стабильны — в
+  // prod второй запуск не наступает и таблица остаётся пустой (в dev его
+  // даёт StrictMode). Поэтому после монтирования форсируется второй
+  // рендер: tasks/links передаются новыми массивами, deps эффекта
+  // меняются, внутренний init заливает данные.
   const [, forceRerenderAfterMount] = useState(0);
   useEffect(() => {
     forceRerenderAfterMount((tick) => tick + 1);
   }, []);
+  const apiRef = useRef<IApi | null>(null);
   const initApi = useCallback((instance: IApi) => {
     if (blockedApis.has(instance)) {
       return;
     }
     blockedApis.add(instance);
-    instance.intercept('drag-task', () => false);
+    apiRef.current = instance;
+    // Сводные полосы не двигаются (B2, design D3): задача документа
+    // перетаскивается, строка группы — нет.
+    instance.intercept('drag-task', (event: unknown) => {
+      console.info('[pbt039dbg] drag-task ev', JSON.stringify(event));
+      const rawId = (event as { id?: unknown } | undefined)?.id;
+      if (typeof rawId !== 'string') {
+        return false;
+      }
+      const planNow = planRef.current;
+      if (planNow === undefined) {
+        return false;
+      }
+      const rowId = rawId.startsWith(':') ? rawId.slice(1) : rawId;
+      if (planNow.groups.some((group) => group.id === rowId)) {
+        return false;
+      }
+      return planNow.tasks.some((task) => task.id === rowId);
+    });
   }, []);
 
   // Двойной клик по строке задачи открывает форму редактирования.
@@ -227,6 +249,145 @@ export default function PlanGanttWidget({
     },
     [openEditor],
   );
+
+  // ─── Жесты drag/resize (ADR-5, PBT-039) ────────────────────────────────
+  // Payload жестов SVAR ненадёжен: после mouseup стор сверяется с
+  // документом, расхождение краёв классифицируется и применяется
+  // командами ядра (спайк PBT-014). Знаковая дельта в календарных днях.
+  const commitGesture = useCallback(
+    (taskId: string, storeStart: string, storeEndInc: string) => {
+      if (!documentId || !documentService) {
+        return;
+      }
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const latest = documentService.get(documentId) ?? documentRef.current;
+        if (latest === undefined) {
+          return;
+        }
+        const parsed = parsePlanContent(latest.content);
+        if (!parsed.ok) {
+          return;
+        }
+        const current = parsed.plan.tasks.find((task) => task.id === taskId);
+        if (current === undefined) {
+          return;
+        }
+        // Стор уже соответствует документу (записал второй экземпляр
+        // либо откат) — жест уже применён или отменён.
+        if (current.start === storeStart && current.end === storeEndInc) {
+          return;
+        }
+        const daysDelta = (fromIso: string, toIso: string): number =>
+          Math.round(
+            (Date.parse(`${toIso}T00:00:00Z`) -
+              Date.parse(`${fromIso}T00:00:00Z`)) /
+              86_400_000,
+          );
+        const dStart = daysDelta(current.start, storeStart);
+        const dEnd = daysDelta(current.end, storeEndInc);
+        const result =
+          dStart !== 0 && dStart === dEnd
+            ? moveTask(parsed.plan, taskId, storeStart)
+            : dStart !== 0
+              ? setTaskDates(parsed.plan, taskId, {
+                  start: storeStart,
+                  end: current.end,
+                })
+              : setTaskDates(parsed.plan, taskId, {
+                  start: current.start,
+                  end: storeEndInc,
+                });
+        if (!result.ok) {
+          // Отклонение ядром (например, перевёрнутый интервал) —
+          // отмена жеста: полоса возвращается к датам документа.
+          const api = apiRef.current;
+          api?.exec('update-task', {
+            id: taskId,
+            task: {
+              start: ganttDate(current.start),
+              end: ganttDate(addCalendarDays(current.end, 1)),
+            },
+          });
+          return;
+        }
+        try {
+          documentService.update(documentId, latest.revision, result.plan);
+          return;
+        } catch {
+          // Конфликт ревизии (записал второй экземпляр) — перечитываем
+          // документ и применяем факт заново относительно свежих данных.
+        }
+      }
+    },
+    [documentId, documentService],
+  );
+
+  useEffect(() => {
+    // Стор применяет жест с нестабильной задержкой и анимацией подлёта:
+    // промежуточные чтения только запоминают факт, запись документа —
+    // по последней сверке (иначе remount после ранней записи теряет
+    // финальное положение полосы — найдено в e2e PBT-039).
+    const scheduleGestureSync = () => {
+      let observed: {
+        taskId: string;
+        storeStart: string;
+        storeEndInc: string;
+      } | null = null;
+      const readOnce = () => {
+        const api = apiRef.current;
+        const planNow = planRef.current;
+        if (api === null || planNow === undefined) {
+          return;
+        }
+        for (const task of planNow.tasks) {
+          let stored: { start?: unknown; end?: unknown };
+          try {
+            stored = api.getTask(task.id) as typeof stored;
+          } catch {
+            continue;
+          }
+          if (!(stored.start instanceof Date) || !(stored.end instanceof Date)) {
+            continue;
+          }
+          const storeStart = ganttDayIso(stored.start);
+          const endDate = new Date(stored.end);
+          endDate.setDate(endDate.getDate() - 1);
+          const storeEndInc = ganttDayIso(endDate);
+          if (storeStart !== task.start || storeEndInc !== task.end) {
+            observed = { taskId: task.id, storeStart, storeEndInc };
+            break;
+          }
+        }
+      };
+      window.setTimeout(readOnce, 250);
+      window.setTimeout(readOnce, 700);
+      window.setTimeout(() => {
+        readOnce();
+        if (observed !== null) {
+          commitGesture(observed.taskId, observed.storeStart, observed.storeEndInc);
+        }
+      }, 1500);
+    };
+    const handler = () => scheduleGestureSync();
+    // Capture-фаза на документе: SVAR останавливает всплытие mouseup
+    // внутри чарта (bubble до контейнера не доходит), а ранние
+    // состояния виджета (загрузка/ошибка) не содержат чарта — привязка
+    // к контейнеру через ref ненадёжна (PBT-039).
+    const captureHandler = (event: Event) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.plan-gantt__chart') !== null
+      ) {
+        handler();
+      }
+    };
+    window.document.addEventListener('mouseup', captureHandler, true);
+    window.document.addEventListener('touchend', captureHandler, true);
+    return () => {
+      window.document.removeEventListener('mouseup', captureHandler, true);
+      window.document.removeEventListener('touchend', captureHandler, true);
+    };
+  }, [commitGesture]);
 
   const tasks = useMemo(
     () => (plan ? planToGanttTasks(plan) : []),

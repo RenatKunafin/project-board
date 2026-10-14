@@ -357,13 +357,19 @@ export function moveTask(
     end = addCalendarDays(newStart, calendarDaySpan(task.start, task.end));
   } else {
     // Перенос (A2): рабочая длительность сохраняется; новое начало —
-    // ближайший рабочий день в сторону переноса.
+    // ближайший рабочий день в сторону переноса. Особый случай
+    // длительности 1 при рабочем начале — окончание совпадает с началом
+    // (addWorkingDays(x, 0) даёт следующий рабочий день — синхронно
+    // с setTaskDuration; регрессия PBT-039).
     start = calendar.isWorkingDay(newStart)
       ? newStart
       : newStart >= task.start
         ? calendar.nextWorkingDay(newStart)
         : calendar.prevWorkingDay(newStart);
-    end = calendar.addWorkingDays(start, workingDuration - 1);
+    end =
+      workingDuration === 1 && calendar.isWorkingDay(start)
+        ? start
+        : calendar.addWorkingDays(start, workingDuration - 1);
   }
   return { ok: true, plan: replaceTask(plan, { ...task, start, end }) };
 }

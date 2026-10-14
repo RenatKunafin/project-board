@@ -23,6 +23,8 @@ declare global {
       activeSubscriptionCount: () => number;
       /** Запись содержимого документа для контрольных данных e2e (PBT-037). */
       writeDocumentContent: (documentId: string, content: unknown) => void;
+      /** Чтение документа (ревизия/содержимое) для проверок e2e (PBT-039). */
+      readDocument: (documentId: string) => { revision: number } | undefined;
     };
   }
 }
@@ -53,6 +55,7 @@ window.__projectBoard = {
       documentService.update(documentId, document.revision, content);
     }
   },
+  readDocument: (documentId) => documentService.get(documentId),
 };
 
 // Технический маршрут самопроверки локального хранилища (не продуктовый UI):

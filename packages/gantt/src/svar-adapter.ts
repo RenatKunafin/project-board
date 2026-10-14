@@ -24,7 +24,8 @@ export interface GanttLink {
   readonly lag: number;
 }
 
-function ganttDate(isoDate: string): Date {
+/** ISO (включительный день) → локальная полночь для SVAR. */
+export function ganttDate(isoDate: string): Date {
   // Локальная полночь: SVAR оперирует локальными Date (спайк PBT-014).
   const utc = new Date(`${isoDate}T00:00:00Z`);
   return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
