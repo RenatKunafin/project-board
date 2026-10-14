@@ -58,6 +58,7 @@ export type PlanCommandErrorCode =
   | 'invalid-duration'
   | 'invalid-title'
   | 'invalid-lag'
+  | 'invalid-calendar'
   | 'circular-group'
   | 'circular-dependency'
   | 'duplicate-dependency';
@@ -163,6 +164,12 @@ export type PlanCommand =
       readonly unavailabilityId: string;
     }
   | { readonly type: 'createDependency'; readonly input: DependencyCreateInput }
+  | {
+      readonly type: 'updateCalendar';
+      readonly workingDays: readonly number[];
+      readonly holidays: readonly string[];
+      readonly workingExceptions: readonly string[];
+    }
   | {
       readonly type: 'updateDependency';
       readonly dependencyId: string;
@@ -439,6 +446,75 @@ export function deleteTask(
   };
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Замена календаря плана (PBT-044): атомарная валидация и замена.
+ * Отклоняются: не-ISO/несуществующие даты, дубли дней недели и дат,
+ * пересечение праздников и исключений, пустой календарь (без рабочих
+ * дней и без исключений — createWorkingCalendar бросает invalid-calendar).
+ */
+export function updateCalendar(
+  plan: PlanContent,
+  workingDays: readonly number[],
+  holidays: readonly string[],
+  workingExceptions: readonly string[],
+): PlanCommandResult {
+  const days = [...workingDays];
+  if (new Set(days).size !== days.length) {
+    return fail('invalid-calendar', 'Рабочие дни недели не могут повторяться.');
+  }
+  if (days.some((day) => !Number.isInteger(day) || day < 1 || day > 7)) {
+    return fail('invalid-calendar', 'День недели должен быть числом 1–7.');
+  }
+  const holidaysList = [...holidays];
+  const exceptionsList = [...workingExceptions];
+  for (const date of [...holidaysList, ...exceptionsList]) {
+    if (!ISO_DATE.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`))) {
+      return fail(
+        'invalid-calendar',
+        `Дата должна быть в формате YYYY-MM-DD: "${date}".`,
+      );
+    }
+  }
+  if (new Set(holidaysList).size !== holidaysList.length) {
+    return fail('invalid-calendar', 'Праздничные даты не могут повторяться.');
+  }
+  if (new Set(exceptionsList).size !== exceptionsList.length) {
+    return fail('invalid-calendar', 'Рабочие исключения не могут повторяться.');
+  }
+  const overlap = holidaysList.find((date) => exceptionsList.includes(date));
+  if (overlap !== undefined) {
+    return fail(
+      'invalid-calendar',
+      `Дата «${overlap}» не может быть одновременно праздником и рабочим исключением.`,
+    );
+  }
+  try {
+    createWorkingCalendar({
+      workingDays: days as PlanContent['calendar']['workingDays'],
+      holidays: holidaysList,
+      workingExceptions: exceptionsList,
+    });
+  } catch (error) {
+    return fail(
+      'invalid-calendar',
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+  return {
+    ok: true,
+    plan: {
+      ...plan,
+      calendar: {
+        workingDays: [...days].sort() as PlanContent['calendar']['workingDays'],
+        holidays: [...holidaysList].sort(),
+        workingExceptions: [...exceptionsList].sort(),
+      },
+    },
+  };
+}
+
 export function applyPlanCommand(
   plan: PlanContent,
   command: PlanCommand,
@@ -497,5 +573,12 @@ export function applyPlanCommand(
       return updateDependency(plan, command.dependencyId, command.patch);
     case 'deleteDependency':
       return deleteDependency(plan, command.dependencyId);
+    case 'updateCalendar':
+      return updateCalendar(
+        plan,
+        command.workingDays,
+        command.holidays,
+        command.workingExceptions,
+      );
   }
 }

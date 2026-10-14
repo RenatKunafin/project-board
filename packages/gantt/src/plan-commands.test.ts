@@ -7,6 +7,7 @@ import {
   moveTask,
   setTaskDates,
   setTaskDuration,
+  updateCalendar,
   updateTask,
   type PlanCommandResult,
 } from './plan-commands';
@@ -109,6 +110,76 @@ describe('createTask', () => {
       createTask(plan, { title: 'X', start: '2026-10-12', end: '2026-10-12', workTypeIds: ['wt-404'] }),
       'unknown-work-type',
     );
+  });
+});
+
+describe('updateCalendar', () => {
+  it('заменяет календарь атомарно: праздники и исключения сортируются', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['2026-10-14'], []),
+    );
+    expect(next.calendar).toEqual({
+      workingDays: [1, 2, 3, 4, 5],
+      holidays: ['2026-10-14'],
+      workingExceptions: [],
+    });
+  });
+
+  it('пустой календарь (без рабочих дней и исключений) отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [], [], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('календарь без рабочих дней, но с исключением — валиден', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateCalendar(plan, [], [], ['2026-10-14']),
+    );
+    expect(next.calendar.workingDays).toEqual([]);
+    expect(next.calendar.workingExceptions).toEqual(['2026-10-14']);
+  });
+
+  it('пересечение праздника и исключения отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['2026-10-14'], ['2026-10-14']),
+      'invalid-calendar',
+    );
+  });
+
+  it('не-ISO дата отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['14.10.2026'], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('дубли рабочих дней и дат отклоняются', () => {
+    const plan = buildPlan();
+    expectError(updateCalendar(plan, [1, 1, 2], [], []), 'invalid-calendar');
+    expectError(
+      updateCalendar(plan, [1, 2, 3], ['2026-10-14', '2026-10-14'], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('applyPlanCommand исполняет updateCalendar', () => {
+    const plan = buildPlan();
+    const result = applyPlanCommand(plan, {
+      type: 'updateCalendar',
+      workingDays: [1, 2, 3, 4],
+      holidays: [],
+      workingExceptions: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.calendar.workingDays).toEqual([1, 2, 3, 4]);
+    }
   });
 });
 

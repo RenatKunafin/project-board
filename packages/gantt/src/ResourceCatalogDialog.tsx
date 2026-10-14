@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PlanCommandError } from './plan-commands';
 import type { PlanContent } from './plan-document';
+import PlanCalendarSection from './PlanCalendarSection';
 import './task-editor.css';
 
 /** Команды редакторов справочников — родитель исполняет их ядром. */
@@ -25,7 +26,13 @@ export type CatalogCommand =
       readonly start: string;
       readonly end: string;
     }
-  | { readonly type: 'deleteUnavailability'; readonly unavailabilityId: string };
+  | { readonly type: 'deleteUnavailability'; readonly unavailabilityId: string }
+  | {
+      readonly type: 'updateCalendar';
+      readonly workingDays: readonly number[];
+      readonly holidays: readonly string[];
+      readonly workingExceptions: readonly string[];
+    };
 
 interface ResourceCatalogDialogProps {
   readonly plan: PlanContent;
@@ -243,14 +250,14 @@ export default function ResourceCatalogDialog({
         className="task-editor catalog"
         role="dialog"
         aria-modal="true"
-        aria-label="Справочники плана"
+        aria-label="Настройки плана"
       >
         <header className="task-editor__head">
           <h3 className="task-editor__title">Справочники плана</h3>
           <button
             type="button"
             className="task-editor__close"
-            aria-label="Закрыть справочники"
+            aria-label="Закрыть настройки плана"
             onClick={onClose}
           >
             ×
@@ -661,6 +668,17 @@ export default function ResourceCatalogDialog({
               </p>
             )}
           </section>
+          <PlanCalendarSection
+            calendar={plan.calendar}
+            onApply={(workingDays, holidays, workingExceptions) =>
+              applyCommand({
+                type: 'updateCalendar',
+                workingDays,
+                holidays,
+                workingExceptions,
+              })
+            }
+          />
           {addError !== null && (
             <p className="task-editor__error" role="alert" data-catalog-error>
               {addError}

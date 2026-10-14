@@ -37,7 +37,7 @@ async function createPlan(page: Page, title: string): Promise<string> {
 async function openCatalog(page: Page, paneTitle: string) {
   const pane = page.getByRole('group', { name: `План · ${paneTitle}` });
   await pane.locator('[data-catalogs]').click();
-  const dialog = pane.getByRole('dialog', { name: 'Справочники плана' });
+  const dialog = pane.getByRole('dialog', { name: 'Настройки плана' });
   await expect(dialog).toBeVisible();
   return dialog;
 }

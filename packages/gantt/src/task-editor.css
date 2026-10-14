@@ -233,3 +233,26 @@
 .plan-gantt .catalog__add input[type='text'] {
   flex: 1;
 }
+
+/* Календарь плана PBT-044. */
+
+.plan-gantt .catalog__week {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-gantt .catalog__week-day {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.plan-gantt .catalog__sub {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

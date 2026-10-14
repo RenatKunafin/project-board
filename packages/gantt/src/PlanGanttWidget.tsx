@@ -27,6 +27,7 @@ import {
   deleteUnavailability,
   updateUnavailability,
 } from './plan-assignments';
+import { updateCalendar } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import { buildTaskDates, validateTaskForm, type TaskFormIssue } from './task-editor';
@@ -402,6 +403,13 @@ export default function PlanGanttWidget({
               });
             case 'deleteUnavailability':
               return deleteUnavailability(base, command.unavailabilityId);
+            case 'updateCalendar':
+              return updateCalendar(
+                base,
+                command.workingDays,
+                command.holidays,
+                command.workingExceptions,
+              );
           }
         })();
         if (!result.ok) {
@@ -1090,7 +1098,7 @@ export default function PlanGanttWidget({
               data-catalogs
               onClick={openCatalog}
             >
-              Справочники
+              Настройки плана
             </button>
             <span className="plan-gantt__count" data-task-count>
               Задач: {plan?.tasks.length ?? 0}
