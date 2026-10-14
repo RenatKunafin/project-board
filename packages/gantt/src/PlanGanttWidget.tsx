@@ -390,6 +390,47 @@ export default function PlanGanttWidget({
     [openEditor, openGroupEditor],
   );
 
+  // ─── Диапазон шкалы (перерендер столбцов, наблюдение владельца
+  // 2026-10-14) ────────────────────────────────────────────────────────────
+  // Без заданных start/end SVAR при каждом update-task пересчитывает
+  // диапазон под задачи (autoScale) и пересобирает колонки календаря.
+  // Диапазон задаём с запасом (−60/+365 дней) и расширяем только при
+  // выходе задачи за него; собственные записи жеста его не трогают.
+  const chartRangeRef = useRef<{ start: Date; end: Date; anchor: string } | null>(
+    null,
+  );
+  const [rangeTick, setRangeTick] = useState(0);
+  // Расширение диапазона, если задача вышла за него (после коррекции/записи).
+  const ensureChartRangeCovers = useCallback(
+    (startIso: string, endIso: string) => {
+      const prev = chartRangeRef.current;
+      if (prev === null) {
+        return;
+      }
+      const padStart = addCalendarDays(startIso, -30);
+      const padEnd = addCalendarDays(endIso, 30);
+      if (
+        ganttDayIso(prev.start) <= padStart &&
+        ganttDayIso(prev.end) >= padEnd
+      ) {
+        return;
+      }
+      chartRangeRef.current = {
+        start: ganttDate(
+          ganttDayIso(prev.start) <= padStart
+            ? ganttDayIso(prev.start)
+            : padStart,
+        ),
+        end: ganttDate(
+          ganttDayIso(prev.end) >= padEnd ? ganttDayIso(prev.end) : padEnd,
+        ),
+        anchor: prev.anchor,
+      };
+      setRangeTick((tick) => tick + 1);
+    },
+    [],
+  );
+
   // ─── Жесты drag/resize (ADR-5, PBT-039; плавность — уточнение владельца
   // от 2026-10-14, design PBT-039 D7) ─────────────────────────────────────
   // Payload жестов SVAR ненадёжен: после отпускания кнопки стор сверяется
@@ -480,6 +521,8 @@ export default function PlanGanttWidget({
             end: ganttDate(addCalendarDays(next.end, 1)),
           },
         });
+        // Задача вышла за запас шкалы — расширяем (пересборка редкая).
+        ensureChartRangeCovers(next.start, next.end);
         if (!persist) {
           // Промежуточная сверка: только визуальная коррекция, документ
           // запишет финальная сверка (одна ревизия на жест).
@@ -660,6 +703,65 @@ export default function PlanGanttWidget({
   useEffect(() => {
     svarSourceRef.current = source;
   }, [source]);
+  const chartRange = useMemo(() => {
+    if (source === null) {
+      return undefined;
+    }
+    let min: string | undefined;
+    let max: string | undefined;
+    for (const task of source.plan.tasks) {
+      if (min === undefined || task.start < min) {
+        min = task.start;
+      }
+      if (max === undefined || task.end > max) {
+        max = task.end;
+      }
+    }
+    const prev = chartRangeRef.current;
+    if (min === undefined || max === undefined) {
+      return prev ?? undefined;
+    }
+    const wantStart = addCalendarDays(min, -60);
+    const wantEnd = addCalendarDays(max, 365);
+    if (
+      prev !== null &&
+      ganttDayIso(prev.start) <= wantStart &&
+      ganttDayIso(prev.end) >= wantEnd
+    ) {
+      // Запас покрывает данные — шкала не трогается (стабильные ссылки).
+      return prev;
+    }
+    const anchor = min;
+    const next =
+      prev !== null
+        ? {
+            start: ganttDate(
+              ganttDayIso(prev.start) <= wantStart
+                ? ganttDayIso(prev.start)
+                : wantStart,
+            ),
+            end: ganttDate(
+              ganttDayIso(prev.end) >= wantEnd ? ganttDayIso(prev.end) : wantEnd,
+            ),
+            anchor,
+          }
+        : { start: ganttDate(wantStart), end: ganttDate(wantEnd), anchor };
+    chartRangeRef.current = next;
+    return next;
+    // rangeTick — принудительный пересчёт после расширения из жестов.
+  }, [source, rangeTick]);
+  // Прокрутка шкалы к началу плана после пересборки представления
+  // (перезаливка сбрасывает позицию прокрутки). Отступ −2 дня: полоса
+  // не упирается в левый край видимой области, а её центр остаётся
+  // в пределах вьюпорта для жестов в обе стороны.
+  useEffect(() => {
+    if (source === null || chartRange === undefined) {
+      return;
+    }
+    apiRef.current?.exec('scroll-chart', {
+      date: ganttDate(addCalendarDays(chartRange.anchor, -2)),
+    });
+  }, [source, chartRange]);
   const tasks = useMemo(
     // Раскрытие групп — состояние экземпляра (B4): свёрнутые группы
     // передаются адаптеру (open: false), при пересборке представления
@@ -837,6 +939,9 @@ export default function PlanGanttWidget({
                 links={links}
                 columns={columns}
                 inclusiveEnd={true}
+                autoScale={false}
+                start={chartRange?.start}
+                end={chartRange?.end}
                 init={initApi}
                 highlightTime={highlightTime}
               />
