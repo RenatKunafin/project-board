@@ -112,7 +112,7 @@ test('проектный Гантт показывает контрольный 
   await expect(restoredChart.getByText('Фаза 1').first()).toBeVisible();
 
   await page.screenshot({
-    path: 'openspec/changes/pbt-037-project-gantt-view/screenshots/project-gantt.png',
+    path: 'test-results/screenshots/project-gantt.png',
     fullPage: false,
   });
 });
