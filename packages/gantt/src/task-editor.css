@@ -262,3 +262,21 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/* Список проблем плана PBT-046. */
+
+.plan-gantt .plan-gantt__issues-button {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: transparent;
+}
+
+.plan-gantt .issues__row {
+  border-left: 3px solid var(--color-danger);
+  padding-left: 8px;
+  align-items: flex-start;
+}
+
+.plan-gantt .issues__kind {
+  font-weight: 600;
+}

@@ -3,7 +3,7 @@ import { Gantt, Willow } from '@svar-ui/react-gantt';
 import type { IApi, IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
-import { parsePlanContent, type PlanContent, type PlanIssue } from './plan-document';
+import { createPlanContent, parsePlanContent, type PlanContent, type PlanIssue } from './plan-document';
 import { createWorkingCalendar } from './working-calendar';
 import {
   ganttDate,
@@ -43,6 +43,7 @@ import TaskEditorDialog, {
 } from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
+import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
 import './gantt.css';
 
 type EditorState =
@@ -122,6 +123,8 @@ export default function PlanGanttWidget({
   );
   // Редактор справочников (PBT-041).
   const [catalogOpen, setCatalogOpen] = useState(false);
+  // Список проблем плана (PBT-046).
+  const [issuesOpen, setIssuesOpen] = useState(false);
 
   // Сворачивание групп — состояние экземпляра (B4): множество свёрнутых
   // id в памяти виджета, переживает remount чарта по ревизии, в документ
@@ -467,6 +470,50 @@ export default function PlanGanttWidget({
     },
     [commitPlan],
   );
+
+  // Переход к задаче из списка проблем (PBT-046): раскрыть цепочку
+  // свёрнутых групп-предков, прокрутить шкалу к дате, выделить строку.
+  const showTask = useCallback((taskId: string) => {
+    console.info('[pbt046dbg] show-task', JSON.stringify({ taskId, apiNull: apiRef.current === null }));
+    const planNow = planRef.current;
+    const api = apiRef.current;
+    if (planNow === undefined || api === null) {
+      return;
+    }
+    const task = planNow.tasks.find((entry) => entry.id === taskId);
+    if (task === undefined) {
+      return;
+    }
+    const groupById = new Map(
+      planNow.groups.map((group) => [group.id, group] as const),
+    );
+    const toOpen: string[] = [];
+    let cursor = task.groupId;
+    while (cursor !== undefined) {
+      const group = groupById.get(cursor);
+      if (group === undefined) {
+        break;
+      }
+      toOpen.push(group.id);
+      cursor = group.parentId;
+    }
+    if (toOpen.length > 0) {
+      // Стор раскрывает группы немедленно (exec); collapsedGroups
+      // синхронизируется для пересборки представления при следующей заливке.
+      for (const id of toOpen) {
+        api.exec('open-task', { id, mode: true });
+      }
+      setCollapsedGroups((previous) => {
+        const next = new Set(previous);
+        for (const id of toOpen) {
+          next.delete(id);
+        }
+        return next;
+      });
+    }
+    api.exec('scroll-chart', { date: ganttDate(task.start) });
+    api.exec('select-task', { id: taskId });
+  }, []);
 
   // Read-only сводных (B2): строки задач двигаются, сводные полосы
   // определяются дочерними задачами. Специфика обёртки SVAR
@@ -937,6 +984,8 @@ export default function PlanGanttWidget({
     () => (source ? planToGanttLinks(source.plan) : []),
     [source],
   );
+  // Проблемы плана (PBT-046): производное документа, без записей.
+  const issues = usePlanIssues(plan ?? createPlanContent());
   useEffect(() => {
     svarSourceRef.current = source;
   }, [source]);
@@ -1145,6 +1194,14 @@ export default function PlanGanttWidget({
             >
               Настройки плана
             </button>
+            <button
+              type="button"
+              className={`plan-gantt__add-button${issues.length > 0 ? ' plan-gantt__issues-button' : ''}`}
+              data-issues
+              onClick={() => setIssuesOpen(true)}
+            >
+              Проблемы ({issues.length})
+            </button>
             <span className="plan-gantt__count" data-task-count>
               Задач: {plan?.tasks.length ?? 0}
             </span>
@@ -1199,6 +1256,13 @@ export default function PlanGanttWidget({
               plan={plan}
               applyCommand={applyCatalogCommand}
               onClose={closeCatalog}
+            />
+          )}
+          {issuesOpen && (
+            <PlanIssuesDialog
+              issues={issues}
+              onShowTask={showTask}
+              onClose={() => setIssuesOpen(false)}
             />
           )}
         </div>
