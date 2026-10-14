@@ -22,6 +22,10 @@ import type {
   UnavailabilityCreateInput,
   UnavailabilityUpdatePatch,
 } from './plan-assignments';
+import type {
+  DependencyCreateInput,
+  DependencyUpdatePatch,
+} from './plan-dependencies';
 import {
   assignResource,
   assignWorkType,
@@ -31,6 +35,11 @@ import {
   unassignWorkType,
   updateUnavailability,
 } from './plan-assignments';
+import {
+  createDependency,
+  deleteDependency,
+  updateDependency,
+} from './plan-dependencies';
 import {
   addCalendarDays,
   calendarDaySpan,
@@ -44,10 +53,14 @@ export type PlanCommandErrorCode =
   | 'unknown-resource'
   | 'unknown-work-type'
   | 'unknown-unavailability'
+  | 'unknown-dependency'
   | 'inverted-interval'
   | 'invalid-duration'
   | 'invalid-title'
-  | 'circular-group';
+  | 'invalid-lag'
+  | 'circular-group'
+  | 'circular-dependency'
+  | 'duplicate-dependency';
 
 export interface PlanCommandError {
   readonly code: PlanCommandErrorCode;
@@ -148,7 +161,14 @@ export type PlanCommand =
   | {
       readonly type: 'deleteUnavailability';
       readonly unavailabilityId: string;
-    };
+    }
+  | { readonly type: 'createDependency'; readonly input: DependencyCreateInput }
+  | {
+      readonly type: 'updateDependency';
+      readonly dependencyId: string;
+      readonly patch: DependencyUpdatePatch;
+    }
+  | { readonly type: 'deleteDependency'; readonly dependencyId: string };
 
 function fail(
   code: PlanCommandErrorCode,
@@ -448,5 +468,11 @@ export function applyPlanCommand(
       return updateUnavailability(plan, command.unavailabilityId, command.patch);
     case 'deleteUnavailability':
       return deleteUnavailability(plan, command.unavailabilityId);
+    case 'createDependency':
+      return createDependency(plan, command.input);
+    case 'updateDependency':
+      return updateDependency(plan, command.dependencyId, command.patch);
+    case 'deleteDependency':
+      return deleteDependency(plan, command.dependencyId);
   }
 }
