@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Timeline from 'react-calendar-timeline';
 import type { TimelineKeys } from 'react-calendar-timeline';
 import 'react-calendar-timeline/dist/style.css';
@@ -393,22 +394,89 @@ export default function ResourceTimelineWidget({
     () => timelineRange(plan ?? createPlanContent()),
     [plan],
   );
-  const dayClassNames = useCallback((startMs: number): string[] => {
-    if (plan === undefined) {
-      return [];
+
+  // ─── Слой нерабочих дней (уточнение владельца 2026-10-15) ───────────────  // verticalLineClassNamesForTime зависит от единицы шкалы беты: в узких
+  // окнах RCT укрупняет колонки до недели/месяца, и подсветка отдельных
+  // дней пропадает. Собственный слой рисует колонки дней в canvas-
+  // координатах (те же, что у элементов) независимо от единицы: canvas-
+  // диапазон даёт onBoundsChange, ширину канвы — scrollWidth хоста.
+  const [scrollHost, setScrollHost] = useState<HTMLDivElement | null>(null);
+  const [bounds, setBounds] = useState<
+    { readonly start: number; readonly end: number } | undefined
+  >(undefined);
+  // onBoundsChange беты не вызывается при первом монтировании (только при
+  // изменении канвы) — стартовый диапазон берётся из default-шкалы.
+  useEffect(() => {
+    setBounds((previous) =>
+      previous === undefined ||
+      previous.start > range.start ||
+      previous.end < range.end
+        ? { start: range.start, end: range.end }
+        : previous,
+    );
+  }, [range]);
+
+  const dayLayer = useMemo(() => {
+    if (!scrollHost || !bounds || plan === undefined) {
+      return null;
     }
-    const kind = nonWorkingDayKind(plan, timelineDayIso(startMs));
-    if (kind === 'holiday') {
-      return ['rtl-day--holiday'];
+    const canvasWidth = scrollHost.scrollWidth;
+    const spanMs = bounds.end - bounds.start;
+    if (canvasWidth <= 0 || spanMs <= 0) {
+      return null;
     }
-    return kind === 'weekend' ? ['rtl-day--weekend'] : [];
-    // План читается через замыкание: классы считаются на текущий рендер.
-  }, [plan]);
-  // Подсветка ведётся по началу дневного интервала шкалы (колонка дня).
-  const verticalLineClassNamesForTime = useCallback(
-    (startMs: number): string[] => dayClassNames(startMs),
-    [dayClassNames],
-  );
+    const pxPerMs = canvasWidth / spanMs;
+    // Первый день канвы: локальная полночь дня canvasTimeStart.
+    const firstDay = new Date(bounds.start);
+    firstDay.setHours(0, 0, 0, 0);
+    const columns: Array<{
+      readonly key: number;
+      readonly iso: string;
+      readonly left: number;
+      readonly width: number;
+      readonly kind: 'weekend' | 'holiday';
+    }> = [];
+    for (
+      let dayMs = firstDay.getTime();
+      dayMs < bounds.end;
+      dayMs += DAY_MS
+    ) {
+      const iso = timelineDayIso(dayMs);
+      const kind = nonWorkingDayKind(plan, iso);
+      if (kind !== undefined) {
+        columns.push({
+          key: dayMs,
+          iso,
+          left: (dayMs - bounds.start) * pxPerMs,
+          width: DAY_MS * pxPerMs + 0.5, // перекрытие стыков округления
+          kind,
+        });
+      }
+    }
+    if (columns.length === 0) {
+      return null;
+    }
+    // Канва: контейнер, в котором RCT позиционирует строки/элементы —
+    // координатное пространство слоя совпадает с элементами.
+    const canvas = scrollHost.querySelector('.rct-vertical-lines')?.parentElement;
+    if (canvas === null || canvas === undefined) {
+      return null;
+    }
+    return createPortal(
+      <div className="rt-day-layer" aria-hidden>
+        {columns.map((column) => (
+          <div
+            key={column.key}
+            data-day={column.iso}
+            className={`rt-day-col rt-day--${column.kind}`}
+            style={{ left: column.left, width: column.width }}
+          />
+        ))}
+      </div>,
+      canvas,
+    );
+    // Ревизия в deps: после ремоунта чарта портал переносится в новый DOM.
+  }, [scrollHost, bounds, plan, document?.revision]);
 
   if (!documentId || !documentService) {
     return (
@@ -471,6 +539,7 @@ export default function ResourceTimelineWidget({
         </p>
       ) : (
         <div className="resource-timeline__chart" data-rt-chart>
+          {dayLayer}
           {/* Ключ по ревизии: внешние изменения (второй вид, формы)
               пересобирают дорожки; собственная запись жеста подавляет
               ремоунт — прокрутка сохраняется (design D5 PBT-048). */}
@@ -504,7 +573,8 @@ export default function ResourceTimelineWidget({
             useResizeHandle
             onItemDrag={onItemDrag}
             onItemDoubleClick={onItemDoubleClick}
-            verticalLineClassNamesForTime={verticalLineClassNamesForTime}
+            scrollRef={setScrollHost}
+            onBoundsChange={(start, end) => setBounds({ start, end })}
           />
         </div>
       )}

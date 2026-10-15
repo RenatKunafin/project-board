@@ -64,8 +64,10 @@
 }
 
 /* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
-   нерабочих дней задаётся календарём плана через rtl-day--*, а не днём
-   недели (календарь настраиваемый, PBT-044). */
+   нерабочих дней задаётся календарём плана собственным слоем дней
+   (rt-day-*), а не днём недели и не линиями RCT (календарь настраиваемый,
+   PBT-044; слой независим от единицы шкалы — уточнение владельца
+   2026-10-15). */
 .resource-timeline .react-calendar-timeline .rct-vl.rct-day-0,
 .resource-timeline .react-calendar-timeline .rct-vl.rct-day-6,
 .resource-timeline .rct-vl.rct-day-0,
@@ -73,12 +75,29 @@
   background: transparent;
 }
 
-/* Нерабочие дни календаря плана на общей шкале (D3). */
-.resource-timeline .rct-vl.rtl-day--weekend {
+/* Собственный слой нерабочих дней (PBT-047, уточнение владельца):
+   колонки дней в canvas-координатах через портал в канву RCT —
+   работают при любой единице шкалы; под строками и элементами. */
+.resource-timeline .rt-day-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.resource-timeline .rt-day-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.resource-timeline .rt-day-col.rt-day--weekend {
   background: var(--color-gantt-weekend);
 }
 
-.resource-timeline .rct-vl.rtl-day--holiday {
+.resource-timeline .rt-day-col.rt-day--holiday {
   background: var(--color-gantt-holiday);
 }
 

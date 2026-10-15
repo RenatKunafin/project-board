@@ -163,30 +163,22 @@ test('нерабочие дни по календарю плана: выходн
   const chart = pane.locator('[data-rt-chart]');
   await expect(chart.locator('.rct-item')).toHaveCount(6);
 
-  // Дневные колонки: воскресенья подсвечены как выходные.
-  const sundays = chart.locator('.rct-vl.rct-day-0');
-  const sundayCount = await sundays.count();
-  expect(sundayCount).toBeGreaterThan(2);
-  await expect(chart.locator('.rct-vl.rtl-day--weekend').first()).toBeVisible();
-
-  // Рабочее исключение 17.10 (суббота): среди суббот есть колонка
-  // без подсветки выходного, остальные субботы подсвечены.
-  const saturdays = chart.locator('.rct-vl.rct-day-6');
-  const saturdayCount = await saturdays.count();
-  expect(saturdayCount).toBeGreaterThan(1);
-  const plainSaturdays = await saturdays.evaluateAll((nodes) =>
-    nodes.filter((el) => !el.className.includes('rtl-day--weekend')).length,
+  // Слой нерабочих дней: колонки календаря плана, независимые от
+  // единицы шкалы RCT (уточнение владельца 2026-10-15).
+  // Праздник 14.10 (среда) подсвечен особо.
+  await expect(chart.locator('.rt-day-col.rt-day--holiday')).toHaveCount(1);
+  // Рабочее исключение 17.10 (суббота) — без подсветки выходного.
+  await expect(chart.locator('.rt-day-col[data-day="2026-10-17"]')).toHaveCount(
+    0,
   );
-  expect(plainSaturdays).toBe(1);
-
-  // Праздник 14.10 (среда) различим среди выходных.
-  const holidayWednesday = await chart
-    .locator('.rct-vl.rct-day-3')
-    .evaluateAll(
-      (nodes) =>
-        nodes.filter((el) => el.className.includes('rtl-day--holiday')).length,
-    );
-  expect(holidayWednesday).toBe(1);
+  // Обычная суббота 24.10 подсвечена как выходной.
+  await expect(
+    chart.locator('.rt-day-col.rt-day--weekend[data-day="2026-10-24"]'),
+  ).toHaveCount(1);
+  // Рабочий день 15.10 не подсвечивается вовсе.
+  await expect(chart.locator('.rt-day-col[data-day="2026-10-15"]')).toHaveCount(
+    0,
+  );
 });
 
 test('оба вида одного документа: изменение в проектном виде смещает полосу в ресурсном', async ({
