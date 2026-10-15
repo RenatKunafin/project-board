@@ -163,6 +163,39 @@ export class WorkspaceStore {
     );
   }
 
+  /**
+   * Состояние представлений экземпляров (PBT-049, ADR-6.4): ключи
+   * `view:<instanceId>` в общей KV-таблице settings — без смены схемы БД.
+   */
+  async loadViewSettings(): Promise<Record<string, Record<string, unknown>>> {
+    await this.openOnce();
+    const rows = await this.settings.toArray();
+    const result: Record<string, Record<string, unknown>> = {};
+    for (const row of rows) {
+      if (!row.key.startsWith('view:')) {
+        continue;
+      }
+      if (
+        typeof row.value === 'object' &&
+        row.value !== null &&
+        !Array.isArray(row.value)
+      ) {
+        result[row.key.slice('view:'.length)] = {
+          ...(row.value as Record<string, unknown>),
+        };
+      }
+    }
+    return result;
+  }
+
+  async saveViewSetting(
+    instanceId: string,
+    value: Record<string, unknown>,
+  ): Promise<void> {
+    await this.openOnce();
+    await this.settings.put({ key: `view:${instanceId}`, value });
+  }
+
   private async openOnce(): Promise<void> {
     if (!this.opened) {
       await this.db.open();

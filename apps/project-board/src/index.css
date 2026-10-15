@@ -8,9 +8,19 @@
   --color-text-muted: #5a6b7b;
   --color-text-faint: #8a99a8;
   --color-accent: #2f6fed;
+  --color-on-accent: #ffffff;
+  --color-danger: #b02a1d;
+  --radius-sm: 6px;
   /* Подсветка нерабочих дней проектного Гантта (PBT-037). */
   --color-gantt-weekend: #e3e7ec;
   --color-gantt-holiday: #f8d3d3;
+  /* Ресурсные дорожки (PBT-047): недоступность и конфликтные полосы.
+     Бордер обычной задачи — тёмный оттенок accent: у стыкующихся задач
+     полосы без контрастной границы сливаются в одну (правка владельца). */
+  --color-rt-task-border: #2456b8;
+  --color-rt-unavailability-bg: rgba(176, 42, 29, 0.14);
+  --color-rt-unavailability-border: rgba(176, 42, 29, 0.45);
+  --color-rt-conflict-bg: rgba(176, 42, 29, 0.28);
 }
 
 * {

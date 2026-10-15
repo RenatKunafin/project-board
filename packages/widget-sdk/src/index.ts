@@ -31,6 +31,12 @@ export interface WidgetProps {
    * возвращает функцию отписки; платформа троттлит значения кадром.
    */
   readonly onResize?: (listener: (size: WidgetSize) => void) => () => void;
+  /**
+   * Запись состояния представления экземпляра (ADR-6.4, PBT-049): патч
+   * мержится платформой в настройки экземпляра и сохраняется локально;
+   * снапшот возвращается виджету в `settings` при монтировании панели.
+   */
+  readonly updateSettings?: (patch: WidgetTypeSettings) => void;
 }
 
 export interface WidgetSizeConstraints {

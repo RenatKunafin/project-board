@@ -24,7 +24,8 @@ export interface GanttLink {
   readonly lag: number;
 }
 
-function ganttDate(isoDate: string): Date {
+/** ISO (включительный день) → локальная полночь для SVAR. */
+export function ganttDate(isoDate: string): Date {
   // Локальная полночь: SVAR оперирует локальными Date (спайк PBT-014).
   const utc = new Date(`${isoDate}T00:00:00Z`);
   return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
@@ -71,15 +72,20 @@ function orderedGroups(plan: PlanContent): readonly PlanGroup[] {
  * План → задачи SVAR (ADR-4 PBT-017). Внутренняя семантика SVAR всегда
  * исключительная: включительное окончание передаётся +1 день. Сводные
  * группы идут без дат — SVAR рисует их по вложенным (спайк PBT-014).
+ * collapsedGroups — свёрнутые группы экземпляра представления (B4):
+ * такие группы передаются с open: false, умолчание — развёрнуто.
  */
-export function planToGanttTasks(plan: PlanContent): readonly GanttTask[] {
+export function planToGanttTasks(
+  plan: PlanContent,
+  collapsedGroups?: ReadonlySet<string>,
+): GanttTask[] {
   const tasks: GanttTask[] = [];
   for (const group of orderedGroups(plan)) {
     tasks.push({
       id: group.id,
       text: group.title,
       type: 'summary',
-      open: true,
+      open: !(collapsedGroups?.has(group.id) ?? false),
       ...(group.parentId !== undefined ? { parent: group.parentId } : {}),
     });
   }
@@ -97,7 +103,7 @@ export function planToGanttTasks(plan: PlanContent): readonly GanttTask[] {
 }
 
 /** FS-зависимости плана → связи SVAR «окончание → начало» с лагом. */
-export function planToGanttLinks(plan: PlanContent): readonly GanttLink[] {
+export function planToGanttLinks(plan: PlanContent): GanttLink[] {
   return plan.dependencies.map((dependency) => ({
     id: dependency.id,
     source: dependency.fromTaskId,

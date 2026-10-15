@@ -1,0 +1,159 @@
+/* Ресурсные дорожки PBT-047. Только токены :root (хекс-коды запрещены
+   до PBT-066); дефолты RCT переопределяются усиленными селекторами
+   (прецедент спайка PBT-015). */
+
+.resource-timeline {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+}
+
+.resource-timeline__hint {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.resource-timeline__issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.resource-timeline--error {
+  overflow: auto;
+}
+
+.resource-timeline__chart {
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+/* Фильтры и масштаб представления (PBT-049). */
+.resource-timeline__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 0;
+}
+
+.resource-timeline__filter-input {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  min-width: 140px;
+}
+
+.resource-timeline__filter-select {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  max-width: 160px;
+}
+
+.resource-timeline__zoom-button {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* Нейтральный header вместо дефолтного красного RCT. */
+.resource-timeline .rct-header-root,
+.resource-timeline .react-calendar-timeline .rct-header-root {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.resource-timeline .rct-header-root .rct-title,
+.resource-timeline .rct-dateHeader-primary {
+  color: var(--color-text);
+}
+
+.resource-timeline .rct-dateHeader {
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  border-left-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* Границы RCT (#bbb) — токеном. */
+.resource-timeline .rct-sidebar,
+.resource-timeline .rct-sidebar .rct-sidebar-row,
+.resource-timeline .rct-vl,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd,
+.resource-timeline .rct-calendar-header {
+  border-color: var(--color-border);
+}
+
+/* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
+   нерабочих дней задаётся календарём плана собственным слоем дней
+   (rt-day-*), а не днём недели и не линиями RCT (календарь настраиваемый,
+   PBT-044; слой независим от единицы шкалы — уточнение владельца
+   2026-10-15). */
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-0,
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-6,
+.resource-timeline .rct-vl.rct-day-0,
+.resource-timeline .rct-vl.rct-day-6 {
+  background: transparent;
+}
+
+/* Собственный слой нерабочих дней (PBT-047, уточнение владельца):
+   колонки дней в canvas-координатах через портал в канву RCT —
+   работают при любой единице шкалы; под строками и элементами. */
+.resource-timeline .rt-day-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.resource-timeline .rt-day-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.resource-timeline .rt-day-col.rt-day--weekend {
+  background: var(--color-gantt-weekend);
+}
+
+.resource-timeline .rt-day-col.rt-day--holiday {
+  background: var(--color-gantt-holiday);
+}
+
+/* Полосы: стили задаёт адаптер через item.style (токены) — здесь только
+   скругление и типографика содержимого. */
+.resource-timeline .rct-item .rct-item-content {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  /* Подпись не выходит за полосу: иначе содержимое узкой полосы
+     («Недоступен») перекрывает соседнюю и перехватывает её клики
+     (находка PBT-048). */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

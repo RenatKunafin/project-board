@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPlanContent, type PlanContent } from './plan-document';
+import { createPlanContent, parsePlanContent, type PlanContent } from './plan-document';
 import {
   applyPlanCommand,
   createTask,
@@ -7,6 +7,7 @@ import {
   moveTask,
   setTaskDates,
   setTaskDuration,
+  updateCalendar,
   updateTask,
   type PlanCommandResult,
 } from './plan-commands';
@@ -112,18 +113,99 @@ describe('createTask', () => {
   });
 });
 
+describe('updateCalendar', () => {
+  it('заменяет календарь атомарно: праздники и исключения сортируются', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['2026-10-14'], []),
+    );
+    expect(next.calendar).toEqual({
+      workingDays: [1, 2, 3, 4, 5],
+      holidays: ['2026-10-14'],
+      workingExceptions: [],
+    });
+  });
+
+  it('пустой календарь (без рабочих дней и исключений) отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [], [], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('календарь без рабочих дней, но с исключением — валиден', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateCalendar(plan, [], [], ['2026-10-14']),
+    );
+    expect(next.calendar.workingDays).toEqual([]);
+    expect(next.calendar.workingExceptions).toEqual(['2026-10-14']);
+  });
+
+  it('пересечение праздника и исключения отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['2026-10-14'], ['2026-10-14']),
+      'invalid-calendar',
+    );
+  });
+
+  it('не-ISO дата отклоняется', () => {
+    const plan = buildPlan();
+    expectError(
+      updateCalendar(plan, [1, 2, 3, 4, 5], ['14.10.2026'], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('дубли рабочих дней и дат отклоняются', () => {
+    const plan = buildPlan();
+    expectError(updateCalendar(plan, [1, 1, 2], [], []), 'invalid-calendar');
+    expectError(
+      updateCalendar(plan, [1, 2, 3], ['2026-10-14', '2026-10-14'], []),
+      'invalid-calendar',
+    );
+  });
+
+  it('applyPlanCommand исполняет updateCalendar', () => {
+    const plan = buildPlan();
+    const result = applyPlanCommand(plan, {
+      type: 'updateCalendar',
+      workingDays: [1, 2, 3, 4],
+      holidays: [],
+      workingExceptions: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.calendar.workingDays).toEqual([1, 2, 3, 4]);
+    }
+  });
+});
+
 describe('updateTask', () => {
-  it('патч заменяет присутствующие поля, id и даты не меняются', () => {
+  it('пустое множество в патче снимает все назначения (поле убирается, контракт PBT-034)', () => {
     const plan = buildPlan();
     const next = expectOk(
       updateTask(plan, 't-a', { title: 'Анализ 2', assigneeIds: [] }),
     );
     const task = next.tasks.find((entry) => entry.id === 't-a');
     expect(task?.title).toBe('Анализ 2');
-    expect(task?.assigneeIds).toEqual([]);
+    expect(task?.assigneeIds).toBeUndefined();
+    expect(task?.workTypeIds).toEqual(['wt-dev']);
     expect(task?.id).toBe('t-a');
     expect(task?.start).toBe('2026-10-12');
     expect(task?.end).toBe('2026-10-16');
+  });
+
+  it('непустое множество в патче заменяет назначения целиком', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateTask(plan, 't-a', { workTypeIds: ['wt-psi'] }),
+    );
+    const task = next.tasks.find((entry) => entry.id === 't-a');
+    expect(task?.workTypeIds).toEqual(['wt-psi']);
+    expect(task?.assigneeIds).toEqual(['r-qa']);
   });
 
   it('отсутствующие свойства патча не меняют поля', () => {
@@ -251,6 +333,28 @@ describe('moveTask — перенос (A2)', () => {
     const task = next.tasks.find((entry) => entry.id === 't-b');
     expect(task?.start).toBe('2026-10-16');
     expect(task?.end).toBe('2026-10-22');
+  });
+
+  it('перенос однодневной задачи сохраняет длительность 1 (особый случай addWorkingDays(x,0))', () => {
+    // Регрессия PBT-039: пн 12–пн 12 (1 раб. день) → пн 19 должно
+    // остаться 19–19, а не 19–20.
+    const oneDay = parsePlanContent({
+      title: 'Однодневная',
+      calendar: { workingDays: [1, 2, 3, 4, 5], holidays: [], workingExceptions: [] },
+      workTypes: [],
+      resources: [],
+      groups: [],
+      tasks: [{ id: 't-1', title: 'День', start: '2026-10-12', end: '2026-10-12' }],
+      dependencies: [],
+      unavailability: [],
+    });
+    if (!oneDay.ok) {
+      throw new Error('фикстура не прошла валидацию');
+    }
+    const next = expectOk(moveTask(oneDay.plan, 't-1', '2026-10-19'));
+    const task = next.tasks.find((entry) => entry.id === 't-1');
+    expect(task?.start).toBe('2026-10-19');
+    expect(task?.end).toBe('2026-10-19');
   });
 
   it('связанная задача не сдвигается', () => {
