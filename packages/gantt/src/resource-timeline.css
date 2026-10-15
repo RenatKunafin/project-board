@@ -88,4 +88,10 @@
   border-radius: var(--radius-sm);
   font-weight: 600;
   white-space: nowrap;
+  /* Подпись не выходит за полосу: иначе содержимое узкой полосы
+     («Недоступен») перекрывает соседнюю и перехватывает её клики
+     (находка PBT-048). */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

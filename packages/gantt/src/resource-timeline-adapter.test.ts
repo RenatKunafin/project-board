@@ -106,7 +106,7 @@ describe('planToTimelineItems — назначения и границы (ADR-4)
     expect(item.end_time - item.start_time).toBe(5 * 86_400_000);
   });
 
-  it('элементы read-only: canMove/canResize false в данных (v1)', () => {
+  it('задачи жестовые (PBT-048): canMove + canResize both; недоступность — нет', () => {
     const plan: PlanContent = {
       ...createPlanContent(),
       resources: [{ id: 'r-qa', title: 'QA' }],
@@ -119,11 +119,16 @@ describe('planToTimelineItems — назначения и границы (ADR-4)
           assigneeIds: ['r-qa'],
         },
       ],
+      unavailability: [
+        { id: 'u-1', resourceId: 'r-qa', start: '2026-10-26', end: '2026-10-27' },
+      ],
     };
-    const [item] = planToTimelineItems(plan);
-    expect(item.canMove).toBe(false);
-    expect(item.canResize).toBe(false);
-    expect(item.className).toBeUndefined();
+    const items = planToTimelineItems(plan);
+    expect(items[0].canMove).toBe(true);
+    expect(items[0].canResize).toBe('both');
+    expect(items[1].canMove).toBe(false);
+    expect(items[1].canResize).toBe(false);
+    expect(items[0].className).toBeUndefined();
   });
 
   it('стили задач — токены accent; data-атрибуты для e2e-локаторов', () => {

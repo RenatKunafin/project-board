@@ -19,8 +19,8 @@ export interface TimelineItem {
   readonly title: string;
   readonly start_time: number;
   readonly end_time: number;
-  readonly canMove: false;
-  readonly canResize: false;
+  readonly canMove: boolean;
+  readonly canResize: boolean | 'left' | 'right' | 'both';
   readonly className?: string;
   /**
    * itemProps — единственный путь стилей в дефолтном itemRenderer
@@ -113,8 +113,9 @@ export function timelineConflictMarks(
  * План → элементы дорожек (ADR-4 PBT-017): назначения — на дорожке
  * каждого ресурса (D1), неназначенные задачи не отображаются (D2),
  * недоступность — элемент у своего ресурса без жестов. Включительное
- * окончание → полночь дня после окончания (A1). Элементы read-only:
- * canMove/canResize false в данных (v1 без жестов — PBT-048).
+ * окончание → полночь дня после окончания (A1). Задачи редактируются
+ * жестами (PBT-048: drag/resize после клика-выделения, ADR-5);
+ * недоступность — только чтение.
  */
 export function planToTimelineItems(
   plan: PlanContent,
@@ -134,8 +135,8 @@ export function planToTimelineItems(
         title: task.title,
         start_time: timelineDayStartMs(task.start),
         end_time: timelineDayStartMs(addCalendarDays(task.end, 1)),
-        canMove: false,
-        canResize: false,
+        canMove: true,
+        canResize: 'both',
         ...(conflict
           ? { className: 'rtl-item--conflict' }
           : {}),

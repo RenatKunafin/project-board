@@ -12,7 +12,7 @@ import {
   planToGanttLinks,
   planToGanttTasks,
 } from './svar-adapter';
-import { createTask, deleteTask, moveTask, setTaskDates, updateTask } from './plan-commands';
+import { moveTask, setTaskDates } from './plan-commands';
 import type { PlanCommandError, PlanCommandResult } from './plan-commands';
 import {
   createResource,
@@ -27,28 +27,18 @@ import {
   deleteUnavailability,
   updateUnavailability,
 } from './plan-assignments';
-import {
-  createDependency,
-  deleteDependency,
-  updateDependency,
-} from './plan-dependencies';
 import { updateCalendar } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
-import { buildTaskDates, validateTaskForm, type TaskFormIssue } from './task-editor';
 import type { GroupFormIssue } from './group-editor';
-import TaskEditorDialog, {
-  type DependencyCommand,
-  type TaskEditorSubmit,
-} from './TaskEditorDialog';
+import TaskEditorDialog from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
 import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
+import { useTaskForm, type TaskEditorState } from './use-task-form';
 import './gantt.css';
 
-type EditorState =
-  | { readonly mode: 'create' }
-  | { readonly mode: 'edit'; readonly taskId: string };
+type EditorState = TaskEditorState;
 
 type GroupEditorState =
   | { readonly mode: 'group-create' }
@@ -177,131 +167,21 @@ export default function PlanGanttWidget({
     focusAnchorRef.current = null;
   }, []);
 
-  // Запись в документ: команды применяются к плану, одна запись на
-  // подтверждение формы. Конфликт ревизии (параллельная запись второго
-  // экземпляра) — перечитываем документ и повторяем; команды чистые.
-  const commitPlan = useCallback(
-    (mutate: (latest: ManagedDocument) => unknown) => {
-      const currentDocument = documentRef.current;
-      if (!documentId || !documentService || currentDocument === undefined) {
-        return;
-      }
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        const latest = documentService.get(documentId) ?? currentDocument;
-        try {
-          const nextContent = mutate(latest);
-          if (nextContent !== undefined) {
-            documentService.update(
-              documentId,
-              latest.revision,
-              nextContent as typeof latest.content,
-            );
-          }
-          return;
-        } catch (error) {
-          if (attempt === 2) {
-            throw error;
-          }
-        }
-      }
-    },
-    [documentId, documentService],
-  );
-
-  const submitTaskForm = useCallback(
-    (submit: TaskEditorSubmit): TaskFormIssue | undefined => {
-      const current = planRef.current;
-      if (current === undefined) {
-        return undefined;
-      }
-      const input = {
-        title: submit.title,
-        ...(submit.groupId === undefined ? {} : { groupId: submit.groupId }),
-        start: submit.start,
-        durationDays: submit.durationDays,
-      };
-      const issue = validateTaskForm(input, current);
-      if (issue !== undefined) {
-        return issue;
-      }
-      const dates = buildTaskDates(input, current);
-      const currentTask =
-        editor?.mode === 'edit'
-          ? current.tasks.find((task) => task.id === editor.taskId)
-          : undefined;
-      let coreError: TaskFormIssue | undefined;
-      commitPlan((latest) => {
-        const validationNow = parsePlanContent(latest.content);
-        if (!validationNow.ok) {
-          return undefined;
-        }
-        const base = validationNow.plan;
-        // Назначения (PBT-042): пустое множество снимает все (поле убирается).
-        const assignments = {
-          ...(submit.assigneeIds.length > 0
-            ? { assigneeIds: submit.assigneeIds }
-            : { assigneeIds: [] as readonly string[] }),
-          ...(submit.workTypeIds.length > 0
-            ? { workTypeIds: submit.workTypeIds }
-            : { workTypeIds: [] as readonly string[] }),
-        };
-        const result = ((): PlanCommandResult => {
-          if (currentTask === undefined) {
-            return createTask(base, {
-              title: input.title,
-              start: dates.start,
-              end: dates.end,
-              ...(input.groupId === undefined
-                ? {}
-                : { groupId: input.groupId }),
-              ...assignments,
-            });
-          }
-          const updated = updateTask(base, currentTask.id, {
-            title: input.title,
-            ...(input.groupId === undefined
-              ? { groupId: undefined }
-              : { groupId: input.groupId }),
-            ...assignments,
-          });
-          if (!updated.ok) {
-            return updated;
-          }
-          return setTaskDates(updated.plan, currentTask.id, {
-            start: dates.start,
-            end: dates.end,
-          });
-        })();
-        if (!result.ok) {
-          coreError = { field: 'assignments', message: result.error.message };
-          return undefined;
-        }
-        return result.plan;
-      });
-      if (coreError !== undefined) {
-        return coreError;
-      }
-      closeEditor();
-      return undefined;
-    },
-    [editor, commitPlan, closeEditor],
-  );
-
-  const deleteCurrentTask = useCallback(() => {
-    if (editor?.mode !== 'edit') {
-      return;
-    }
-    const taskId = editor.taskId;
-    commitPlan((latest) => {
-      const validationNow = parsePlanContent(latest.content);
-      if (!validationNow.ok) {
-        return undefined;
-      }
-      const removed = deleteTask(validationNow.plan, taskId);
-      return removed.ok ? removed.plan : undefined;
-    });
-    closeEditor();
-  }, [editor, commitPlan, closeEditor]);
+  // Форма задачи — общий хук с ресурсным видом (PBT-048): запись
+  // документа с ретраем ревизии, submit/удаление, команды зависимостей.
+  const {
+    commitPlan,
+    submitTaskForm,
+    deleteCurrentTask,
+    applyDependencyCommand,
+  } = useTaskForm({
+    documentId,
+    documentService,
+    document,
+    plan,
+    editor,
+    onClose: closeEditor,
+  });
 
   // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
   // Клиентскую валидацию выполняет форма; ошибка ядра (circular-group
@@ -421,43 +301,6 @@ export default function PlanGanttWidget({
                 command.holidays,
                 command.workingExceptions,
               );
-          }
-        })();
-        if (!result.ok) {
-          error = result.error;
-          return undefined;
-        }
-        return result.plan;
-      });
-      return error;
-    },
-    [commitPlan],
-  );
-
-  // Команды зависимостей (PBT-045): делегирование ядру plan-dependencies.
-  const applyDependencyCommand = useCallback(
-    (command: DependencyCommand): PlanCommandError | undefined => {
-      let error: PlanCommandError | undefined;
-      commitPlan((latest) => {
-        const validationNow = parsePlanContent(latest.content);
-        if (!validationNow.ok) {
-          return undefined;
-        }
-        const base = validationNow.plan;
-        const result = ((): PlanCommandResult => {
-          switch (command.type) {
-            case 'createDependency':
-              return createDependency(base, {
-                fromTaskId: command.fromTaskId,
-                toTaskId: command.toTaskId,
-                lagDays: command.lagDays,
-              });
-            case 'updateDependencyLag':
-              return updateDependency(base, command.dependencyId, {
-                lagDays: command.lagDays,
-              });
-            case 'deleteDependency':
-              return deleteDependency(base, command.dependencyId);
           }
         })();
         if (!result.ok) {
