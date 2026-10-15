@@ -1,0 +1,91 @@
+/* Ресурсные дорожки PBT-047. Только токены :root (хекс-коды запрещены
+   до PBT-066); дефолты RCT переопределяются усиленными селекторами
+   (прецедент спайка PBT-015). */
+
+.resource-timeline {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+}
+
+.resource-timeline__hint {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.resource-timeline__issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.resource-timeline--error {
+  overflow: auto;
+}
+
+.resource-timeline__chart {
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+/* Нейтральный header вместо дефолтного красного RCT. */
+.resource-timeline .rct-header-root,
+.resource-timeline .react-calendar-timeline .rct-header-root {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.resource-timeline .rct-header-root .rct-title,
+.resource-timeline .rct-dateHeader-primary {
+  color: var(--color-text);
+}
+
+.resource-timeline .rct-dateHeader {
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  border-left-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* Границы RCT (#bbb) — токеном. */
+.resource-timeline .rct-sidebar,
+.resource-timeline .rct-sidebar .rct-sidebar-row,
+.resource-timeline .rct-vl,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd,
+.resource-timeline .rct-calendar-header {
+  border-color: var(--color-border);
+}
+
+/* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
+   нерабочих дней задаётся календарём плана через rtl-day--*, а не днём
+   недели (календарь настраиваемый, PBT-044). */
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-0,
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-6,
+.resource-timeline .rct-vl.rct-day-0,
+.resource-timeline .rct-vl.rct-day-6 {
+  background: transparent;
+}
+
+/* Нерабочие дни календаря плана на общей шкале (D3). */
+.resource-timeline .rct-vl.rtl-day--weekend {
+  background: var(--color-gantt-weekend);
+}
+
+.resource-timeline .rct-vl.rtl-day--holiday {
+  background: var(--color-gantt-holiday);
+}
+
+/* Полосы: стили задаёт адаптер через item.style (токены) — здесь только
+   скругление и типографика содержимого. */
+.resource-timeline .rct-item .rct-item-content {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}

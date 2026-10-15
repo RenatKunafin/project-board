@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@project-board/widget-sdk": "*",
-    "@svar-ui/react-gantt": "2.8.0"
+    "@svar-ui/react-gantt": "2.8.0",
+    "dayjs": "1.11.23",
+    "interactjs": "1.10.27",
+    "react-calendar-timeline": "0.30.0-beta.19"
   }
 }

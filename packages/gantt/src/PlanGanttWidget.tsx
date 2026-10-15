@@ -474,7 +474,6 @@ export default function PlanGanttWidget({
   // Переход к задаче из списка проблем (PBT-046): раскрыть цепочку
   // свёрнутых групп-предков, прокрутить шкалу к дате, выделить строку.
   const showTask = useCallback((taskId: string) => {
-    console.info('[pbt046dbg] show-task', JSON.stringify({ taskId, apiNull: apiRef.current === null }));
     const planNow = planRef.current;
     const api = apiRef.current;
     if (planNow === undefined || api === null) {
