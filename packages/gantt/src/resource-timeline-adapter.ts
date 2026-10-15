@@ -37,7 +37,9 @@ export interface TimelineItem {
  */
 const taskStyle: CSSProperties = {
   background: 'var(--color-accent)',
-  borderColor: 'var(--color-accent)',
+  // Бордер темнее фона: стык соседних задач читается как граница,
+  // полосы не сливаются (правка владельца).
+  borderColor: 'var(--color-rt-task-border)',
   color: 'var(--color-on-accent)',
   fontSize: 12,
 };

@@ -145,6 +145,8 @@ describe('planToTimelineItems — назначения и границы (ADR-4)
     // только itemProps (поле item.style игнорирует).
     expect(item.itemProps?.style).toMatchObject({
       background: 'var(--color-accent)',
+      // бордер темнее фона — стык соседних задач не сливается
+      borderColor: 'var(--color-rt-task-border)',
     });
     expect(item.itemProps).toMatchObject({ 'data-rt-task': 't-1' });
   });
