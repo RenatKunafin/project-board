@@ -76,6 +76,10 @@ function handlers(): { current: PaneHandlers } {
       closePane(): void {},
       replacePaneDocument(): void {},
       createDocumentForPane(): void {},
+      viewStateOf(): Record<string, unknown> {
+        return {};
+      },
+      updateViewState(): void {},
       onAreasChange(): void {},
       onCascadeChange(): void {},
     },

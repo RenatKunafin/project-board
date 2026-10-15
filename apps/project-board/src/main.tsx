@@ -90,6 +90,9 @@ async function bootstrap(): Promise<void> {
     );
   }
   const saved = await workspaceStore.load();
+  // Состояния представлений экземпляров (PBT-049, ключи `view:*`) —
+  // до рендера: панели монтируются со снапшотами настроек.
+  const initialViewStates = await workspaceStore.loadViewSettings();
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
 
@@ -111,6 +114,7 @@ async function bootstrap(): Promise<void> {
           list1Id={firstChecklistId()}
           list2Id={secondChecklistId()}
           restored={restored}
+          initialViewStates={initialViewStates}
           documentsLoadError={documentsLoadError}
         />
       </React.StrictMode>,

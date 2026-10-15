@@ -84,6 +84,8 @@ interface AppProps {
   list1Id: string;
   list2Id: string;
   restored?: RestoredWorkspace;
+  /** Состояния представлений экземпляров из БД (PBT-049, ключи `view:*`). */
+  initialViewStates?: Record<string, Record<string, unknown>>;
   /** Ошибка восстановления документов при старте: каталог показывает её, а не «пусто». */
   documentsLoadError?: boolean;
 }
@@ -131,6 +133,7 @@ function WidgetPane({
   documentService,
   documents,
   visible,
+  handlers,
   onPickDocument,
   onCreateDocument,
 }: {
@@ -139,6 +142,7 @@ function WidgetPane({
   documentService: AutosavingDocumentService;
   documents: readonly ManagedDocument[];
   visible: boolean;
+  handlers: { readonly current: PaneHandlers };
   onPickDocument: (instanceId: string, documentId: string) => void;
   onCreateDocument: (instanceId: string) => void;
 }) {
@@ -221,7 +225,13 @@ function WidgetPane({
     >
       <WidgetComponent
         widgetInstanceId={pane.instanceId}
-        settings={lookup.startSettings}
+        settings={{
+          ...lookup.startSettings,
+          ...handlers.current.viewStateOf(pane.instanceId),
+        }}
+        updateSettings={(patch) =>
+          handlers.current.updateViewState(pane.instanceId, patch)
+        }
         documentId={pane.documentId}
         documentService={documentService}
         visible={visible}
@@ -240,6 +250,9 @@ export interface PaneHandlers {
   createDocumentForPane(instanceId: string): void;
   onAreasChange(next: TiledLayoutState): void;
   onCascadeChange(next: CascadeLayoutState): void;
+  /** Снапшот состояния представления экземпляра (PBT-049, ADR-6.4). */
+  viewStateOf(instanceId: string): Record<string, unknown>;
+  updateViewState(instanceId: string, patch: Record<string, unknown>): void;
 }
 
 interface TabSurfaceProps {
@@ -412,6 +425,7 @@ export const TabSurface = memo(function TabSurface({
               documentService={documentService}
               documents={documents}
               visible={visible && pane.collapsed !== true}
+              handlers={handlers}
               onPickDocument={(instanceId, documentId) =>
                 handlers.current.replacePaneDocument(instanceId, documentId)
               }
@@ -467,8 +481,32 @@ export default function App({
   list1Id,
   list2Id,
   restored,
+  initialViewStates,
   documentsLoadError = false,
 }: AppProps) {
+  // Состояние представлений экземпляров (PBT-049, ADR-6.4): стабильный ref —
+  // виджеты сами применяют свой state, платформа не ре-рендерит панели.
+  const viewStatesRef = useRef<Record<string, Record<string, unknown>>>(
+    initialViewStates ?? {},
+  );
+  const viewStateOf = useCallback(
+    (instanceId: string): Record<string, unknown> =>
+      viewStatesRef.current[instanceId] ?? {},
+    [],
+  );
+  const updateViewState = useCallback(
+    (instanceId: string, patch: Record<string, unknown>) => {
+      viewStatesRef.current[instanceId] = {
+        ...viewStatesRef.current[instanceId],
+        ...patch,
+      };
+      void workspaceStore.saveViewSetting(
+        instanceId,
+        viewStatesRef.current[instanceId],
+      );
+    },
+    [workspaceStore],
+  );
   const [workspace, dispatch] = useReducer(
     workspaceReducer,
     undefined,
@@ -943,6 +981,8 @@ export default function App({
     closePane,
     replacePaneDocument,
     createDocumentForPane,
+    viewStateOf,
+    updateViewState,
     onAreasChange: (next) => {
       if (activeTab) {
         setAreasByTab((previous) => ({ ...previous, [activeTab.id]: next }));

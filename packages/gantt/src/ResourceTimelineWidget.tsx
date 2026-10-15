@@ -79,6 +79,8 @@ export default function ResourceTimelineWidget({
   documentId,
   documentService,
   visible,
+  settings,
+  updateSettings,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
@@ -86,6 +88,25 @@ export default function ResourceTimelineWidget({
   // Форма задачи (PBT-048): общий диалог с проектным видом.
   const [editor, setEditor] = useState<TaskEditorState | undefined>(undefined);
   const focusAnchorRef = useRef<HTMLElement | null>(null);
+
+  // Фильтры представления (PBT-049): тулбар-контролы; изменение —
+  // React-state + updateSettings (производное, документ не меняется).
+  const [filterQuery, setFilterQuery] = useState<string>(
+    typeof settings.filterQuery === 'string' ? settings.filterQuery : '',
+  );
+  const [filterResourceId, setFilterResourceId] = useState<string>(
+    typeof settings.filterResourceId === 'string'
+      ? settings.filterResourceId
+      : '',
+  );
+  const applyFilters = useCallback(
+    (query: string, resourceId: string) => {
+      setFilterQuery(query);
+      setFilterResourceId(resourceId);
+      updateSettings?.({ filterQuery: query, filterResourceId: resourceId });
+    },
+    [updateSettings],
+  );
 
   useEffect(() => {
     if (!documentId || !documentService) {
@@ -377,19 +398,45 @@ export default function ResourceTimelineWidget({
   // Производные представления данных (D2/D4): пересчёт при рендере,
   // записей не создаёт. Ремоунт по ревизии (D7) обновляет дорожки при
   // внешних изменениях; собственная запись жеста — без ремоунта.
-  const groups = useMemo<TimelineGroup[]>(
-    () => (plan ? planToTimelineGroups(plan) : []),
-    [plan],
-  );
+  // Фильтры (PBT-049): производные от полного плана — конфликты/метки
+  // считаются по нему же, фильтр только скрывает. Фильтр ресурса —
+  // одна дорожка; текст — скрывает элементы и опустевшие дорожки.
+  const query = filterQuery.trim().toLowerCase();
+  const filterActive = filterQuery.trim() !== '' || filterResourceId !== '';
   const items = useMemo<TimelineItem[]>(() => {
     if (!plan) {
       return [];
     }
-    return planToTimelineItems(
+    const all = planToTimelineItems(
       plan,
       timelineConflictMarks(resourceConflicts(plan)),
     );
-  }, [plan]);
+    return all.filter((item) => {
+      if (filterResourceId !== '' && item.group !== filterResourceId) {
+        return false;
+      }
+      if (query !== '' && !item.title.toLowerCase().includes(query)) {
+        return false;
+      }
+      return true;
+    });
+  }, [plan, filterQuery, filterResourceId]);
+  const groups = useMemo<TimelineGroup[]>(() => {
+    const all = plan ? planToTimelineGroups(plan) : [];
+    if (filterResourceId !== '') {
+      return all.filter((group) => group.id === filterResourceId);
+    }
+    if (query !== '') {
+      // Текстовый фильтр: дорожки без видимых элементов задач скрыты.
+      const withVisible = new Set(
+        items
+          .filter((item) => !item.id.startsWith('u-'))
+          .map((item) => item.group),
+      );
+      return all.filter((group) => withVisible.has(group.id));
+    }
+    return all;
+  }, [plan, filterResourceId, query, items]);
   const range = useMemo(
     () => timelineRange(plan ?? createPlanContent()),
     [plan],
@@ -415,6 +462,69 @@ export default function ResourceTimelineWidget({
         : previous,
     );
   }, [range]);
+
+  // ─── Масштаб: контролируемая видимая область (PBT-049) ──────────────────
+  // Восстановление — из настроек экземпляра; изменение (кнопки, колесо,
+  // перетаскивание через onTimeChange) сохраняется с дебаунсом 500 мс.
+  const [visibleRange, setVisibleRange] = useState<
+    { readonly start: number; readonly end: number } | undefined
+  >(
+    typeof settings.zoomStart === 'number' &&
+      typeof settings.zoomEnd === 'number'
+      ? { start: settings.zoomStart, end: settings.zoomEnd }
+      : undefined,
+  );
+  const zoomSaveTimerRef = useRef<number | null>(null);
+  const applyVisible = useCallback(
+    (start: number, end: number, immediateSave: boolean) => {
+      setVisibleRange({ start, end });
+      if (zoomSaveTimerRef.current !== null) {
+        window.clearTimeout(zoomSaveTimerRef.current);
+      }
+      const save = () => {
+        zoomSaveTimerRef.current = null;
+        updateSettings?.({ zoomStart: start, zoomEnd: end });
+      };
+      if (immediateSave) {
+        save();
+      } else {
+        zoomSaveTimerRef.current = window.setTimeout(save, 500);
+      }
+    },
+    [updateSettings],
+  );
+  const handleTimeChange = useCallback(
+    (
+      start: number,
+      end: number,
+      updateScrollCanvas: (start: number, end: number) => void,
+    ) => {
+      updateScrollCanvas(start, end);
+      applyVisible(start, end, false);
+    },
+    [applyVisible],
+  );
+  const zoomBy = useCallback(
+    (factor: number) => {
+      setVisibleRange((previous) => {
+        const current =
+          previous ?? { start: range.start, end: range.end };
+        const center = (current.start + current.end) / 2;
+        const span = Math.min(
+          Math.max((current.end - current.start) * factor, 7 * DAY_MS),
+          730 * DAY_MS,
+        );
+        const next = {
+          start: Math.round(center - span / 2),
+          end: Math.round(center + span / 2),
+        };
+        applyVisible(next.start, next.end, true);
+        return next;
+      });
+    },
+    [range, applyVisible],
+  );
+  const effectiveVisible = visibleRange ?? { start: range.start, end: range.end };
 
   const dayLayer = useMemo(() => {
     if (!scrollHost || !bounds || plan === undefined) {
@@ -529,9 +639,60 @@ export default function ResourceTimelineWidget({
       data-widget-instance={widgetInstanceId}
       data-plan-title={document.title}
     >
+      <div className="resource-timeline__toolbar">
+        <input
+          type="search"
+          className="resource-timeline__filter-input"
+          data-rt-filter-query
+          placeholder="Фильтр: задача"
+          value={filterQuery}
+          onChange={(event) =>
+            applyFilters(event.target.value, filterResourceId)
+          }
+        />
+        <select
+          className="resource-timeline__filter-select"
+          data-rt-filter-resource
+          value={filterResourceId}
+          onChange={(event) =>
+            applyFilters(filterQuery, event.target.value)
+          }
+        >
+          <option value="">Все ресурсы</option>
+          {(plan?.resources ?? []).map((resource) => (
+            <option key={resource.id} value={resource.id}>
+              {resource.title}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="resource-timeline__zoom-button"
+          data-rt-zoom-in
+          title="Крупнее"
+          onClick={() => zoomBy(0.6)}
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className="resource-timeline__zoom-button"
+          data-rt-zoom-out
+          title="Мельче"
+          onClick={() => zoomBy(1.6)}
+        >
+          −
+        </button>
+      </div>
       {visible === false ? (
         <p className="resource-timeline__hint">
           Просмотр приостановлен: окно скрыто, документ обновляется в фоне.
+        </p>
+      ) : filterActive && items.length === 0 ? (
+        // Фильтр-пусто раньше «нет ресурсов»: текстовый фильтр скрывает
+        // и дорожки (DoD-4 PBT-049).
+        <p className="resource-timeline__hint" data-rt-filter-empty>
+          Ничего не найдено по фильтру. Задачи документа не изменены.
         </p>
       ) : groups.length === 0 ? (
         <p className="resource-timeline__hint" data-rt-empty>
@@ -552,6 +713,9 @@ export default function ResourceTimelineWidget({
             keys={TIMELINE_KEYS}
             defaultTimeStart={range.start}
             defaultTimeEnd={range.end}
+            visibleTimeStart={effectiveVisible.start}
+            visibleTimeEnd={effectiveVisible.end}
+            onTimeChange={handleTimeChange}
             sidebarWidth={150}
             rightSidebarWidth={0}
             lineHeight={34}

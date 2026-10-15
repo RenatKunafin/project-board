@@ -36,6 +36,11 @@ import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
 import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
 import { useTaskForm, type TaskEditorState } from './use-task-form';
+import {
+  filterPlanForView,
+  planFilterActive,
+  type PlanViewFilter,
+} from './plan-view-filter';
 import './gantt.css';
 
 type EditorState = TaskEditorState;
@@ -56,9 +61,30 @@ export default function PlanGanttWidget({
   documentId,
   documentService,
   visible,
+  settings,
+  updateSettings,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
+  );
+
+  // Фильтры представления (PBT-049): тулбар-контролы; изменение —
+  // React-state + updateSettings (производное, документ не меняется).
+  const [filterQuery, setFilterQuery] = useState<string>(
+    typeof settings.filterQuery === 'string' ? settings.filterQuery : '',
+  );
+  const [filterResourceId, setFilterResourceId] = useState<string>(
+    typeof settings.filterResourceId === 'string'
+      ? settings.filterResourceId
+      : '',
+  );
+  const applyFilters = useCallback(
+    (query: string, resourceId: string) => {
+      setFilterQuery(query);
+      setFilterResourceId(resourceId);
+      updateSettings?.({ filterQuery: query, filterResourceId: resourceId });
+    },
+    [updateSettings],
   );
 
   useEffect(() => {
@@ -117,13 +143,28 @@ export default function PlanGanttWidget({
   const [issuesOpen, setIssuesOpen] = useState(false);
 
   // Сворачивание групп — состояние экземпляра (B4): множество свёрнутых
-  // id в памяти виджета, переживает remount чарта по ревизии, в документ
-  // не попадает. Слушается перехватчиком open-task (design D4).
+  // id переживает remount чарта по ревизии, в документ не попадает.
+  // PBT-049: состояние сохраняется в настройках экземпляра (ADR-6.4)
+  // и восстанавливается при монтировании после перезапуска.
   const [collapsedGroups, setCollapsedGroups] = useState<
     ReadonlySet<string>
-  >(new Set());
+  >(
+    () =>
+      new Set(
+        Array.isArray(settings.collapsedGroups)
+          ? (settings.collapsedGroups as readonly string[])
+          : [],
+      ),
+  );
   const collapsedRef = useRef(collapsedGroups);
   collapsedRef.current = collapsedGroups;
+  // Запись раскрытия в настройки: перехватчики и showTask (замыкания
+  // без зависимостей) пишут через ref.
+  const updateSettingsRef = useRef(updateSettings);
+  updateSettingsRef.current = updateSettings;
+  const persistCollapsed = useCallback((next: ReadonlySet<string>) => {
+    updateSettingsRef.current?.({ collapsedGroups: [...next] });
+  }, []);
 
   const openEditor = useCallback((next: EditorState) => {
     focusAnchorRef.current =
@@ -316,7 +357,9 @@ export default function PlanGanttWidget({
 
   // Переход к задаче из списка проблем (PBT-046): раскрыть цепочку
   // свёрнутых групп-предков, прокрутить шкалу к дате, выделить строку.
-  const showTask = useCallback((taskId: string) => {
+  // Фильтры сбрасываются: задача может быть скрыта фильтром (PBT-049).
+  const showTask = useCallback(
+    (taskId: string) => {
     const planNow = planRef.current;
     const api = apiRef.current;
     if (planNow === undefined || api === null) {
@@ -350,12 +393,16 @@ export default function PlanGanttWidget({
         for (const id of toOpen) {
           next.delete(id);
         }
+        persistCollapsed(next);
         return next;
       });
     }
+    applyFilters('', '');
     api.exec('scroll-chart', { date: ganttDate(task.start) });
     api.exec('select-task', { id: taskId });
-  }, []);
+    },
+    [applyFilters, persistCollapsed],
+  );
 
   // Read-only сводных (B2): строки задач двигаются, сводные полосы
   // определяются дочерними задачами. Специфика обёртки SVAR
@@ -414,6 +461,7 @@ export default function PlanGanttWidget({
         } else {
           next.delete(rowId);
         }
+        persistCollapsed(next);
         return next;
       });
       return undefined;
@@ -676,7 +724,12 @@ export default function PlanGanttWidget({
           } catch {
             continue;
           }
-          if (!(stored.start instanceof Date) || !(stored.end instanceof Date)) {
+          // Задача скрыта фильтром представления (PBT-049) — в сторе её нет.
+          if (
+            stored === undefined ||
+            !(stored.start instanceof Date) ||
+            !(stored.end instanceof Date)
+          ) {
             continue;
           }
           const storeStart = ganttDayIso(stored.start);
@@ -743,15 +796,26 @@ export default function PlanGanttWidget({
   // Стабильная версия данных, отданная в SVAR: при собственной записи
   // жеста возвращается прежний объект (ссылки props не меняются —
   // перезаливки нет), при внешних изменениях создаётся новый.
+  // Фильтр представления (PBT-049): производное от полного плана; чарт
+  // рисует отфильтрованное дерево, проблемы и счётчик — полный план.
+  const viewFilter = useMemo<PlanViewFilter>(
+    () => ({ query: filterQuery, resourceId: filterResourceId }),
+    [filterQuery, filterResourceId],
+  );
+  const filteredPlan = useMemo(
+    () => (plan !== undefined ? filterPlanForView(plan, viewFilter) : undefined),
+    [plan, viewFilter],
+  );
+  const filterActive = planFilterActive(viewFilter);
   const source = useMemo(
     () =>
       svarSourceRef.current !== null && ownWrite
         ? svarSourceRef.current
-        : plan !== undefined
-          ? { plan, collapsed: collapsedGroups }
+        : filteredPlan !== undefined
+          ? { plan: filteredPlan, collapsed: collapsedGroups }
           : null,
     // svarSourceRef намеренно вне deps: это «данные, уже залитые в стор».
-    [ownWrite, plan, collapsedGroups],
+    [ownWrite, filteredPlan, collapsedGroups],
   );
   useEffect(() => {
     svarSourceRef.current = source;
@@ -1044,10 +1108,40 @@ export default function PlanGanttWidget({
             >
               Проблемы ({issues.length})
             </button>
+            <input
+              type="search"
+              className="plan-gantt__filter-input"
+              data-gantt-filter-query
+              placeholder="Фильтр: задача"
+              value={filterQuery}
+              onChange={(event) =>
+                applyFilters(event.target.value, filterResourceId)
+              }
+            />
+            <select
+              className="plan-gantt__filter-select"
+              data-gantt-filter-resource
+              value={filterResourceId}
+              onChange={(event) =>
+                applyFilters(filterQuery, event.target.value)
+              }
+            >
+              <option value="">Все ресурсы</option>
+              {(plan?.resources ?? []).map((resource) => (
+                <option key={resource.id} value={resource.id}>
+                  {resource.title}
+                </option>
+              ))}
+            </select>
             <span className="plan-gantt__count" data-task-count>
               Задач: {plan?.tasks.length ?? 0}
             </span>
           </div>
+          {filterActive && filteredPlan !== undefined && filteredPlan.tasks.length === 0 ? (
+            <p className="plan-gantt__filter-empty" data-gantt-filter-empty>
+              Ничего не найдено по фильтру. Задачи документа не изменены.
+            </p>
+          ) : null}
           <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
             <Willow>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
