@@ -24,4 +24,4 @@
 ## 5. Реестр и PR
 
 - [x] 5.1 После одобрения артефактов: коммит change в ветку, статус `In progress` в реестре `.context/tasks/README.md`
-- [ ] 5.2 Открыть PR в `develop` с результатами проверок и скриншотами/выводами тестов; после одобрения — архивация change с sync specs в `openspec/specs/plan-transfer/` заключительным коммитом перед merge, статус `Done` после merge
+- [x] 5.2 Открыть PR в `develop` с результатами проверок и скриншотами/выводами тестов; после одобрения — архивация change с sync specs в `openspec/specs/plan-transfer/` заключительным коммитом перед merge, статус `Done` после merge
