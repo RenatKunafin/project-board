@@ -1364,12 +1364,17 @@ export default function PlanGanttWidget({
                   props после init (спайк PBT-014) — внешние изменения
                   документа применяются пересозданием представления.
                   Своя запись жеста подавляет remount (D7 PBT-039). */}
+              {/* Компактная плотность по референсу OnlineGantt (PBT-068,
+                  замер 2026-10-16): день ≈ 33px, строка 36px — вместо
+                  дефолтов SVAR 100/38, дающих ~10 дней в окно. */}
               <Gantt
                 key={chartRemountKey}
                 tasks={tasks}
                 links={links}
                 columns={columns}
                 inclusiveEnd={true}
+                cellWidth={33}
+                cellHeight={36}
                 autoScale={false}
                 start={chartRange?.start}
                 end={chartRange?.end}
