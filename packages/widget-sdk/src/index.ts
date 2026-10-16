@@ -37,6 +37,12 @@ export interface WidgetProps {
    * снапшот возвращается виджету в `settings` при монтировании панели.
    */
   readonly updateSettings?: (patch: WidgetTypeSettings) => void;
+  /**
+   * Переключение документа экземпляра по запросу виджета (PBT-051):
+   * платформа перепривязывает окно на указанный документ того же типа
+   * (механизм замены документа), подписи окон и каталог обновляются.
+   */
+  readonly switchDocument?: (documentId: string) => void;
 }
 
 export interface WidgetSizeConstraints {

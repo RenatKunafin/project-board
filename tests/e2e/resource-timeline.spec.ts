@@ -191,6 +191,9 @@ test('оба вида одного документа: изменение в п�
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
     { id: documentId, value: planContent },
   );
+  // SVAR пересобирает представление по ревизии (PBT-037): измерения и
+  // жесты сразу после записи контрольных данных попадают в переходный DOM.
+  await page.waitForTimeout(1500);
 
   // Второй вид — проектный Гантт на том же документе (без дублирования).
   await page.getByRole('button', { name: 'Добавить виджет' }).click();
