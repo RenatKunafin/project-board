@@ -44,6 +44,8 @@ interface TaskEditorDialogProps {
     command: DependencyCommand,
   ) => PlanCommandError | undefined;
   readonly onDelete?: () => void;
+  /** PBT-054: открытие диалога преобразования в отпуск (edit-режим). */
+  readonly onConvertToAbsence?: () => void;
   readonly onClose: () => void;
 }
 
@@ -59,6 +61,7 @@ export default function TaskEditorDialog({
   onSubmit,
   applyDependencyCommand,
   onDelete,
+  onConvertToAbsence,
   onClose,
 }: TaskEditorDialogProps) {
   const [title, setTitle] = useState(task?.title ?? '');
@@ -522,6 +525,16 @@ export default function TaskEditorDialog({
               }}
             >
               Удалить
+            </button>
+          )}
+          {mode === 'edit' && onConvertToAbsence !== undefined && (
+            <button
+              type="button"
+              className="task-editor__button"
+              data-task-to-absence
+              onClick={onConvertToAbsence}
+            >
+              В отпуск…
             </button>
           )}
           <div className="task-editor__foot-spacer" />
