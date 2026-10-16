@@ -14,4 +14,4 @@
 ## 3. Проверки и PR
 
 - [x] 3.1 Полный набор на чистой среде: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `test:browser`, `openspec validate pbt-054-imported-absence-mapping --strict` и `--all --strict`; результаты в PR
-- [ ] 3.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs (resource-planning +1, plan-transfer +1) заключительным коммитом перед merge, `Done` после merge
+- [x] 3.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs (resource-planning +1, plan-transfer +1) заключительным коммитом перед merge, `Done` после merge
