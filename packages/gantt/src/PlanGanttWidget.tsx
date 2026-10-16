@@ -16,8 +16,12 @@ import {
   deserializePlanFile,
   planFileName,
   serializePlanFile,
-  type PlanFileIssue,
 } from './native-plan-format';
+import {
+  parseOnlineGanttFile,
+  type OnlineGanttPayload,
+} from './onlinegantt-parser';
+import OnlineGanttImportDialog from './OnlineGanttImportDialog';
 import { createWorkingCalendar } from './working-calendar';
 import {
   ganttDate,
@@ -86,9 +90,30 @@ export default function PlanGanttWidget({
   // Перенос плана файлом (PBT-051): результат последнего импорта —
   // краткое подтверждение или перечень проблем; документ при отказе
   // не создаётся, отмена выбора файла состояние не меняет.
+  // PBT-053: проблемы обоих форматов структурно совместимы —
+  // собственный формат и OnlineGantt .gantt показываются одной панелью.
   const [importResult, setImportResult] = useState<
     | { readonly ok: true; readonly title: string }
-    | { readonly ok: false; readonly issues: readonly PlanFileIssue[] }
+    | {
+        readonly ok: false;
+        readonly issues: readonly {
+          code: string;
+          path: string;
+          message: string;
+          details?: readonly {
+            code: string;
+            path: string;
+            message: string;
+          }[];
+        }[];
+      }
+    | undefined
+  >(undefined);
+
+  // Предпросмотр импорта .gantt (PBT-053): разобранный payload живёт
+  // до явного применения; создание документа — только по кнопке.
+  const [onlineganttPreview, setOnlineganttPreview] = useState<
+    | { readonly fileName: string; readonly payload: OnlineGanttPayload }
     | undefined
   >(undefined);
 
@@ -260,6 +285,8 @@ export default function PlanGanttWidget({
   // switchDocument, механизм замены документа платформы); отказ —
   // перечень проблем по месту, документ не создаётся. Отмена выбора
   // файла (change не сработал) состояние не меняет.
+  // PBT-053: файлы .gantt идут в парсер OnlineGantt с предпросмотром
+  // до создания (design D1/D2); прочие — собственный формат (PBT-051).
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const handleImportFile = useCallback(
     (file: File | undefined) => {
@@ -267,6 +294,16 @@ export default function PlanGanttWidget({
         return;
       }
       void file.text().then((text) => {
+        if (file.name.toLowerCase().endsWith('.gantt')) {
+          const parsed = parseOnlineGanttFile(text);
+          if (!parsed.ok) {
+            setImportResult({ ok: false, issues: parsed.issues });
+            return;
+          }
+          setImportResult(undefined);
+          setOnlineganttPreview({ fileName: file.name, payload: parsed.payload });
+          return;
+        }
         const result = deserializePlanFile(text);
         if (!result.ok) {
           setImportResult({ ok: false, issues: result.issues });
@@ -285,6 +322,32 @@ export default function PlanGanttWidget({
     },
     [documentService, switchDocument],
   );
+
+  // Применение предпросмотра .gantt (design D4): новый независимый
+  // документ с названием из диалога, окно переключается, предпросмотр
+  // закрывается. Отмена/Esc — только сброс состояния, данные не тронуты.
+  const applyOnlineGanttImport = useCallback(
+    (title: string) => {
+      if (documentService === undefined || onlineganttPreview === undefined) {
+        return;
+      }
+      const created = documentService.create({
+        moduleId: PLAN_MODULE_ID,
+        documentType: PLAN_DOCUMENT_TYPE,
+        schemaVersion: PLAN_SCHEMA_VERSION,
+        title,
+        content: onlineganttPreview.payload.content,
+      });
+      setOnlineganttPreview(undefined);
+      setImportResult({ ok: true, title: created.title });
+      switchDocument?.(created.id);
+    },
+    [documentService, onlineganttPreview, switchDocument],
+  );
+
+  const cancelOnlineGanttImport = useCallback(() => {
+    setOnlineganttPreview(undefined);
+  }, []);
 
 
   // Форма задачи — общий хук с ресурсным видом (PBT-048): запись
@@ -1209,7 +1272,7 @@ export default function PlanGanttWidget({
             <input
               ref={importInputRef}
               type="file"
-              accept=".json,application/json"
+              accept=".json,.gantt,application/json"
               className="plan-gantt__import-input"
               data-import-plan-input
               aria-label="Файл плана для импорта"
@@ -1352,6 +1415,14 @@ export default function PlanGanttWidget({
               issues={issues}
               onShowTask={showTask}
               onClose={() => setIssuesOpen(false)}
+            />
+          )}
+          {onlineganttPreview !== undefined && (
+            <OnlineGanttImportDialog
+              fileName={onlineganttPreview.fileName}
+              payload={onlineganttPreview.payload}
+              onApply={applyOnlineGanttImport}
+              onCancel={cancelOnlineGanttImport}
             />
           )}
         </div>
