@@ -98,3 +98,47 @@
   font-size: 13px;
   color: var(--color-text-muted);
 }
+
+/* Перенос плана файлом (PBT-051): скрытый input и результат импорта. */
+/* Перенос плана файлом (PBT-051): скрытый input и результат импорта.
+   Координаты обязательны: без top/left absolute-элемент занимает место
+   в потоке тулбара, раздувает его высоту и сдвигает чарт (наблюдение
+   бисекта PBT-051: двойной клик по строке попадал в соседнюю строку). */
+.plan-gantt__import-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* Иконочные кнопки переноса (PBT-051): эмодзи выше текста 13px —
+   без ограничения ряд тулбара растёт и сдвигает чарт. */
+.plan-gantt__icon-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.plan-gantt__transfer-result {
+  margin: 8px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.plan-gantt__transfer-result--error {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.plan-gantt__transfer-issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}

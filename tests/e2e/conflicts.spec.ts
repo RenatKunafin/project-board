@@ -124,6 +124,10 @@ test('исправление конфликта работ снимает про
   );
   const pane = page.getByRole('group', { name: 'План · Конфликты' });
   await expect(pane.locator('[data-issues]')).toContainText('Проблемы (4)');
+  // SVAR пересобирает представление по ревизии документа (PBT-037):
+  // жест сразу после записи контрольных данных попадает в переходный
+  // DOM — строка-сосед сверху. Ждём завершения пересборки.
+  await page.waitForTimeout(1500);
 
   const revBefore = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.revision,

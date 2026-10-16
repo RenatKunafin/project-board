@@ -98,6 +98,9 @@ test('из плоского плана строится структура «н�
   await page.goto('/');
   const documentId = await createPlan(page, 'Структура');
   await seedPlan(page, documentId, flatPlan);
+  // SVAR пересобирает представление по ревизии (PBT-037): жесты сразу
+  // после записи контрольных данных попадают в переходный DOM.
+  await page.waitForTimeout(1500);
 
   const pane = paneOf(page, 'Структура');
   const chart = pane.locator('.plan-gantt__chart');

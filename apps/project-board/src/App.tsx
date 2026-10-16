@@ -236,6 +236,11 @@ function WidgetPane({
         documentService={documentService}
         visible={visible}
         onResize={subscribeResize}
+        // Переключение документа экземпляра по запросу виджета (PBT-051):
+        // тот же механизм перепривязки, что и у замены недоступного документа.
+        switchDocument={(documentId) =>
+          handlers.current.replacePaneDocument(pane.instanceId, documentId)
+        }
       />
     </div>
   );

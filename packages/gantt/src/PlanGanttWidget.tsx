@@ -3,7 +3,21 @@ import { Gantt, Willow } from '@svar-ui/react-gantt';
 import type { IApi, IColumnConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
 import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
-import { createPlanContent, parsePlanContent, type PlanContent, type PlanIssue } from './plan-document';
+import {
+  createPlanContent,
+  parsePlanContent,
+  PLAN_DOCUMENT_TYPE,
+  PLAN_MODULE_ID,
+  PLAN_SCHEMA_VERSION,
+  type PlanContent,
+  type PlanIssue,
+} from './plan-document';
+import {
+  deserializePlanFile,
+  planFileName,
+  serializePlanFile,
+  type PlanFileIssue,
+} from './native-plan-format';
 import { createWorkingCalendar } from './working-calendar';
 import {
   ganttDate,
@@ -63,10 +77,20 @@ export default function PlanGanttWidget({
   visible,
   settings,
   updateSettings,
+  switchDocument,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
   );
+
+  // Перенос плана файлом (PBT-051): результат последнего импорта —
+  // краткое подтверждение или перечень проблем; документ при отказе
+  // не создаётся, отмена выбора файла состояние не меняет.
+  const [importResult, setImportResult] = useState<
+    | { readonly ok: true; readonly title: string }
+    | { readonly ok: false; readonly issues: readonly PlanFileIssue[] }
+    | undefined
+  >(undefined);
 
   // Фильтры представления (PBT-049): тулбар-контролы; изменение —
   // React-state + updateSettings (производное, документ не меняется).
@@ -207,6 +231,61 @@ export default function PlanGanttWidget({
     focusAnchorRef.current?.focus();
     focusAnchorRef.current = null;
   }, []);
+
+  // ─── Перенос плана файлом (PBT-051) ─────────────────────────────────────
+  // Экспорт: формат PBT-050, скачивание клиентскими средствами
+  // (Blob + a[download]); имя файла — конвенция генерации planFileName.
+  const handleExportPlan = useCallback(() => {
+    const planNow = planRef.current;
+    const current = documentRef.current;
+    if (planNow === undefined || current === undefined) {
+      return;
+    }
+    const serialized = serializePlanFile({
+      title: current.title,
+      content: planNow,
+    });
+    const url = URL.createObjectURL(
+      new Blob([serialized.json], { type: 'application/json' }),
+    );
+    const anchor = window.document.createElement('a');
+    anchor.href = url;
+    anchor.download = planFileName(new Date());
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  // Импорт: валидация до создания документа; успех — новый независимый
+  // документ (политика PBT-050) и переключение окна на него (SDK
+  // switchDocument, механизм замены документа платформы); отказ —
+  // перечень проблем по месту, документ не создаётся. Отмена выбора
+  // файла (change не сработал) состояние не меняет.
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const handleImportFile = useCallback(
+    (file: File | undefined) => {
+      if (file === undefined || documentService === undefined) {
+        return;
+      }
+      void file.text().then((text) => {
+        const result = deserializePlanFile(text);
+        if (!result.ok) {
+          setImportResult({ ok: false, issues: result.issues });
+          return;
+        }
+        const created = documentService.create({
+          moduleId: PLAN_MODULE_ID,
+          documentType: PLAN_DOCUMENT_TYPE,
+          schemaVersion: PLAN_SCHEMA_VERSION,
+          title: result.payload.title,
+          content: result.payload.content,
+        });
+        setImportResult({ ok: true, title: created.title });
+        switchDocument?.(created.id);
+      });
+    },
+    [documentService, switchDocument],
+  );
+
 
   // Форма задачи — общий хук с ресурсным видом (PBT-048): запись
   // документа с ретраем ревизии, submit/удаление, команды зависимостей.
@@ -1108,6 +1187,39 @@ export default function PlanGanttWidget({
             >
               Проблемы ({issues.length})
             </button>
+            {/* BISECT: кнопки с компактным классом */}
+            <button
+              type="button"
+              className="plan-gantt__add-button plan-gantt__icon-button"
+              data-export-plan
+              aria-label="Экспорт плана"
+              onClick={handleExportPlan}
+            >
+              📤
+            </button>
+            <button
+              type="button"
+              className="plan-gantt__add-button plan-gantt__icon-button"
+              data-import-plan
+              aria-label="Импорт плана"
+              onClick={() => importInputRef.current?.click()}
+            >
+              📥
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="plan-gantt__import-input"
+              data-import-plan-input
+              aria-label="Файл плана для импорта"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                // Сброс позволяет выбрать тот же файл повторно.
+                event.target.value = '';
+                handleImportFile(file);
+              }}
+            />
             <input
               type="search"
               className="plan-gantt__filter-input"
@@ -1137,6 +1249,47 @@ export default function PlanGanttWidget({
               Задач: {plan?.tasks.length ?? 0}
             </span>
           </div>
+          {importResult !== undefined ? (
+            <div
+              className={`plan-gantt__transfer-result${
+                importResult.ok ? '' : ' plan-gantt__transfer-result--error'
+              }`}
+              role={importResult.ok ? 'status' : 'alert'}
+              data-import-plan-result
+            >
+              {importResult.ok ? (
+                `План «${importResult.title}» импортирован: создан новый независимый документ.`
+              ) : (
+                <>
+                  {'Файл не импортирован:'}
+                  <ul className="plan-gantt__transfer-issues">
+                    {importResult.issues.flatMap((issue, index) => (
+                      <li key={`transfer-issue-${index}`}>
+                        <span>
+                          {issue.code}
+                          {issue.path ? ` (${issue.path})` : ''}: {issue.message}
+                        </span>
+                        {(issue.details ?? []).map((detail, detailIndex) => (
+                          <ul
+                            className="plan-gantt__transfer-issues"
+                            key={`transfer-detail-${detailIndex}`}
+                          >
+                            <li>
+                              <span>
+                                {detail.code}
+                                {detail.path ? ` (${detail.path})` : ''}:{' '}
+                                {detail.message}
+                              </span>
+                            </li>
+                          </ul>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          ) : null}
           {filterActive && filteredPlan !== undefined && filteredPlan.tasks.length === 0 ? (
             <p className="plan-gantt__filter-empty" data-gantt-filter-empty>
               Ничего не найдено по фильтру. Задачи документа не изменены.
