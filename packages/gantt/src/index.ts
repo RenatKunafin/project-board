@@ -13,6 +13,7 @@ export { default as ResourceTimelineWidget } from './ResourceTimelineWidget';
 export * from './plan-document';
 export * from './native-plan-format';
 export * from './onlinegantt-parser';
+export * from './plantuml-export';
 export * from './plan-commands';
 export * from './plan-hierarchy';
 export * from './plan-catalogs';
