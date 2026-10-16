@@ -8,4 +8,4 @@
 ## 2. Проверки и PR
 
 - [x] 2.1 Полный набор: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `test:browser` на чистой среде, `openspec validate pbt-068-compact-gantt-density --strict` и `--all --strict`
-- [ ] 2.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs, `Done` после merge
+- [x] 2.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs, `Done` после merge
