@@ -14,4 +14,4 @@
 ## 3. Проверки и PR
 
 - [x] 3.1 Полный набор: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `test:browser` на чистой среде (`pkill -f "vite preview"`, порт 4173 свободен), `openspec validate pbt-053-onlinegantt-import-ui --strict` и `--all --strict`; результаты в PR
-- [ ] 3.2 Реестр: `In progress` → PR → `In review` со ссылкой; после одобрения — архивация change с sync specs заключительным коммитом перед merge, `Done` после merge
+- [x] 3.2 Реестр: `In progress` → PR → `In review` со ссылкой; после одобрения — архивация change с sync specs заключительным коммитом перед merge, `Done` после merge
