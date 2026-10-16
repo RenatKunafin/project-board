@@ -1,0 +1,98 @@
+/* Преобразование задачи в отпуск (PBT-054). Только токены :root
+   (хекс-коды запрещены до PBT-066). Каркас — по образцу диалогов. */
+
+.plan-gantt .absence-convert__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 39, 51, 0.35);
+}
+
+.plan-gantt .absence-convert {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(28, 39, 51, 0.2);
+}
+
+.plan-gantt .absence-convert__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.plan-gantt .absence-convert__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-gantt .absence-convert__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .absence-convert__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.plan-gantt .absence-convert__note {
+  margin: 0;
+  font-size: 12px;
+}
+
+.plan-gantt .absence-convert__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.plan-gantt .absence-convert__label {
+  font-size: 12px;
+}
+
+.plan-gantt .absence-convert__row {
+  display: flex;
+  gap: 12px;
+}
+
+.plan-gantt .absence-convert__error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.plan-gantt .absence-convert__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.plan-gantt .absence-convert__button {
+  cursor: pointer;
+}
+
+.plan-gantt .absence-convert__button--primary {
+  font-weight: 600;
+}

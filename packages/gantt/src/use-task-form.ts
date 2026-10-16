@@ -16,12 +16,17 @@ import {
   deleteDependency,
   updateDependency,
 } from './plan-dependencies';
+import { createUnavailability } from './plan-assignments';
 import {
   buildTaskDates,
   validateTaskForm,
   type TaskFormIssue,
 } from './task-editor';
-import type { DependencyCommand, TaskEditorSubmit } from './TaskEditorDialog';
+import type {
+  DependencyCommand,
+  TaskEditorSubmit,
+} from './TaskEditorDialog';
+import type { AbsenceConvertInput } from './AbsenceConvertDialog';
 
 export type TaskEditorState =
   | { readonly mode: 'create' }
@@ -188,6 +193,44 @@ export function useTaskForm({
     closeEditor();
   }, [editor, commitPlan, closeEditor]);
 
+  // Преобразование задачи в период недоступности (PBT-054, design D3):
+  // композиция готовых команд ядра в одной записи документа — атомарная
+  // замена (deleteTask чистит зависимости, контракт D6 PBT-031).
+  // Ошибка любой команды — текст ядра в диалог, план не тронут.
+  const convertCurrentTaskToAbsence = useCallback(
+    (input: AbsenceConvertInput): string | undefined => {
+      if (editor?.mode !== 'edit') {
+        return 'Задача не выбрана.';
+      }
+      const taskId = editor.taskId;
+      let failure: string | undefined;
+      commitPlan((latest) => {
+        const base = parseLatest(latest.content);
+        if (base === undefined) {
+          failure = 'Документ недоступен — повторите попытку.';
+          return undefined;
+        }
+        const removed = deleteTask(base, taskId);
+        if (!removed.ok) {
+          failure = removed.error.message;
+          return undefined;
+        }
+        const created = createUnavailability(removed.plan, input);
+        if (!created.ok) {
+          failure = created.error.message;
+          return undefined;
+        }
+        return created.plan;
+      });
+      if (failure !== undefined) {
+        return failure;
+      }
+      closeEditor();
+      return undefined;
+    },
+    [editor, commitPlan, closeEditor],
+  );
+
   // Команды зависимостей (PBT-045): делегирование ядру plan-dependencies.
   const applyDependencyCommand = useCallback(
     (command: DependencyCommand): PlanCommandError | undefined => {
@@ -228,6 +271,7 @@ export function useTaskForm({
     commitPlan,
     submitTaskForm,
     deleteCurrentTask,
+    convertCurrentTaskToAbsence,
     applyDependencyCommand,
     closeEditor,
   };
