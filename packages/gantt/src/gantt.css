@@ -53,6 +53,13 @@
   right: 0;
 }
 
+/* Шкала дат/месяцев (.wx-scale, sticky) по умолчанию прозрачна: при
+   вертикальном скролле полосы задач просвечивают сквозь неё (находка
+   владельца 2026-10-16, приёмка PBT-053) — непрозрачный фон токеном. */
+.plan-gantt__chart .wx-scale {
+  background: var(--color-surface);
+}
+
 .plan-gantt .wx-gantt-holidays > * {
   position: absolute;
   top: 0;
