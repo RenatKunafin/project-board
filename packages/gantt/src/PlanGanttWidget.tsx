@@ -25,6 +25,12 @@ import OnlineGanttImportDialog from './OnlineGanttImportDialog';
 import AbsenceConvertDialog, {
   type AbsenceConvertInput,
 } from './AbsenceConvertDialog';
+import PlantUmlExportDialog from './PlantUmlExportDialog';
+import {
+  plantumlFileName,
+  serializePlanToPlantUml,
+  type PlantUmlExportNote,
+} from './plantuml-export';
 import { createWorkingCalendar } from './working-calendar';
 import {
   ganttDate,
@@ -385,6 +391,50 @@ export default function PlanGanttWidget({
     },
     [convertCurrentTaskToAbsence],
   );
+
+  // Экспорт PlantUML (PBT-056): предпросмотр из полного документа —
+  // фильтры представления не участвуют и не меняются (DoD-5 карточки).
+  const [plantumlPreview, setPlantumlPreview] = useState<
+    | {
+        readonly text: string;
+        readonly report: readonly PlantUmlExportNote[];
+        readonly fileName: string;
+      }
+    | undefined
+  >(undefined);
+
+  const openPlantumlExport = useCallback(() => {
+    const planNow = planRef.current;
+    const current = documentRef.current;
+    if (planNow === undefined || current === undefined) {
+      return;
+    }
+    const { text, report } = serializePlanToPlantUml({
+      ...planNow,
+      title: planNow.title ?? current.title,
+    });
+    setPlantumlPreview({
+      text,
+      report,
+      fileName: plantumlFileName(new Date()),
+    });
+  }, []);
+
+  const downloadPlantuml = useCallback(() => {
+    if (plantumlPreview === undefined) {
+      return;
+    }
+    const url = URL.createObjectURL(
+      new Blob([plantumlPreview.text], {
+        type: 'text/plain;charset=utf-8',
+      }),
+    );
+    const anchor = window.document.createElement('a');
+    anchor.href = url;
+    anchor.download = plantumlPreview.fileName;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, [plantumlPreview]);
 
   // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
   // Клиентскую валидацию выполняет форма; ошибка ядра (circular-group
@@ -1283,6 +1333,15 @@ export default function PlanGanttWidget({
             <button
               type="button"
               className="plan-gantt__add-button plan-gantt__icon-button"
+              data-export-plantuml
+              aria-label="Экспорт PlantUML"
+              onClick={openPlantumlExport}
+            >
+              📊
+            </button>
+            <button
+              type="button"
+              className="plan-gantt__add-button plan-gantt__icon-button"
               data-import-plan
               aria-label="Импорт плана"
               onClick={() => importInputRef.current?.click()}
@@ -1454,6 +1513,15 @@ export default function PlanGanttWidget({
               issues={issues}
               onShowTask={showTask}
               onClose={() => setIssuesOpen(false)}
+            />
+          )}
+          {plantumlPreview !== undefined && (
+            <PlantUmlExportDialog
+              text={plantumlPreview.text}
+              report={plantumlPreview.report}
+              fileName={plantumlPreview.fileName}
+              onDownload={downloadPlantuml}
+              onClose={() => setPlantumlPreview(undefined)}
             />
           )}
           {onlineganttPreview !== undefined && (
