@@ -1145,39 +1145,49 @@ export default function PlanGanttWidget({
   const chartRemountKey = baseRemountKey;
   remountKeyRef.current = chartRemountKey;
   // Пересоздание чарта по скачку ширины — без суффикса ключа ревизии
-  // (изменение формата ключа ломало применение жестов PBT-039): короткое
-  // размонтирование на кадр с сохранением позиции прокрутки шкалы.
-  // Свежий mount отрисовывает полный диапазон (dayWidth фиксирован —
-  // cellWidth 33), пиксели соответствуют датам один к одному: позиция
-  // взгляда восстанавливается после пересоздания (PBT-071 D8).
+  // (изменение формата ключа ломало применение жестов PBT-039). Само
+  // размонтирование тоже отвергнуто (живая проверка владельца): SVAR
+  // при повторном монтаже в момент нестабильного layout строит шкалу
+  // пустой до первого скролла. Итоговая механика PBT-071 D8: чарт не
+  // трогаем — SVAR сам пересобирает шкалу по resize и сбрасывает
+  // прокрутку; пассивно запоминаем позицию и удерживаем её поллингом
+  // кадров (~1.5 с), пока пересборка не стабилизируется.
   const chartHostRef = useRef<HTMLDivElement | null>(null);
   const chartScrollLeftRef = useRef(0);
-  const [chartHidden, setChartHidden] = useState(false);
+  useEffect(() => {
+    const host = chartHostRef.current;
+    if (!host) {
+      return;
+    }
+    const onScroll = (event: Event) => {
+      const target =
+        event.target instanceof HTMLElement ? event.target : null;
+      if (
+        target?.classList.contains('wx-chart') &&
+        target.scrollLeft > 0
+      ) {
+        chartScrollLeftRef.current = target.scrollLeft;
+      }
+    };
+    host.addEventListener('scroll', onScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () => host.removeEventListener('scroll', onScroll, { capture: true });
+  }, []);
   useEffect(() => {
     if (widthEpoch === 0) {
       return;
     }
-    const chart =
-      chartHostRef.current?.querySelector<HTMLElement>('.wx-chart');
-    if (chart) {
-      chartScrollLeftRef.current = chart.scrollLeft;
-    }
-    setChartHidden(true);
-    const raf = requestAnimationFrame(() => setChartHidden(false));
-    return () => cancelAnimationFrame(raf);
-  }, [widthEpoch]);
-  // После повторного монтажа возвращаем сохранённую позицию: SVAR строит
-  // шкалу асинхронно и может пересоздавать DOM шкалы уже после нашей
-  // установки — держим позицию поллингом кадров, пока представление не
-  // стабилизируется (~1.5 с).
-  useEffect(() => {
-    if (chartHidden || widthEpoch === 0) {
+    const saved = chartScrollLeftRef.current;
+    if (saved <= 0) {
       return;
     }
-    const saved = chartScrollLeftRef.current;
+    // SVAR пересобирает шкалу серией DOM-мутаций и может сбрасывать
+    // прокрутку уже после установки — удерживаем позицию кадрами.
     let frames = 0;
     let raf = 0;
-    const restore = () => {
+    const hold = () => {
       const chart =
         chartHostRef.current?.querySelector<HTMLElement>('.wx-chart');
       if (chart && chart.scrollWidth > 0 && chart.scrollLeft < saved - 1) {
@@ -1185,12 +1195,12 @@ export default function PlanGanttWidget({
       }
       frames += 1;
       if (frames < 90) {
-        raf = requestAnimationFrame(restore);
+        raf = requestAnimationFrame(hold);
       }
     };
-    raf = requestAnimationFrame(restore);
+    raf = requestAnimationFrame(hold);
     return () => cancelAnimationFrame(raf);
-  }, [chartHidden, widthEpoch]);
+  }, [widthEpoch]);
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -1515,9 +1525,6 @@ export default function PlanGanttWidget({
             ref={chartHostRef}
             onDoubleClick={onChartDoubleClick}
           >
-            {/* Скачок ширины (разворот окна, PBT-071): короткое
-                размонтирование пересоздаёт чарт с новой точкой старта. */}
-            {chartHidden ? null : (
             <Willow>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
@@ -1541,7 +1548,6 @@ export default function PlanGanttWidget({
                 highlightTime={highlightTime}
               />
             </Willow>
-            )}
           </div>
           {editor !== undefined && plan !== undefined && (
             <TaskEditorDialog
