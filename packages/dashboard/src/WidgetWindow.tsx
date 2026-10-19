@@ -137,8 +137,10 @@ export function WidgetWindow({
           </button>
         </span>
       </div>
-      {/* Boundary локален содержимому: кнопки рамки доступны при падении. */}
-      <div className="widget-window__body" hidden={collapsed}>
+      {/* Boundary локален содержимому: кнопки рамки доступны при падении.
+          Развёрнутое окно показывает содержимое и свёрнутым до разворота
+          (прототип: !collapsed || maximized). */}
+      <div className="widget-window__body" hidden={collapsed && !maximized}>
         <WidgetErrorBoundary>{children}</WidgetErrorBoundary>
       </div>
     </div>

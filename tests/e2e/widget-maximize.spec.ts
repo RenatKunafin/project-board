@@ -86,6 +86,39 @@ test('сворачивание развёрнутого окна возвращ�
   ).toBeVisible();
 });
 
+test('разворот свёрнутого окна показывает содержимое (сценарий владельца)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const pane1 = page.getByRole('group', { name: PANE_1 });
+  const layer = page.getByTestId('widget-maximize-layer');
+
+  // Разворот → сворачивание (шеврон) → повторный разворот свёрнутого.
+  await pane1
+    .getByRole('button', { name: `Развернуть на весь дашборд ${PANE_1}` })
+    .click();
+  await expect(layer).toBeVisible();
+
+  await pane1.getByRole('button', { name: `Свернуть ${PANE_1}` }).click();
+  await expect(layer).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+
+  await pane1
+    .getByRole('button', { name: `Развернуть на весь дашборд ${PANE_1}` })
+    .click();
+  await expect(layer).toBeVisible();
+  expect(await isInMaximizeLayer(pane1)).toBe(true);
+  // Развёрнутое свёрнутое окно показывает содержимое, а не пустой заголовок.
+  await expect(pane1.getByPlaceholder('Новый пункт')).toBeVisible();
+
+  // Возврат прежнего размера возвращает свёрнутый вид в раскладке.
+  await pane1
+    .getByRole('button', { name: `Вернуть прежний размер ${PANE_1}` })
+    .click();
+  await expect(layer).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+});
+
 test('перезапуск восстанавливает окно в обычном виде', async ({ page }) => {
   await page.goto('/');
   const pane1 = page.getByRole('group', { name: PANE_1 });

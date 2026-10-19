@@ -475,7 +475,9 @@ export const TabSurface = memo(function TabSurface({
               pane={pane}
               documentService={documentService}
               documents={documents}
-              visible={visible && pane.collapsed !== true && !hiddenByMaximize}
+              visible={
+                visible && (!pane.collapsed || maximized) && !hiddenByMaximize
+              }
               handlers={handlers}
               onPickDocument={(instanceId, documentId) =>
                 handlers.current.replacePaneDocument(instanceId, documentId)
