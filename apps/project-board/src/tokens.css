@@ -1,0 +1,68 @@
+/*
+ * Единый источник дизайн-токенов Project Board (PBT-069).
+ * Референс: прототип flexi-dashboard-hub, src/styles.css (README прототипа:
+ * переносим визуальный язык — токены, а не код).
+ * Единственное место литеральных цветов в приложении и пакетах:
+ * остальные стили ссылаются на эти переменные.
+ */
+:root {
+  /* Поверхности тёмной темы: панели каркаса → канвас → окна → приподнятое. */
+  --chrome: oklch(0.17 0.02 250);
+  --background: oklch(0.2 0.022 250);
+  --surface: oklch(0.235 0.025 250);
+  --surface-raised: oklch(0.27 0.027 250);
+  --secondary: oklch(0.3 0.028 250);
+  --popover: oklch(0.255 0.027 250);
+
+  /* Текст и приглушённые состояния. */
+  --foreground: oklch(0.9 0.012 250);
+  --card-foreground: var(--foreground);
+  --popover-foreground: oklch(0.92 0.01 250);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.28 0.025 250);
+  --muted-foreground: oklch(0.66 0.025 250);
+  --accent: oklch(0.32 0.03 250);
+  --accent-foreground: oklch(0.95 0.01 250);
+
+  /* Акценты и статусы. */
+  --primary: oklch(0.62 0.17 255);
+  --primary-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.66 0.2 22);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.76 0.17 155);
+  --warning: oklch(0.84 0.16 88);
+
+  /* Линии и фокус. */
+  --border: oklch(0.31 0.025 250);
+  --input: oklch(0.33 0.025 250);
+  --ring: var(--primary);
+
+  /* Типографика: шрифты подключаются локальной сборкой @fontsource
+     (импорты в main.tsx) — офлайн-требование PWA (PBT-028). */
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Радиусы, тени, оверлей. */
+  --radius: 0.375rem;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --shadow-float: 0 18px 40px -12px oklch(0 0 0 / 0.6);
+  --overlay: oklch(0 0 0 / 0.5);
+  --canvas-dot: oklch(1 0 0 / 0.06);
+}
+
+/*
+ * Спец. токены производных представлений: имена прежние (используются
+ * стилями пакетов), значения — производные семантических токенов по
+ * прототипу (.demo-weekend/.demo-holiday, resource-bar-absence/conflict).
+ * Тонкая настройка тем SVAR/RCT — PBT-073/PBT-074.
+ */
+:root {
+  --color-gantt-weekend: var(--muted);
+  --color-gantt-holiday: color-mix(in oklch, var(--warning) 15%, var(--surface));
+  --color-rt-task-border: var(--primary);
+  --color-rt-unavailability-bg: color-mix(in oklch, var(--warning) 14%, var(--surface));
+  --color-rt-unavailability-border: var(--warning);
+  --color-rt-conflict-bg: color-mix(in oklch, var(--destructive) 18%, var(--surface));
+}

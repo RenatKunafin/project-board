@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
 export interface WidgetWindowProps {
@@ -57,7 +58,7 @@ export function WidgetWindow({
             aria-expanded={!collapsed}
             onClick={onToggleCollapse}
           >
-            {collapsed ? '□' : '−'}
+            {collapsed ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
           </button>
           <button
             type="button"
@@ -65,7 +66,7 @@ export function WidgetWindow({
             aria-label={`Закрыть ${title}`}
             onClick={onClose}
           >
-            ×
+            <X aria-hidden="true" />
           </button>
         </span>
       </div>
