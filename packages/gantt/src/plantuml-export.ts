@@ -14,6 +14,14 @@ export interface PlantUmlExportNote {
   readonly message: string;
 }
 
+/** Имя файла экспорта (прецедент planFileName PBT-050; дефисы ради Windows). */
+export function plantumlFileName(now: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  return `pb-plantuml-${date}_${time}.puml`;
+}
+
 export interface PlantUmlExportResult {
   readonly text: string;
   readonly report: readonly PlantUmlExportNote[];
