@@ -15,6 +15,14 @@ import { planTitle } from '@project-board/gantt';
 import type { ManagedDocument } from '@project-board/widget-sdk';
 import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
+// Шрифты — локальная сборка @fontsource (офлайн-требование PWA, PBT-069):
+// внешних CDN-запросов нет, значения --font-sans/--font-mono в tokens.css.
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-sans/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
 import './index.css';
 
 declare global {

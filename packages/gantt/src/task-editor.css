@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(28, 39, 51, 0.35);
+  background: var(--overlay);
 }
 
 .plan-gantt .task-editor {
@@ -16,11 +16,11 @@
   width: min(440px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow: auto;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 12px 32px rgba(28, 39, 51, 0.2);
+  box-shadow: var(--shadow-float);
 }
 
 .plan-gantt .task-editor__head {
@@ -28,7 +28,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border);
 }
 
 .plan-gantt .task-editor__title {
@@ -71,28 +71,28 @@
 
 .plan-gantt .task-editor__label {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--muted-foreground);
 }
 
 .plan-gantt .task-editor__field input,
 .plan-gantt .task-editor__field select {
   padding: 6px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font: inherit;
-  background: var(--color-surface);
+  background: var(--surface);
   color: inherit;
 }
 
 .plan-gantt .task-editor__error {
   font-size: 12px;
-  color: var(--color-danger);
+  color: var(--destructive);
 }
 
 .plan-gantt .task-editor__preview {
   margin: 0;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--muted-foreground);
 }
 
 /* Назначения задачи PBT-042: чекбоксы справочников. */
@@ -117,7 +117,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--border);
 }
 
 .plan-gantt .task-editor__foot-spacer {
@@ -126,7 +126,7 @@
 
 .plan-gantt .task-editor__button {
   padding: 6px 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
   font: inherit;
@@ -135,14 +135,14 @@
 }
 
 .plan-gantt .task-editor__button--primary {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .plan-gantt .task-editor__button--danger {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
+  color: var(--destructive);
+  border-color: var(--destructive);
 }
 
 .plan-gantt .plan-gantt__toolbar {
@@ -150,15 +150,15 @@
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border);
 }
 
 .plan-gantt .plan-gantt__add-button {
   padding: 5px 12px;
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--primary);
   border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--primary);
+  color: var(--primary-foreground);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -166,7 +166,7 @@
 
 .plan-gantt .plan-gantt__count {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--muted-foreground);
 }
 
 /* Редактор справочников PBT-041 (общие стили диалогов task-editor__). */
@@ -207,7 +207,7 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--muted-foreground);
 }
 
 .plan-gantt .catalog__add {
@@ -225,9 +225,9 @@
 .plan-gantt .catalog__row input[type='date'],
 .plan-gantt .catalog__row input[type='number'] {
   padding: 6px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  background: var(--surface);
   color: inherit;
   font: inherit;
 }
@@ -266,13 +266,13 @@
 /* Список проблем плана PBT-046. */
 
 .plan-gantt .plan-gantt__issues-button {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
+  border-color: var(--destructive);
+  color: var(--destructive);
   background: transparent;
 }
 
 .plan-gantt .issues__row {
-  border-left: 3px solid var(--color-danger);
+  border-left: 3px solid var(--destructive);
   padding-left: 8px;
   align-items: flex-start;
 }
