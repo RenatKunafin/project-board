@@ -8,4 +8,4 @@
 6. [x] Css пакетов `packages/gantt` (gantt, resource-timeline, task-editor, absence-convert, onlinegantt-import, plantuml-export-dialog) — новые имена токенов, grep литеральных цветов (D7).
 7. [x] Проверить `tests/` на цветовые зависимости (grep — нет ассертаций на цвет); `lint` → `typecheck` → `test` (447) → `build` → чистая среда → `test:browser` (101 passed / 3 failed — предсуществующие, воспроизведены бисектом на develop без правок) → `openspec validate --all --strict` (17).
 8. [x] Скриншоты до/после в `change/screenshots/`; ручная проверка 1024×778 и широкого экрана; Network-проверка шрифтов (D9) — шрифты локальны; попутная находка: SVAR тянет иконки с cdn.svar.dev → PBT-073 (design Risks).
-9. [ ] Обновить реестр: `In review` + PR после открытия.
+9. [x] Обновить реестр: `In review` + PR#47.
