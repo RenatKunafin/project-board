@@ -1146,23 +1146,51 @@ export default function PlanGanttWidget({
   remountKeyRef.current = chartRemountKey;
   // Пересоздание чарта по скачку ширины — без суффикса ключа ревизии
   // (изменение формата ключа ломало применение жестов PBT-039): короткое
-  // размонтирование на кадр; новый mount применяет start пропсом —
-  // после init SVAR игнорирует смену start.
+  // размонтирование на кадр с сохранением позиции прокрутки шкалы.
+  // Свежий mount отрисовывает полный диапазон (dayWidth фиксирован —
+  // cellWidth 33), пиксели соответствуют датам один к одному: позиция
+  // взгляда восстанавливается после пересоздания (PBT-071 D8).
+  const chartHostRef = useRef<HTMLDivElement | null>(null);
+  const chartScrollLeftRef = useRef(0);
   const [chartHidden, setChartHidden] = useState(false);
   useEffect(() => {
     if (widthEpoch === 0) {
       return;
     }
+    const chart =
+      chartHostRef.current?.querySelector<HTMLElement>('.wx-chart');
+    if (chart) {
+      chartScrollLeftRef.current = chart.scrollLeft;
+    }
     setChartHidden(true);
     const raf = requestAnimationFrame(() => setChartHidden(false));
     return () => cancelAnimationFrame(raf);
   }, [widthEpoch]);
-  // После скачка ширины шкала начинается от якоря плана: SVAR строит
-  // колонки от start, и план остаётся у левого края без прокрутки.
-  const chartStart =
-    widthEpoch > 0 && chartRange !== undefined
-      ? ganttDate(addCalendarDays(chartRange.anchor, -2))
-      : chartRange?.start;
+  // После повторного монтажа возвращаем сохранённую позицию: SVAR строит
+  // шкалу асинхронно и может пересоздавать DOM шкалы уже после нашей
+  // установки — держим позицию поллингом кадров, пока представление не
+  // стабилизируется (~1.5 с).
+  useEffect(() => {
+    if (chartHidden || widthEpoch === 0) {
+      return;
+    }
+    const saved = chartScrollLeftRef.current;
+    let frames = 0;
+    let raf = 0;
+    const restore = () => {
+      const chart =
+        chartHostRef.current?.querySelector<HTMLElement>('.wx-chart');
+      if (chart && chart.scrollWidth > 0 && chart.scrollLeft < saved - 1) {
+        chart.scrollLeft = saved;
+      }
+      frames += 1;
+      if (frames < 90) {
+        raf = requestAnimationFrame(restore);
+      }
+    };
+    raf = requestAnimationFrame(restore);
+    return () => cancelAnimationFrame(raf);
+  }, [chartHidden, widthEpoch]);
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -1484,6 +1512,7 @@ export default function PlanGanttWidget({
           ) : null}
           <div
             className="plan-gantt__chart"
+            ref={chartHostRef}
             onDoubleClick={onChartDoubleClick}
           >
             {/* Скачок ширины (разворот окна, PBT-071): короткое
@@ -1506,7 +1535,7 @@ export default function PlanGanttWidget({
                 cellWidth={33}
                 cellHeight={36}
                 autoScale={false}
-                start={chartStart}
+                start={chartRange?.start}
                 end={chartRange?.end}
                 init={initApi}
                 highlightTime={highlightTime}
