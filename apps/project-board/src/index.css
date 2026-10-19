@@ -115,19 +115,32 @@ body {
   border-radius: var(--radius-sm);
 }
 
+/* Уголок resize каскада — двойной диагональный штрих прототипа
+   (PBT-070 D3): две полоски на 45°, цвет токеном, без SVG-файлов. */
 .cascade-resize-se {
-  width: 14px;
-  height: 14px;
-  border-radius: 0 0 var(--radius-md) 0;
+  width: 16px;
+  height: 16px;
 }
 
+.cascade-resize-se::before,
 .cascade-resize-se::after {
   content: '';
   position: absolute;
-  inset: 0;
-  border-right: 2px solid var(--muted-foreground);
-  border-bottom: 2px solid var(--muted-foreground);
-  border-radius: 0 0 var(--radius-md) 0;
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--muted-foreground);
+  transform: rotate(-45deg);
+}
+
+.cascade-resize-se::before {
+  right: 2px;
+  bottom: 5px;
+}
+
+.cascade-resize-se::after {
+  right: 5px;
+  bottom: 2px;
 }
 
 .layout-mode-switch {
@@ -191,6 +204,11 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
+  /* Переходы только тени и границы (PBT-070 D4): активация мягкая,
+     геометрия не анимируется — жесты раскладок не затрагиваются. */
+  transition:
+    box-shadow 150ms ease,
+    border-color 150ms ease;
 }
 
 /* Активное окно — рамка акцентного цвета и «плавающая» тень (прототип,
@@ -200,11 +218,14 @@ body {
   box-shadow: var(--shadow-float);
 }
 
+/* Заголовок фиксированной высоты 32px с фоном приподнятой поверхности
+   (PBT-070 D1, прототип WidgetFrame h-8). */
 .widget-window__head {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  height: 32px;
+  padding: 0 8px;
   border-bottom: 1px solid var(--border);
   background: color-mix(in oklch, var(--surface-raised) 40%, transparent);
 }
@@ -228,15 +249,27 @@ body {
   font-size: 13px;
 }
 
+.widget-window__grip {
+  display: inline-flex;
+  flex: none;
+  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+}
+
+.widget-window__grip svg {
+  width: 14px;
+  height: 14px;
+}
+
 .widget-window__title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--foreground);
+  /* Типографика прототипа (PBT-070 D1): text-sm, обычный вес. */
+  font-size: 14px;
+  font-weight: 400;
+  color: color-mix(in oklch, var(--foreground) 90%, transparent);
 }
 
 .widget-window__actions {
@@ -244,22 +277,30 @@ body {
   gap: 4px;
 }
 
+/* Кнопки-иконки 24×24 ghost (PBT-070 D2, прототип IconBtn). */
 .widget-window__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--muted-foreground);
   line-height: 1;
   border-radius: var(--radius-sm);
-  padding: 2px 6px;
   cursor: pointer;
 }
 
 .widget-window__button:hover {
   background: var(--accent);
   color: var(--foreground);
+}
+
+/* Закрытие — hover акцентом опасного действия (PBT-070 D2). */
+.widget-window__button--danger:hover {
+  color: var(--destructive);
 }
 
 .widget-window__button svg {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
 export interface WidgetWindowProps {
@@ -41,6 +41,11 @@ export function WidgetWindow({
         <span className="widget-window__icon" aria-hidden="true">
           {icon ?? '🧩'}
         </span>
+        {/* Ручка переноса — визуальный язык прототипа (PBT-070 D1);
+            сам перенос управляется раскладкой, иконка индикативна. */}
+        <span className="widget-window__grip" aria-hidden="true">
+          <GripVertical />
+        </span>
         <span className="widget-window__title">{title}</span>
         <span
           className="widget-window__actions"
@@ -62,7 +67,7 @@ export function WidgetWindow({
           </button>
           <button
             type="button"
-            className="widget-window__button"
+            className="widget-window__button widget-window__button--danger"
             aria-label={`Закрыть ${title}`}
             onClick={onClose}
           >
