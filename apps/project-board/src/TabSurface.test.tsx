@@ -73,6 +73,7 @@ function handlers(): { current: PaneHandlers } {
     current: {
       activatePane(): void {},
       toggleCollapse(): void {},
+      toggleMaximize(): void {},
       closePane(): void {},
       replacePaneDocument(): void {},
       createDocumentForPane(): void {},
@@ -123,6 +124,7 @@ function renderSurface(props?: Partial<Parameters<typeof TabSurface>[0]>): void 
         areas={{}}
         cascade={{ areas: {}, order: [] }}
         activeInstanceId="w-1"
+        maximizedInstanceId={null}
         registry={stableRegistry}
         documentService={stableService}
         documents={stableService.listDocuments()}

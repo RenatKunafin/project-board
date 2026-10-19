@@ -1,5 +1,12 @@
-import type { ReactNode } from 'react';
-import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Maximize2,
+  Minimize2,
+  X,
+} from 'lucide-react';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
 export interface WidgetWindowProps {
@@ -7,7 +14,16 @@ export interface WidgetWindowProps {
   readonly icon?: string;
   readonly collapsed?: boolean;
   readonly active?: boolean;
+  /**
+   * Развёрнутость окна на весь дашборд (PBT-071): узел окна переносится
+   * в overlay-слой вкладки без размонтирования; геометрия раскладки
+   * не меняется.
+   */
+  readonly maximized?: boolean;
+  /** Скрытие соседом активной максимизации: keep-mounted (display: none). */
+  readonly hiddenByMaximize?: boolean;
   readonly onToggleCollapse?: () => void;
+  readonly onToggleMaximize?: () => void;
   readonly onClose?: () => void;
   readonly onActivate?: () => void;
   readonly children?: ReactNode;
@@ -18,19 +34,52 @@ export function WidgetWindow({
   icon,
   collapsed = false,
   active = false,
+  maximized = false,
+  hiddenByMaximize = false,
   onToggleCollapse,
+  onToggleMaximize,
   onClose,
   onActivate,
   children,
 }: WidgetWindowProps) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Исходный родитель узла до разворота: возврат на место раскладки
+  // (ячейка сетки / обёртка каскада) без размонтирования React-узла.
+  const restoreParentRef = useRef<ParentNode | null>(null);
+
+  useEffect(() => {
+    const element = rootRef.current;
+    if (!element) {
+      return;
+    }
+    if (maximized) {
+      const layer = element
+        .closest('.tab-surface')
+        ?.querySelector<HTMLElement>(':scope > .widget-maximize-layer');
+      if (layer && element.parentElement !== layer) {
+        restoreParentRef.current = element.parentElement;
+        layer.appendChild(element);
+      }
+      return;
+    }
+    const parent = restoreParentRef.current;
+    if (parent) {
+      restoreParentRef.current = null;
+      parent.appendChild(element);
+    }
+  }, [maximized]);
+
   return (
     <div
+      ref={rootRef}
       role="group"
       aria-label={title}
       className={[
         'widget-window',
         active ? 'widget-window--active' : '',
         collapsed ? 'widget-window--collapsed' : '',
+        maximized ? 'widget-window--maximized' : '',
+        hiddenByMaximize ? 'widget-window--maximize-hidden' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -64,6 +113,19 @@ export function WidgetWindow({
             onClick={onToggleCollapse}
           >
             {collapsed ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className="widget-window__button"
+            aria-label={
+              maximized
+                ? `Вернуть прежний размер ${title}`
+                : `Развернуть на весь дашборд ${title}`
+            }
+            aria-expanded={maximized}
+            onClick={onToggleMaximize}
+          >
+            {maximized ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
           </button>
           <button
             type="button"
