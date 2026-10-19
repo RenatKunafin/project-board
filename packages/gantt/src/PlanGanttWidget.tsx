@@ -91,6 +91,7 @@ export default function PlanGanttWidget({
   settings,
   updateSettings,
   switchDocument,
+  onResize,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
@@ -1110,14 +1111,58 @@ export default function PlanGanttWidget({
   // Ревизия своей записи жеста продолжает прежний ключ: пересборка чарта
   // на неё не нужна (стор уже синхронен документу). Внешние ревизии
   // (второй экземпляр, формы) меняют ключ и пересобирают представление.
-  const chartRemountKey =
+  // PBT-071: разворот окна на весь дашборд (и возврат) — существенный
+  // скачок ширины контейнера. SVAR после пересборки отрисовывает шкалу
+  // виртуализированно (видимая область + буфер) от начала диапазона:
+  // при запасе −60 дней слева развёрнутое окно целиком занимает пустая
+  // зона до плана. Пересоздание чарта по скачку ширины + старт шкалы
+  // от якоря плана (−2 дня) держат план у левого края в обоих размерах.
+  const [widthEpoch, setWidthEpoch] = useState(0);
+  const lastWidthRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!onResize) {
+      return;
+    }
+    return onResize(({ width }) => {
+      const previous = lastWidthRef.current;
+      lastWidthRef.current = width;
+      if (previous === null || previous <= 0) {
+        return;
+      }
+      const change = Math.abs(width - previous) / previous;
+      if (change > 0.4) {
+        setWidthEpoch((epoch) => epoch + 1);
+      }
+    });
+  }, [onResize]);
+  const baseRemountKey =
     document === undefined
       ? 'init'
       : localRevisionRef.current !== null &&
           document.revision === localRevisionRef.current
         ? remountKeyRef.current
         : String(document.revision);
+  const chartRemountKey = baseRemountKey;
   remountKeyRef.current = chartRemountKey;
+  // Пересоздание чарта по скачку ширины — без суффикса ключа ревизии
+  // (изменение формата ключа ломало применение жестов PBT-039): короткое
+  // размонтирование на кадр; новый mount применяет start пропсом —
+  // после init SVAR игнорирует смену start.
+  const [chartHidden, setChartHidden] = useState(false);
+  useEffect(() => {
+    if (widthEpoch === 0) {
+      return;
+    }
+    setChartHidden(true);
+    const raf = requestAnimationFrame(() => setChartHidden(false));
+    return () => cancelAnimationFrame(raf);
+  }, [widthEpoch]);
+  // После скачка ширины шкала начинается от якоря плана: SVAR строит
+  // колонки от start, и план остаётся у левого края без прокрутки.
+  const chartStart =
+    widthEpoch > 0 && chartRange !== undefined
+      ? ganttDate(addCalendarDays(chartRange.anchor, -2))
+      : chartRange?.start;
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -1437,7 +1482,13 @@ export default function PlanGanttWidget({
               Ничего не найдено по фильтру. Задачи документа не изменены.
             </p>
           ) : null}
-          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
+          <div
+            className="plan-gantt__chart"
+            onDoubleClick={onChartDoubleClick}
+          >
+            {/* Скачок ширины (разворот окна, PBT-071): короткое
+                размонтирование пересоздаёт чарт с новой точкой старта. */}
+            {chartHidden ? null : (
             <Willow>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
@@ -1455,12 +1506,13 @@ export default function PlanGanttWidget({
                 cellWidth={33}
                 cellHeight={36}
                 autoScale={false}
-                start={chartRange?.start}
+                start={chartStart}
                 end={chartRange?.end}
                 init={initApi}
                 highlightTime={highlightTime}
               />
             </Willow>
+            )}
           </div>
           {editor !== undefined && plan !== undefined && (
             <TaskEditorDialog
