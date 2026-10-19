@@ -13,4 +13,4 @@
 ## 3. Проверки и PR
 
 - [x] 3.1 Полный набор на чистой среде: lint, typecheck, test, build, `test:browser`, `openspec validate pbt-056-plantuml-export-ui --strict` и `--all --strict`; результаты в PR
-- [ ] 3.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs (plantuml-export +1) перед merge, `Done` после merge
+- [x] 3.2 Реестр: `In progress` → PR → `In review`; после одобрения — архивация с sync specs (plantuml-export +1) перед merge, `Done` после merge
