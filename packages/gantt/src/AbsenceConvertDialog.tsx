@@ -76,7 +76,12 @@ export default function AbsenceConvertDialog({
         aria-label="Преобразование в отпуск"
       >
         <header className="absence-convert__head">
-          <h3 className="absence-convert__title">Преобразование в отпуск</h3>
+          <div>
+            <h3 className="absence-convert__title">Преобразование в отпуск</h3>
+            <p className="absence-convert__description">
+              Период недоступности ресурса вместо задачи.
+            </p>
+          </div>
           <button
             type="button"
             className="absence-convert__close"

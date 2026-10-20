@@ -64,8 +64,8 @@ test('назначение, замена и снятие исполнителя 
   // Таблица: исполнитель виден, даты не изменились.
   const row = pane.locator('.wx-row', { hasText: 'Задача 1' }).first();
   await expect(row).toContainText('QA');
-  await expect(row).toContainText('12-10-2026');
-  await expect(row).toContainText('16-10-2026');
+  await expect(row).toContainText('12.10');
+  await expect(row).toContainText('16.10');
 
   // Замена QA → QA2.
   await chart.getByText('Задача 1').first().dblclick();

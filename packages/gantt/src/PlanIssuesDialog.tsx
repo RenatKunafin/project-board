@@ -77,7 +77,13 @@ export default function PlanIssuesDialog({
         aria-label="Проблемы плана"
       >
         <header className="task-editor__head">
-          <h3 className="task-editor__title">Проблемы плана</h3>
+          <div>
+            <h3 className="task-editor__title">Проблемы плана</h3>
+            <p className="task-editor__description">
+              Нарушения зависимостей FS и конфликты ресурсов по календарю
+              плана.
+            </p>
+          </div>
           <button
             type="button"
             className="task-editor__close"

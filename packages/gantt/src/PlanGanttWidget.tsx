@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Gantt, Willow } from '@svar-ui/react-gantt';
-import type { IApi, IColumnConfig } from '@svar-ui/react-gantt';
+import {
+  AlertTriangle,
+  BarChart3,
+  Download,
+  FolderPlus,
+  Plus,
+  Search,
+  Settings2,
+  Upload,
+} from 'lucide-react';
+import { Gantt, WillowDark } from '@svar-ui/react-gantt';
+import type { IApi, IColumnConfig, IScaleConfig } from '@svar-ui/react-gantt';
 import '@svar-ui/react-gantt/style.css';
+// Иконки SVAR локально (PBT-073, design D2): WillowDark ниже подключается
+// с fonts={false}, внешний запрос к cdn.svar.dev не выполняется (офлайн-PWA).
+import './vendor/wx-icons/wx-icons.css';
 import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
 import {
   createPlanContent,
@@ -68,6 +81,14 @@ import {
   planFilterActive,
   type PlanViewFilter,
 } from './plan-view-filter';
+import {
+  convertZoomScrollLeft,
+  formatIsoDayMonth,
+  formatZoomDayLabel,
+  normalizeGanttZoom,
+  ZOOM_CELL_WIDTH,
+  type GanttZoom,
+} from './zoom-utils';
 import './gantt.css';
 
 type EditorState = TaskEditorState;
@@ -91,6 +112,7 @@ export default function PlanGanttWidget({
   settings,
   updateSettings,
   switchDocument,
+  onResize,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
@@ -126,6 +148,10 @@ export default function PlanGanttWidget({
     | undefined
   >(undefined);
 
+  // Служебный статус последнего действия виджета (PBT-073, design D5):
+  // показывается в футере представления (role="status"); в покое — пусто.
+  const [footerStatus, setFooterStatus] = useState('');
+
   // Фильтры представления (PBT-049): тулбар-контролы; изменение —
   // React-state + updateSettings (производное, документ не меняется).
   const [filterQuery, setFilterQuery] = useState<string>(
@@ -144,6 +170,14 @@ export default function PlanGanttWidget({
     },
     [updateSettings],
   );
+
+  // Масштаб шкалы «Дни/Недели» (PBT-073, design D3): состояние экземпляра
+  // через settings (ADR-6.4), документ не меняется. Дефолт — «Недели»:
+  // компактная плотность PBT-068 остаётся режимом по умолчанию.
+  const [ganttZoom, setGanttZoom] = useState<GanttZoom>(() =>
+    normalizeGanttZoom(settings.ganttZoom),
+  );
+  const zoomCellWidth = ZOOM_CELL_WIDTH[ganttZoom];
 
   useEffect(() => {
     if (!documentId || !documentService) {
@@ -287,6 +321,7 @@ export default function PlanGanttWidget({
     anchor.download = planFileName(new Date());
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setFooterStatus('План экспортирован');
   }, []);
 
   // Импорт: валидация до создания документа; успех — новый независимый
@@ -326,6 +361,7 @@ export default function PlanGanttWidget({
           content: result.payload.content,
         });
         setImportResult({ ok: true, title: created.title });
+        setFooterStatus(`План «${created.title}» импортирован`);
         switchDocument?.(created.id);
       });
     },
@@ -349,6 +385,7 @@ export default function PlanGanttWidget({
       });
       setOnlineganttPreview(undefined);
       setImportResult({ ok: true, title: created.title });
+      setFooterStatus(`План «${created.title}» импортирован`);
       switchDocument?.(created.id);
     },
     [documentService, onlineganttPreview, switchDocument],
@@ -434,6 +471,7 @@ export default function PlanGanttWidget({
     anchor.download = plantumlPreview.fileName;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setFooterStatus('Файл PlantUML скачан');
   }, [plantumlPreview]);
 
   // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
@@ -1091,6 +1129,161 @@ export default function PlanGanttWidget({
       date: ganttDate(addCalendarDays(chartRange.anchor, -2)),
     });
   }, [source, chartRange]);
+
+  // ─── Позиция прокрутки шкалы (PBT-073, design D6; техдолг D8 PBT-071) ──
+  // SVAR при скачке ширины контейнера пересобирает шкалу и сбрасывает
+  // прокрутку. Механизм: пассивный трекинг scrollLeft скролл-контейнеров
+  // (capture-фаза: scroll не всплывает) + разовое восстановление после
+  // стабилизации ширины (debounce onResize 150 мс + ограниченная серия
+  // попыток 0/150/350 мс — не поллинг). Отличается от отвергнутых в D8
+  // PBT-071: поллинга-удержания (гонки), перемонтирования (пустая шкала),
+  // якорного старта (уход к началу плана).
+  // Пассивный трекинг scrollLeft: подписка на document (capture-фаза —
+  // scroll не всплывает), фильтр по классу контейнера SVAR и экземпляру
+  // виджета. На host-элементе не вешается: при первом рендере чарт ещё
+  // не смонтирован (ветка «Загрузка плана…»), а эффект с пустыми deps
+  // повторно не выполняется — слушатель терялся (диагностика PBT-073).
+  const lastScrollLeftRef = useRef(0);
+  // Активное окно восстановления (design D6): пересборка шкалы SVAR
+  // асинхронна и может сбросить прокрутку ПОСЛЕ стартовой серии попыток;
+  // сброс — это scroll-событие, на него реагируем повторным применением.
+  const pendingRestoreRef = useRef<{ left: number; until: number } | null>(
+    null,
+  );
+  useEffect(() => {
+    const onScroll = (event: Event) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.classList.contains('wx-chart')
+      ) {
+        const root = target.closest('.plan-gantt');
+        if (
+          root?.getAttribute('data-widget-instance') === widgetInstanceId
+        ) {
+          lastScrollLeftRef.current = target.scrollLeft;
+          const pending = pendingRestoreRef.current;
+          if (
+            pending !== null &&
+            window.performance.now() < pending.until
+          ) {
+            if (Math.abs(target.scrollLeft - pending.left) <= 33) {
+              // Позиция восстановлена — окно закрывается.
+              pendingRestoreRef.current = null;
+            } else if (target.scrollLeft < pending.left - 33) {
+              // Сброс пересборки догнал серию попыток — вернуть позицию
+              // (в rAF: не драться с пересборкой внутри обработчика).
+              window.requestAnimationFrame(() => {
+                applyChartScrollLeft(widgetInstanceId, pending.left);
+              });
+            }
+          }
+        }
+      }
+    };
+    // window.document — пропс-состояние document шэдоуит глобальный
+    // (начальное значение undefined роняло монтаж, диагностика PBT-073).
+    window.document.addEventListener('scroll', onScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      window.document.removeEventListener('scroll', onScroll, {
+        capture: true,
+      });
+  }, [widgetInstanceId]);
+
+  // Запланированное восстановление (px): серия попыток покрывает
+  // асинхронность пересборки шкалы SVAR и remount при смене зума;
+  // scroll-chart {left} — штатный путь (обработчик библиотеки
+  // устанавливает scrollLeft контейнера, кламп выполняет браузер).
+  const scrollRetryTimersRef = useRef<number[]>([]);
+  const clearScrollRetries = useCallback(() => {
+    for (const timer of scrollRetryTimersRef.current) {
+      window.clearTimeout(timer);
+    }
+    scrollRetryTimersRef.current = [];
+  }, []);
+  // Применение позиции: прямое присвоение scrollLeft контейнеру чарта +
+  // штатный scroll-chart поверх. Только exec недостаточно: SVAR хранит
+  // «последний применённый left» и после пересборки при развороте
+  // игнорирует повторный тот же left (диагностика PBT-073, dist 3773).
+  // Прямое присвоение диспатчит scroll — SVAR сам синхронизирует таблицу.
+  const applyChartScrollLeft = useCallback(
+    (instanceId: string, left: number) => {
+      const chart = window.document.querySelector<HTMLElement>(
+        `.plan-gantt[data-widget-instance="${instanceId}"] .wx-chart`,
+      );
+      if (chart !== null) {
+        chart.scrollLeft = left;
+      }
+      apiRef.current?.exec('scroll-chart', { left });
+    },
+    [],
+  );
+
+  const scheduleScrollRestore = useCallback(
+    (left: number) => {
+      clearScrollRetries();
+      // Окно восстановления (2 с): стартовая серия + реакция на сброс
+      // пересборки через scroll-событие (см. трекинг выше).
+      pendingRestoreRef.current = {
+        left,
+        until: window.performance.now() + 2000,
+      };
+      for (const delay of [0, 150, 350]) {
+        const timer = window.setTimeout(() => {
+          applyChartScrollLeft(widgetInstanceId, left);
+        }, delay);
+        scrollRetryTimersRef.current.push(timer);
+      }
+    },
+    [clearScrollRetries, applyChartScrollLeft, widgetInstanceId],
+  );
+  useEffect(() => clearScrollRetries, [clearScrollRetries]);
+
+  // Восстановление после изменения размеров окна (разворот/возврат,
+  // resize рамки): пиксельная позиция валидна — cellWidth не меняется.
+  useEffect(() => {
+    if (onResize === undefined) {
+      return;
+    }
+    let debounce = 0;
+    const unsubscribe = onResize(() => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => {
+        scheduleScrollRestore(lastScrollLeftRef.current);
+      }, 150);
+    });
+    return () => {
+      unsubscribe();
+      window.clearTimeout(debounce);
+    };
+  }, [onResize, scheduleScrollRestore]);
+
+  // Смена зума: пиксельная позиция невалидна (меняется cellWidth) —
+  // конверсия через ширину клетки до смены состояния (design D6.5),
+  // восстановление после пересборки (chartRemountKey включает зум).
+  const ganttZoomRef = useRef(ganttZoom);
+  ganttZoomRef.current = ganttZoom;
+  const applyZoom = useCallback(
+    (next: GanttZoom) => {
+      const current = ganttZoomRef.current;
+      if (current === next) {
+        return;
+      }
+      const converted = convertZoomScrollLeft(
+        lastScrollLeftRef.current,
+        current,
+        next,
+      );
+      setGanttZoom(next);
+      updateSettingsRef.current?.({ ganttZoom: next });
+      scheduleScrollRestore(converted);
+    },
+    [scheduleScrollRestore],
+  );
+
   const tasks = useMemo(
     // Раскрытие групп — состояние экземпляра (B4): свёрнутые группы
     // передаются адаптеру (open: false), при пересборке представления
@@ -1118,6 +1311,9 @@ export default function PlanGanttWidget({
         ? remountKeyRef.current
         : String(document.revision);
   remountKeyRef.current = chartRemountKey;
+  // Смена зума пересобирает представление (cellWidth/scales); позиция
+  // взгляда восстанавливается конверсией через дни (design D6.5).
+  const chartKey = `${chartRemountKey}|${ganttZoom}`;
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -1152,10 +1348,55 @@ export default function PlanGanttWidget({
       }
       return calendar.workingDaysBetween(task.start, task.end);
     };
+    // Даты таблицы — дд.мм моноширинно (PBT-073, design D4): источник —
+    // документ (даты групп — сводные min/max детей, как в «Раб. днях»);
+    // окончание показывается включительно (A1, прототип строки 9–10).
+    const dateCell = (rowId: string, edge: 'start' | 'end') => {
+      const current = planRef.current;
+      if (!current) {
+        return null;
+      }
+      const group = current.groups.find((entry) => entry.id === rowId);
+      if (group !== undefined) {
+        const children = current.tasks.filter(
+          (task) => task.groupId === rowId,
+        );
+        if (children.length === 0) {
+          return null;
+        }
+        const iso = children.reduce(
+          (acc, task) =>
+            edge === 'start'
+              ? task.start < acc
+                ? task.start
+                : acc
+              : task.end > acc
+                ? task.end
+                : acc,
+          edge === 'start' ? children[0].start : children[0].end,
+        );
+        return formatIsoDayMonth(iso);
+      }
+      const task = current.tasks.find((entry) => entry.id === rowId);
+      if (task === undefined) {
+        return null;
+      }
+      return formatIsoDayMonth(task[edge]);
+    };
     return [
       { id: 'text', header: 'Задача', flexgrow: 1 },
-      { id: 'start', header: 'Начало', width: 100 },
-      { id: 'end', header: 'Окончание', width: 100 },
+      {
+        id: 'start',
+        header: 'Начало',
+        width: 80,
+        cell: ({ row }) => dateCell(String(row.id), 'start'),
+      },
+      {
+        id: 'end',
+        header: 'Окончание',
+        width: 80,
+        cell: ({ row }) => dateCell(String(row.id), 'end'),
+      },
       {
         id: 'work-days',
         header: 'Раб. дни',
@@ -1216,6 +1457,28 @@ export default function PlanGanttWidget({
     // Своя запись жеста не меняет колонки: SVAR перерисовывает ячейку
     // строки при update-task, значение читается из свежего planRef.
   }, [source]);
+
+  // Шкала дат (PBT-073, design D3, по прототипу SvarGanttChart): месяц —
+  // «октябрь 2026 г.», день — дд.мм в «Днях» / число месяца в «Неделях».
+  const scales = useMemo<IScaleConfig[]>(
+    () => [
+      {
+        unit: 'month',
+        step: 1,
+        format: (date: Date) =>
+          date.toLocaleDateString('ru-RU', {
+            month: 'long',
+            year: 'numeric',
+          }),
+      },
+      {
+        unit: 'day',
+        step: 1,
+        format: (date: Date) => formatZoomDayLabel(date, ganttZoom),
+      },
+    ],
+    [ganttZoom],
+  );
 
   const highlightTime = useCallback(
     (date: Date, unit: 'day' | 'hour') => {
@@ -1288,109 +1551,155 @@ export default function PlanGanttWidget({
       ) : (
         <div className="plan-gantt__inner">
           <div className="plan-gantt__toolbar">
-            <button
-              type="button"
-              className="plan-gantt__add-button"
-              data-add-task
-              onClick={() => openEditor({ mode: 'create' })}
-            >
-              + Задача
-            </button>
-            <button
-              type="button"
-              className="plan-gantt__add-button"
-              data-add-group
-              onClick={() => openGroupEditor({ mode: 'group-create' })}
-            >
-              + Группа
-            </button>
-            <button
-              type="button"
-              className="plan-gantt__add-button"
-              data-catalogs
-              onClick={openCatalog}
-            >
-              Настройки плана
-            </button>
-            <button
-              type="button"
-              className={`plan-gantt__add-button${issues.length > 0 ? ' plan-gantt__issues-button' : ''}`}
-              data-issues
-              onClick={() => setIssuesOpen(true)}
-            >
-              Проблемы ({issues.length})
-            </button>
-            {/* BISECT: кнопки с компактным классом */}
-            <button
-              type="button"
-              className="plan-gantt__add-button plan-gantt__icon-button"
-              data-export-plan
-              aria-label="Экспорт плана"
-              onClick={handleExportPlan}
-            >
-              📤
-            </button>
-            <button
-              type="button"
-              className="plan-gantt__add-button plan-gantt__icon-button"
-              data-export-plantuml
-              aria-label="Экспорт PlantUML"
-              onClick={openPlantumlExport}
-            >
-              📊
-            </button>
-            <button
-              type="button"
-              className="plan-gantt__add-button plan-gantt__icon-button"
-              data-import-plan
-              aria-label="Импорт плана"
-              onClick={() => importInputRef.current?.click()}
-            >
-              📥
-            </button>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".json,.gantt,application/json"
-              className="plan-gantt__import-input"
-              data-import-plan-input
-              aria-label="Файл плана для импорта"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                // Сброс позволяет выбрать тот же файл повторно.
-                event.target.value = '';
-                handleImportFile(file);
-              }}
-            />
-            <input
-              type="search"
-              className="plan-gantt__filter-input"
-              data-gantt-filter-query
-              placeholder="Фильтр: задача"
-              value={filterQuery}
-              onChange={(event) =>
-                applyFilters(event.target.value, filterResourceId)
-              }
-            />
-            <select
-              className="plan-gantt__filter-select"
-              data-gantt-filter-resource
-              value={filterResourceId}
-              onChange={(event) =>
-                applyFilters(filterQuery, event.target.value)
-              }
-            >
-              <option value="">Все ресурсы</option>
-              {(plan?.resources ?? []).map((resource) => (
-                <option key={resource.id} value={resource.id}>
-                  {resource.title}
-                </option>
-              ))}
-            </select>
-            <span className="plan-gantt__count" data-task-count>
-              Задач: {plan?.tasks.length ?? 0}
-            </span>
+            <div className="plan-gantt__toolbar-row">
+              <button
+                type="button"
+                className="plan-gantt__button plan-gantt__button--primary"
+                data-add-task
+                onClick={() => openEditor({ mode: 'create' })}
+              >
+                <Plus aria-hidden="true" />
+                Задача
+              </button>
+              <button
+                type="button"
+                className="plan-gantt__button"
+                data-add-group
+                onClick={() => openGroupEditor({ mode: 'group-create' })}
+              >
+                <FolderPlus aria-hidden="true" />
+                Группа
+              </button>
+              <span
+                className="plan-gantt__toolbar-separator"
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                className="plan-gantt__button"
+                data-import-plan
+                aria-label="Импорт плана"
+                onClick={() => importInputRef.current?.click()}
+              >
+                <Upload aria-hidden="true" />
+                Импорт
+              </button>
+              <button
+                type="button"
+                className="plan-gantt__button"
+                data-export-plan
+                aria-label="Экспорт плана"
+                onClick={handleExportPlan}
+              >
+                <Download aria-hidden="true" />
+                Экспорт
+              </button>
+              <button
+                type="button"
+                className="plan-gantt__button"
+                data-export-plantuml
+                aria-label="Экспорт PlantUML"
+                onClick={openPlantumlExport}
+              >
+                <BarChart3 aria-hidden="true" />
+                PlantUML
+              </button>
+              <button
+                type="button"
+                className="plan-gantt__button plan-gantt__button--icon"
+                data-catalogs
+                aria-label="Настройки плана"
+                title="Настройки плана"
+                onClick={openCatalog}
+              >
+                <Settings2 aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`plan-gantt__button plan-gantt__button--issues${
+                  issues.length > 0 ? ' is-warning' : ''
+                }`}
+                data-issues
+                onClick={() => setIssuesOpen(true)}
+              >
+                <AlertTriangle aria-hidden="true" />
+                Проблемы ({issues.length})
+              </button>
+            </div>
+            <div className="plan-gantt__toolbar-row plan-gantt__toolbar-row--filters">
+              <span className="plan-gantt__search">
+                <Search aria-hidden="true" />
+                <input
+                  type="search"
+                  className="plan-gantt__filter-input"
+                  data-gantt-filter-query
+                  aria-label="Поиск задач"
+                  placeholder="Поиск задач…"
+                  value={filterQuery}
+                  onChange={(event) =>
+                    applyFilters(event.target.value, filterResourceId)
+                  }
+                />
+              </span>
+              <select
+                className="plan-gantt__filter-select"
+                data-gantt-filter-resource
+                aria-label="Фильтр по ресурсу"
+                value={filterResourceId}
+                onChange={(event) =>
+                  applyFilters(filterQuery, event.target.value)
+                }
+              >
+                <option value="">Все ресурсы</option>
+                {(plan?.resources ?? []).map((resource) => (
+                  <option key={resource.id} value={resource.id}>
+                    {resource.title}
+                  </option>
+                ))}
+              </select>
+              {/* Масштаб шкалы (design D3): сегмент; дефолт «Недели» —
+                  компактная плотность PBT-068. */}
+              <div
+                className="plan-gantt__zoom"
+                role="group"
+                aria-label="Масштаб шкалы"
+              >
+                <button
+                  type="button"
+                  data-zoom-days
+                  aria-pressed={ganttZoom === 'days'}
+                  onClick={() => applyZoom('days')}
+                >
+                  Дни
+                </button>
+                <button
+                  type="button"
+                  data-zoom-weeks
+                  aria-pressed={ganttZoom === 'weeks'}
+                  onClick={() => applyZoom('weeks')}
+                >
+                  Недели
+                </button>
+              </div>
+              <span className="plan-gantt__count" data-task-count>
+                Задач: {plan?.tasks.length ?? 0}
+              </span>
+            </div>
           </div>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,.gantt,application/json"
+            className="plan-gantt__import-input"
+            data-import-plan-input
+            aria-label="Файл плана для импорта"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              // Сброс позволяет выбрать тот же файл повторно.
+              event.target.value = '';
+              handleImportFile(file);
+            }}
+          />
           {importResult !== undefined ? (
             <div
               className={`plan-gantt__transfer-result${
@@ -1438,30 +1747,45 @@ export default function PlanGanttWidget({
             </p>
           ) : null}
           <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
-            <Willow>
+            <WillowDark fonts={false}>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
                   документа применяются пересозданием представления.
-                  Своя запись жеста подавляет remount (D7 PBT-039). */}
+                  Своя запись жеста подавляет remount (D7 PBT-039).
+                  Компонент зума в ключе — пересборка при смене масштаба
+                  (PBT-073, design D3). */}
               {/* Компактная плотность по референсу OnlineGantt (PBT-068,
-                  замер 2026-10-16): день ≈ 33px, строка 36px — вместо
-                  дефолтов SVAR 100/38, дающих ~10 дней в окно. */}
+                  замер 2026-10-16): день ≈ 33px (зум «Недели», дефолт),
+                  строка 36px; зум «Дни» — 48px (PBT-073). */}
               <Gantt
-                key={chartRemountKey}
+                key={chartKey}
                 tasks={tasks}
                 links={links}
                 columns={columns}
                 inclusiveEnd={true}
-                cellWidth={33}
+                cellWidth={zoomCellWidth}
                 cellHeight={36}
                 autoScale={false}
                 start={chartRange?.start}
                 end={chartRange?.end}
+                scales={scales}
                 init={initApi}
                 highlightTime={highlightTime}
               />
-            </Willow>
+            </WillowDark>
           </div>
+          {/* Строка состояния виджета (PBT-073, design D5): название
+              документа плана + служебный статус последнего действия. */}
+          <footer className="plan-gantt__footer">
+            <span className="plan-gantt__footer-title">{document.title}</span>
+            <span
+              className="plan-gantt__footer-status"
+              role="status"
+              data-gantt-status
+            >
+              {footerStatus}
+            </span>
+          </footer>
           {editor !== undefined && plan !== undefined && (
             <TaskEditorDialog
               plan={plan}

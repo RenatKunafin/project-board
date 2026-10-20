@@ -243,9 +243,15 @@ export default function TaskEditorDialog({
         aria-label={mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
       >
         <header className="task-editor__head">
-          <h3 className="task-editor__title">
-            {mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
-          </h3>
+          <div>
+            <h3 className="task-editor__title">
+              {mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
+            </h3>
+            <p className="task-editor__description">
+              Изменения записываются в документ плана; даты других задач не
+              переносятся.
+            </p>
+          </div>
           <button
             type="button"
             className="task-editor__close"

@@ -93,9 +93,15 @@ export default function GroupEditorDialog({
         aria-label={mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
       >
         <header className="task-editor__head">
-          <h3 className="task-editor__title">
-            {mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
-          </h3>
+          <div>
+            <h3 className="task-editor__title">
+              {mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
+            </h3>
+            <p className="task-editor__description">
+              Группы образуют вложенную структуру; сводная полоса считается по
+              вложенным задачам.
+            </p>
+          </div>
           <button
             type="button"
             className="task-editor__close"

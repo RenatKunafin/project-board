@@ -55,9 +55,70 @@
 
 /* Шкала дат/месяцев (.wx-scale, sticky) по умолчанию прозрачна: при
    вертикальном скролле полосы задач просвечивают сквозь неё (находка
-   владельца 2026-10-16, приёмка PBT-053) — непрозрачный фон токеном. */
+   владельца 2026-10-16, приёмка PBT-053) — непрозрачный фон токеном.
+   PBT-073: фон surface-raised по прототипу (строка 146 styles.css). */
 .plan-gantt__chart .wx-scale {
-  background: var(--surface);
+  background: var(--surface-raised);
+}
+
+/* Тёмная тема SVAR на семантических токенах (PBT-073, design D1).
+   Референс: прототип flexi-dashboard-hub, styles.css — блок
+   «.svar-gantt .wx-willow-dark-theme» (переносим визуальный язык, не код).
+   Значения совпадают с токенами PBT-069; полосы задач — primary, сводные —
+   success, связи muted → primary при наведении, радиус 3px, без теней. */
+.plan-gantt .wx-willow-dark-theme {
+  --wx-font-family: var(--font-sans);
+  --wx-font-size: 14px;
+  --wx-font-size-sm: 12px;
+  --wx-background: var(--surface);
+  --wx-background-alt: var(--surface-raised);
+  --wx-background-hover: var(--accent);
+  --wx-color-font: var(--foreground);
+  --wx-color-font-alt: var(--muted-foreground);
+  --wx-color-secondary-font: var(--muted-foreground);
+  --wx-color-font-disabled: var(--muted-foreground);
+  --wx-color-primary: var(--primary);
+  --wx-color-link: var(--primary);
+  --wx-border: 1px solid var(--border);
+  --wx-gantt-border-color: var(--border);
+  --wx-gantt-icon-color: var(--muted-foreground);
+  --wx-gantt-task-color: color-mix(in oklch, var(--primary) 50%, var(--surface));
+  --wx-gantt-task-fill-color: var(--primary);
+  --wx-gantt-task-font-color: var(--foreground);
+  --wx-gantt-task-border-color: var(--primary);
+  --wx-gantt-summary-color: color-mix(in oklch, var(--success) 35%, var(--surface));
+  --wx-gantt-summary-fill-color: var(--success);
+  --wx-gantt-summary-font-color: var(--foreground);
+  --wx-gantt-summary-border-color: var(--success);
+  --wx-gantt-link-color: var(--muted-foreground);
+  --wx-gantt-link-color-hovered: var(--primary);
+  --wx-gantt-select-color: var(--accent);
+  --wx-gantt-holiday-background: var(--muted);
+  --wx-gantt-holiday-color: var(--muted-foreground);
+  --wx-gantt-bar-shadow: none;
+  --wx-gantt-bar-border-radius: 3px;
+  --wx-grid-header-font-color: var(--muted-foreground);
+  --wx-grid-body-font-color: var(--foreground);
+  --wx-grid-body-row-border: 1px solid var(--border);
+  --wx-grid-header-shadow: none;
+  --wx-table-header-background: var(--surface-raised);
+  --wx-table-select-background: var(--accent);
+  --wx-timescale-font-color: var(--muted-foreground);
+  --wx-timescale-font: 12px var(--font-mono);
+  --wx-timescale-shadow: none;
+}
+
+/* Границы ячеек/строк таблицы — на токене (прототип, строка 160). */
+.plan-gantt .wx-cell,
+.plan-gantt .wx-row {
+  border-color: var(--border);
+}
+
+/* Даты «Начало»/«Конец» — моноширинно (PBT-073, design D4;
+   прототип, строки 147–148). */
+.plan-gantt .wx-cell[data-col-id='start'],
+.plan-gantt .wx-cell[data-col-id='end'] {
+  font-family: var(--font-mono);
 }
 
 .plan-gantt .wx-gantt-holidays > * {
@@ -74,7 +135,176 @@
   background: var(--color-gantt-holiday);
 }
 
-/* Фильтры представления (PBT-049). */
+/* ─── Панель инструментов и строка состояния (PBT-073, design D5) ───────
+   Две строки по прототипу (GanttPrototype.tsx): команды — строка 1,
+   фильтры и масштаб — строка 2. Кнопки: primary — основное действие,
+   остальные ghost; иконки lucide 14px. */
+
+.plan-gantt__toolbar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-gantt__toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.plan-gantt__toolbar-row--filters {
+  gap: 8px;
+}
+
+.plan-gantt__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.plan-gantt__button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.plan-gantt__button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.plan-gantt__button--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.plan-gantt__button--primary:hover {
+  background: color-mix(in oklch, var(--primary) 90%, var(--foreground));
+  color: var(--primary-foreground);
+}
+
+.plan-gantt__button--icon {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Проблемы (design D5): warning при наличии, приглушённая в покое. */
+.plan-gantt__button--issues {
+  margin-left: auto;
+}
+
+.plan-gantt__button--issues.is-warning {
+  color: var(--warning);
+}
+
+.plan-gantt__button--issues.is-warning:hover {
+  background: color-mix(in oklch, var(--warning) 14%, transparent);
+  color: var(--warning);
+}
+
+.plan-gantt__toolbar-separator {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+/* Поиск с иконкой (строка 2, по прототипу). */
+.plan-gantt__search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 128px;
+  max-width: 260px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__search svg {
+  position: absolute;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.plan-gantt__search .plan-gantt__filter-input {
+  width: 100%;
+  min-width: 0;
+  padding-left: 28px;
+}
+
+/* Сегмент масштаба «Дни/Недели» (design D3) — паттерн сегмента
+   раскладки платформы (.layout-mode-switch). */
+.plan-gantt__zoom {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.plan-gantt__zoom button {
+  height: 24px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.plan-gantt__zoom button:hover {
+  color: var(--foreground);
+}
+
+.plan-gantt__zoom button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* Строка состояния (design D5): название плана + статус действия. */
+.plan-gantt__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  height: 24px;
+  padding: 0 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__footer-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-gantt__footer-status {
+  flex: none;
+  margin-left: auto;
+}
+
+/* Фильтры представления (PBT-049; строка 2 тулбара с PBT-073). */
 .plan-gantt__filter-input {
   font: inherit;
   font-size: 12px;

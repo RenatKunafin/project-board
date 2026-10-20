@@ -14,7 +14,7 @@
 .plan-gantt .absence-convert {
   display: flex;
   flex-direction: column;
-  width: min(420px, calc(100% - 32px));
+  width: min(576px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow: auto;
   background: var(--surface);
@@ -26,7 +26,7 @@
 
 .plan-gantt .absence-convert__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);

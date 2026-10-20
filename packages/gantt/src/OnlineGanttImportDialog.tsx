@@ -75,9 +75,15 @@ export default function OnlineGanttImportDialog({
         aria-label="Импорт плана из OnlineGantt"
       >
         <header className="onlinegantt-import__head">
-          <h3 className="onlinegantt-import__title">
-            Импорт плана из OnlineGantt
-          </h3>
+          <div>
+            <h3 className="onlinegantt-import__title">
+              Импорт плана из OnlineGantt
+            </h3>
+            <p className="onlinegantt-import__description">
+              Файл проверяется до создания; будет создан новый независимый
+              план.
+            </p>
+          </div>
           <button
             type="button"
             className="onlinegantt-import__close"

@@ -10,10 +10,15 @@
   background: var(--overlay);
 }
 
+/* ─── Диалоги (PBT-073, design D7) ──────────────────────────────────────
+   Единый стиль модуля: max-width 576px (max-w-xl прототипа), surface,
+   заголовок + описание. Шапка — общие классы, специфические стили форм
+   остаются в файлах диалогов. */
+
 .plan-gantt .task-editor {
   display: flex;
   flex-direction: column;
-  width: min(440px, calc(100% - 32px));
+  width: min(576px, calc(100% - 32px));
   max-height: calc(100% - 32px);
   overflow: auto;
   background: var(--surface);
@@ -25,10 +30,22 @@
 
 .plan-gantt .task-editor__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
+}
+
+/* Строка описания диалога (PBT-073, design D7 — по образцу
+   DialogDescription прототипа); общая для всех диалогов модуля. */
+.plan-gantt .task-editor__description,
+.plan-gantt .onlinegantt-import__description,
+.plan-gantt .plantuml-export__description,
+.plan-gantt .absence-convert__description {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
 }
 
 .plan-gantt .task-editor__title {
@@ -145,34 +162,10 @@
   border-color: var(--destructive);
 }
 
-.plan-gantt .plan-gantt__toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.plan-gantt .plan-gantt__add-button {
-  padding: 5px 12px;
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.plan-gantt .plan-gantt__count {
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-
 /* Редактор справочников PBT-041 (общие стили диалогов task-editor__). */
 
 .plan-gantt .catalog {
-  width: min(600px, calc(100% - 32px));
+  width: min(576px, calc(100% - 32px));
 }
 
 .plan-gantt .catalog__section-title {
@@ -264,12 +257,6 @@
 }
 
 /* Список проблем плана PBT-046. */
-
-.plan-gantt .plan-gantt__issues-button {
-  border-color: var(--destructive);
-  color: var(--destructive);
-  background: transparent;
-}
 
 .plan-gantt .issues__row {
   border-left: 3px solid var(--destructive);

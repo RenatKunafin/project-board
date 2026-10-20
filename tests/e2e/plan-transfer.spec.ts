@@ -142,7 +142,7 @@ test('экспортированный файл переносится в чис
   await otherPage
     .getByRole('group', { name: 'План · Перенос' })
     .first()
-    .getByRole('button', { name: '+ Задача' })
+    .getByRole('button', { name: 'Задача' })
     .click();
   const dialog = otherPage.getByRole('dialog', { name: 'Новая задача' });
   await dialog.locator('[data-task-field="title"]').fill('После импорта');

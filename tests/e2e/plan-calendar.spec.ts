@@ -91,10 +91,10 @@ test('праздник 14.10 → длительность 4; исключени�
   // A5: даты прежние, длительность 4, подсветка праздника в обоих чартах.
   await expect(
     first.locator('.wx-row[data-id=":t-1"]'),
-  ).toContainText('12-10-2026');
+  ).toContainText('12.10');
   await expect(
     first.locator('.wx-row[data-id=":t-1"]'),
-  ).toContainText('16-10-2026');
+  ).toContainText('16.10');
   await expect(
     first.locator('.wx-row[data-id=":t-1"]'),
   ).toContainText('4');

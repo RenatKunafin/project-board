@@ -101,6 +101,14 @@ test('три типа проблем в списке: FS, конфликт ра�
 
   // Исправление FS: сдвиг B на 14.10 (лаг 0) — проблема исчезает.
   await dialog.locator('[data-issues-close]').click();
+  // Окно разворачивается на весь дашборд (PBT-071): в двухстрочном
+  // тулбаре PBT-073 нижние строки таблицы за границей окна, а скролл
+  // таблицы сдвигает строку между кликами dblclick — в развёрнутом
+  // окне все строки видимы (диагностика PBT-073).
+  await pane
+    .getByRole('button', { name: /^Развернуть на весь дашборд/ })
+    .click();
+  await page.waitForTimeout(600);
   await pane
     .locator('.plan-gantt__chart')
     .locator('.wx-row[data-id=":t-b"]')
@@ -146,6 +154,13 @@ test('исправление конфликта работ снимает про
   await dialog.locator('[data-issues-close]').click();
 
   // Исправление: сдвиг «Инфраструктуры» за пределы «Разработки».
+  // Разворот окна: нижние строки за границей окна в двухстрочном
+  // тулбаре PBT-073; скролл таблицы сдвигает строку между кликами
+  // dblclick — в развёрнутом окне все строки видимы (диагностика).
+  await pane
+    .getByRole('button', { name: /^Развернуть на весь дашборд/ })
+    .click();
+  await page.waitForTimeout(600);
   await pane
     .locator('.plan-gantt__chart')
     .locator('.wx-row[data-id=":t-d"]')

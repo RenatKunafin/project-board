@@ -236,7 +236,7 @@ test('пустой справочник ресурсов — применени�
 
   // Задача в пустом плане (справочник ресурсов пуст).
   const pane = page.getByRole('group', { name: 'План · Без ресурсов' }).first();
-  await pane.getByRole('button', { name: '+ Задача' }).click();
+  await pane.getByRole('button', { name: 'Задача' }).click();
   const form = page.getByRole('dialog', { name: 'Новая задача' });
   await form.locator('[data-task-field="title"]').fill('Ручной отпуск');
   await form.locator('[data-task-field="start"]').fill('2026-10-12');

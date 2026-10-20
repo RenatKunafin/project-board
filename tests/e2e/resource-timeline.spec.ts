@@ -217,15 +217,27 @@ test('оба вида одного документа: изменение в п�
   const before = await item.evaluate((el) => el.getBoundingClientRect().left);
 
   // Редактирование в проектном виде: форма задачи, сдвиг начала на 2 дня.
+  // Разворот план-окна (PBT-071): нижние строки за границей окна в
+  // двухстрочном тулбаре PBT-073, а скролл таблицы сдвигает строку между
+  // кликами dblclick. После сохранения окно возвращается — ресурсный
+  // вид снова видим для проверки полосы (диагностика PBT-073).
   await ganttPane
+    .getByRole('button', { name: /^Развернуть на весь дашборд/ })
+    .click();
+  await page.waitForTimeout(600);
+  const rowD = ganttPane
     .locator('.plan-gantt__chart')
-    .locator('.wx-row[data-id=":t-d"]')
-    .dblclick();
+    .locator('.wx-row[data-id=":t-d"]');
+  await rowD.dblclick();
   const dialog = ganttPane.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await dialog.locator('[data-task-field="start"]').fill('2026-10-22');
   await dialog.locator('[data-task-save]').click();
   await expect(dialog).not.toBeAttached();
+  await ganttPane
+    .getByRole('button', { name: /^Вернуть прежний размер/ })
+    .click();
+  await page.waitForTimeout(600);
 
   // Ресурсный вид обновился без перезагрузки страницы.
   await expect(item).toBeVisible();

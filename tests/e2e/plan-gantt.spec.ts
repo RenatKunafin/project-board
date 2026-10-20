@@ -205,8 +205,8 @@ test('drag полосы переносит задачу с сохранение�
   // Начало пн 12 → сб 10 привязывается к рабочей пятнице 09 (A2, назад);
   // рабочая длительность сохранена: 09,12,13,15 (14.10 — праздник) = 4 дня,
   // окончание включительно чт 15.
-  expect(after).toContain('09-10-2026');
-  expect(after).toContain('15-10-2026');
+  expect(after).toContain('09.10');
+  expect(after).toContain('15.10');
   expect(after).toContain('4');
   const revisionAfter = await page.evaluate(
     (id) => window.__projectBoard?.readDocument?.(id)?.revision ?? null,
@@ -251,9 +251,9 @@ test('resize правого края через праздник сохраня�
   await page.waitForTimeout(2000);
   await expect
     .poll(async () => row.textContent(), { timeout: 5000 })
-    .toContain('15-10-2026');
+    .toContain('15.10');
   const after = await row.textContent();
-  expect(after).toContain('16-10-2026');
+  expect(after).toContain('16.10');
   expect(after).toContain('2');
 });
 
@@ -296,8 +296,8 @@ test('сжатие левее начала отклоняется ядром и 
   await page.mouse.up();
   await page.waitForTimeout(2000);
   // Строка осталась 12–16 (4 раб. дня), документ не менялся.
-  await expect(rowA).toHaveText(/12-10-2026/);
-  expect(await rowA.textContent()).toContain('16-10-2026');
+  await expect(rowA).toHaveText(/12\.10/);
+  expect(await rowA.textContent()).toContain('16.10');
   const revisionAfter = await page.evaluate(
     (id) => window.__projectBoard?.readDocument?.(id)?.revision ?? null,
     documentId,
@@ -384,7 +384,7 @@ test('drag однодневной задачи сохраняет длитель
   await page.waitForTimeout(2000);
   await expect
     .poll(async () => row.textContent(), { timeout: 5000 })
-    .not.toContain('12-10-2026');
+    .not.toContain('12.10');
   const after = await row.textContent();
   // Длительность осталась 1 раб. день после переноса (особый случай
   // moveTask, fix PBT-039): окончание совпадает с началом, «1» в колонке.
