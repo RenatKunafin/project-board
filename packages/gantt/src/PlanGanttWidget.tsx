@@ -1404,14 +1404,15 @@ export default function PlanGanttWidget({
       },
       {
         id: 'work-days',
-        header: 'Раб. дней',
-        width: 96,
+        header: 'Рабочих дней',
+        width: 120,
+        align: 'center',
         cell: ({ row }) => workingDaysCell(String(row.id)),
       },
       {
         id: 'assignees',
         header: 'Исполнители',
-        width: 140,
+        width: 180,
         cell: ({ row }) => {
           const current = planRef.current;
           if (!current) {
@@ -1742,7 +1743,7 @@ export default function PlanGanttWidget({
                 tasks={tasks}
                 links={links}
                 columns={columns}
-                gridWidth={652}
+                gridWidth={712}
                 inclusiveEnd={true}
                 cellWidth={zoomCellWidth}
                 cellHeight={36}
