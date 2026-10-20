@@ -14,7 +14,7 @@ const FIXTURE_PATH =
 const IMPORTED_TITLE = 'onlinegantt-20261016.reference';
 
 async function createPlan(page: Page, title: string): Promise<void> {
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })
@@ -102,7 +102,7 @@ test('рабочий файл: предпросмотр со сводкой и �
   await expect(importedPane.getByText('Отпуск').first()).toBeVisible();
 
   // Тот же документ открывается в ресурсном виде через каталог виджетов.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })
@@ -215,7 +215,7 @@ test('повторный импорт создаёт два независимы
   ).toBeVisible();
 
   // Каталог виджетов предлагает оба импортированных документа.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   const choice = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await choice.getByRole('button', { name: 'План', exact: true }).click();
   await expect(

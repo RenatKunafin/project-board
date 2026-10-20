@@ -87,6 +87,15 @@ export interface AutosavingDocumentService extends DocumentService {
     documentId: string,
     handler: SaveStateHandler,
   ): Unsubscribe;
+  /**
+   * Сводное состояние записи всех документов (PBT-072, индикатор топ-бара):
+   * приоритет conflict > error > saving > saved; без записей — saved
+   * (всё содержимое памяти восстановлено из хранилища).
+   */
+  getAggregateSaveStatus(): DocumentSaveStatus;
+  subscribeAggregateSaveStatus(
+    handler: (status: DocumentSaveStatus) => void,
+  ): Unsubscribe;
   /** Проблемы миграций последнего восстановления (design D2). */
   listRecoveryIssues(): DocumentRecoveryIssue[];
   /** Документ записан версией новее поддерживаемой: запись запрещена. */
@@ -109,6 +118,7 @@ export function createDocumentService(
   const queue = new Map<string, SaveQueueEntry>();
   const saveStates = new Map<string, DocumentSaveState>();
   const saveStateHandlers = new Map<string, Set<SaveStateHandler>>();
+  const aggregateHandlers = new Set<(status: DocumentSaveStatus) => void>();
   let notifyingDocumentId: string | null = null;
 
   // Индекс поддержки миграций и результаты последнего восстановления.
@@ -171,6 +181,35 @@ export function createDocumentService(
       for (const handler of [...handlers]) {
         handler(state);
       }
+    }
+    notifyAggregate();
+  }
+
+  const AGGREGATE_PRIORITY: readonly DocumentSaveStatus[] = [
+    'conflict',
+    'error',
+    'saving',
+  ];
+
+  function aggregateSaveStatus(): DocumentSaveStatus {
+    const statuses = new Set(
+      [...saveStates.values()].map((state) => state.status),
+    );
+    return AGGREGATE_PRIORITY.find((status) => statuses.has(status)) ?? 'saved';
+  }
+
+  // Уведомление только при смене сводного статуса: сервис ставит saving
+  // и при постановке в очередь, и при старте записи — App не дёргаем зря.
+  let lastAggregate: DocumentSaveStatus = 'saved';
+
+  function notifyAggregate(): void {
+    const status = aggregateSaveStatus();
+    if (status === lastAggregate) {
+      return;
+    }
+    lastAggregate = status;
+    for (const handler of [...aggregateHandlers]) {
+      handler(status);
     }
   }
 
@@ -420,6 +459,7 @@ export function createDocumentService(
       documents.delete(documentId);
       saveStates.delete(documentId);
       saveStateHandlers.delete(documentId);
+      notifyAggregate();
     },
 
     getViewSettings(
@@ -565,6 +605,15 @@ export function createDocumentService(
       handlers.add(handler);
       return () => {
         handlers.delete(handler);
+      };
+    },
+    getAggregateSaveStatus(): DocumentSaveStatus {
+      return aggregateSaveStatus();
+    },
+    subscribeAggregateSaveStatus(handler): Unsubscribe {
+      aggregateHandlers.add(handler);
+      return () => {
+        aggregateHandlers.delete(handler);
       };
     },
   };

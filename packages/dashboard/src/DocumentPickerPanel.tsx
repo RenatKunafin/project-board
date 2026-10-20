@@ -66,7 +66,10 @@ export function DocumentPickerPanel({
                 className="doc-picker__item"
                 onClick={() => onOpen(document)}
               >
-                {document.title}
+                <span className="doc-picker__tile" aria-hidden="true">
+                  {type.icon ?? '🧩'}
+                </span>
+                <span className="doc-picker__name">{document.title}</span>
               </button>
             </li>
           ))}

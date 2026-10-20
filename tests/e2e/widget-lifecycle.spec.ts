@@ -15,7 +15,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
     const base = await subscriptionCount(page);
     expect(base).toBeGreaterThanOrEqual(1);
 
-    const catalogButton = page.getByRole('button', { name: 'Добавить виджет' });
+    const catalogButton = page.getByRole('button', { name: 'Добавить виджет', exact: true });
     const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
 
     for (let cycle = 0; cycle < 20; cycle += 1) {
@@ -65,7 +65,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
 
     // На второй вкладке открываем окно «Список 1».
     await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
-    await page.getByRole('button', { name: 'Добавить виджет' }).click();
+    await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
     const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
     await catalog.getByRole('button', { name: /Чек-лист/ }).click();
     await catalog.getByRole('button', { name: 'Список 1' }).click();

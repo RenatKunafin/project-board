@@ -87,7 +87,7 @@ test('новая вкладка активна и пуста; переключе
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   const newTab = tablist.getByRole('tab', { name: /Новая вкладка/ });
   await expect(newTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText('Пространство пусто')).toBeVisible();
+  await expect(page.getByText('Пустой дашборд')).toBeVisible();
 
   await tablist.getByRole('tab', { name: /Чек-листы/ }).click();
   await expect(
@@ -95,7 +95,7 @@ test('новая вкладка активна и пуста; переключе
   ).toBeVisible();
 
   await newTab.click();
-  await expect(page.getByText('Пространство пусто')).toBeVisible();
+  await expect(page.getByText('Пустой дашборд')).toBeVisible();
 });
 
 test('вкладка переименовывается по двойному клику', async ({ page }) => {
@@ -143,7 +143,7 @@ test('удаление активной вкладки делает активн
   await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
 
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
-  await expect(page.getByText('Пространство пусто')).toBeVisible();
+  await expect(page.getByText('Пустой дашборд')).toBeVisible();
 
   await tablist
     .getByRole('button', { name: 'Закрыть Чек-листы' })
@@ -190,9 +190,9 @@ test('каталог: новый чек-лист создаётся из пус�
   await page.goto('/');
   const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
-  await expect(page.getByText('Пространство пусто')).toBeVisible();
+  await expect(page.getByText('Пустой дашборд')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await expect(catalog.getByText('☑️')).toBeVisible();
   await catalog.getByRole('button', { name: /Чек-лист/ }).click();
@@ -214,7 +214,7 @@ test('каталог: второе представление существую
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохранено')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })
@@ -233,7 +233,7 @@ test('каталог: второе представление существую
 
 test('каталог: отмена не создаёт документов и экземпляров', async ({ page }) => {
   await page.goto('/');
-  const catalogButton = page.getByRole('button', { name: 'Добавить виджет' });
+  const catalogButton = page.getByRole('button', { name: 'Добавить виджет', exact: true });
   const catalogDialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
 
   await catalogButton.click();

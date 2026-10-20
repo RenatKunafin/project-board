@@ -23,7 +23,7 @@ function overlaps(
 }
 
 async function addSecondChecklist(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })
@@ -173,7 +173,7 @@ test('шесть окон прокручиваются; раскладка ви�
   await page.goto('/');
   await addSecondChecklist(page);
   for (let extra = 0; extra < 2; extra += 1) {
-    await page.getByRole('button', { name: 'Добавить виджет' }).click();
+    await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
     await page
       .getByRole('dialog', { name: 'Каталог виджетов' })
       .getByRole('button', { name: /Чек-лист/ })

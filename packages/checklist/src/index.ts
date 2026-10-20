@@ -11,6 +11,7 @@ export function createChecklistModule() {
         id: 'checklist',
         title: 'Чек-лист',
         icon: '☑️',
+        description: 'Списки задач с отметкой выполнения',
         component: ChecklistWidget,
         startSettings: {},
         sizeConstraints: { minWidth: 2, minHeight: 2 },
