@@ -1742,6 +1742,7 @@ export default function PlanGanttWidget({
                 tasks={tasks}
                 links={links}
                 columns={columns}
+                gridWidth={652}
                 inclusiveEnd={true}
                 cellWidth={zoomCellWidth}
                 cellHeight={36}
