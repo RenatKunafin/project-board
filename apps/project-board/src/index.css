@@ -941,12 +941,44 @@ body {
   font-size: 13px;
 }
 
-/* Поверхность вкладки (PBT-027): скрытые вкладки остаются смонтированы. */
+/* Поверхность вкладки (PBT-027): скрытые вкладки остаются смонтированы.
+   relative — якорь overlay-слоя разворота окна (PBT-071). */
 .tab-surface {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Разворот окна на весь дашборд (PBT-071 D4): поверхность занимает
+   видимую область канваса, прокрутка гаснет, overlay покрывает вкладку. */
+.tab-surface--maximized {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Overlay-слой развёрнутого окна: узел переносится сюда эффектом
+   WidgetWindow без размонтирования (PBT-071 D1). */
+.widget-maximize-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+
+/* Слой фиксирует размеры — окно растягивается на всю область вкладки. */
+.widget-maximize-layer .widget-window {
+  height: 100%;
+}
+
+.widget-maximize-layer[hidden] {
+  display: none;
+}
+
+/* Сосед активной максимизации: скрыты, но смонтированы (keep-mounted
+   PBT-027; прототип — hidden). */
+.widget-window--maximize-hidden {
+  display: none;
 }
 
 .tab-surface[hidden] {

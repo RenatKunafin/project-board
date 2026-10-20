@@ -250,6 +250,7 @@ function WidgetPane({
 export interface PaneHandlers {
   activatePane(instanceId: string): void;
   toggleCollapse(instanceId: string): void;
+  toggleMaximize(instanceId: string): void;
   closePane(instanceId: string): void;
   replacePaneDocument(instanceId: string, documentId: string): void;
   createDocumentForPane(instanceId: string): void;
@@ -268,6 +269,8 @@ interface TabSurfaceProps {
   readonly areas: TiledLayoutState;
   readonly cascade: CascadeLayoutState;
   readonly activeInstanceId: string | null;
+  /** Развёрнутое окно вкладки или null (PBT-071; память вкладки, не персистится). */
+  readonly maximizedInstanceId?: string | null;
   readonly registry: WidgetRegistry;
   readonly documentService: AutosavingDocumentService;
   readonly documents: readonly ManagedDocument[];
@@ -334,6 +337,8 @@ function tabSurfaceAreEqual(previous: TabSurfaceProps, next: TabSurfaceProps): b
     previous.mode !== next.mode ||
     previous.tabTitle !== next.tabTitle ||
     previous.activeInstanceId !== next.activeInstanceId ||
+    (previous.maximizedInstanceId ?? null) !==
+      (next.maximizedInstanceId ?? null) ||
     previous.registry !== next.registry ||
     previous.documentService !== next.documentService ||
     previous.handlers !== next.handlers
@@ -383,11 +388,45 @@ export const TabSurface = memo(function TabSurface({
   areas,
   cascade,
   activeInstanceId,
+  maximizedInstanceId,
   registry,
   documentService,
   documents,
   handlers,
 }: TabSurfaceProps) {
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  // Скролл канваса до разворота: фиксируется в 0 и восстанавливается после
+  // возврата (паттерн previousScroll прототипа, PBT-071 D4).
+  const previousScrollRef = useRef<{ left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    // Прокручиваемый канвас — родительская секция вкладок (.instances,
+    // overflow-y: auto): при развороте контент сжимается до видимой
+    // области, скролл фиксируется в 0 и восстанавливается после возврата
+    // (паттерн previousScroll прототипа, PBT-071 D4).
+    const scroller = surface?.parentElement;
+    if (!surface || !scroller) {
+      return;
+    }
+    if (maximizedInstanceId) {
+      previousScrollRef.current = {
+        left: scroller.scrollLeft,
+        top: scroller.scrollTop,
+      };
+      scroller.scrollTo(0, 0);
+      return;
+    }
+    const previous = previousScrollRef.current;
+    if (previous) {
+      previousScrollRef.current = null;
+      // Возврат высоты контента и восстановление скролла — после отрисовки.
+      requestAnimationFrame(() => {
+        scroller.scrollTo(previous.left, previous.top);
+      });
+    }
+  }, [maximizedInstanceId]);
+
   const effectiveActiveInstanceId = visible
     ? (panes.some((pane) => pane.instanceId === activeInstanceId)
         ? activeInstanceId
@@ -408,6 +447,10 @@ export const TabSurface = memo(function TabSurface({
   const paneToItem = (pane: PaneInstance): CascadeItemInput => {
     const lookup = registry.get(pane.typeId);
     const definition = lookup && !('kind' in lookup) ? lookup : undefined;
+    const maximized =
+      (maximizedInstanceId ?? null) === pane.instanceId &&
+      maximizedInstanceId != null;
+    const hiddenByMaximize = maximizedInstanceId != null && !maximized;
     return {
       instanceId: pane.instanceId,
       constraints:
@@ -419,8 +462,11 @@ export const TabSurface = memo(function TabSurface({
           icon={definition?.icon}
           collapsed={pane.collapsed === true}
           active={pane.instanceId === effectiveActiveInstanceId}
+          maximized={maximized}
+          hiddenByMaximize={hiddenByMaximize}
           onActivate={() => handlers.current.activatePane(pane.instanceId)}
           onToggleCollapse={() => handlers.current.toggleCollapse(pane.instanceId)}
+          onToggleMaximize={() => handlers.current.toggleMaximize(pane.instanceId)}
           onClose={() => handlers.current.closePane(pane.instanceId)}
         >
           {definition ? (
@@ -429,7 +475,9 @@ export const TabSurface = memo(function TabSurface({
               pane={pane}
               documentService={documentService}
               documents={documents}
-              visible={visible && pane.collapsed !== true}
+              visible={
+                visible && (!pane.collapsed || maximized) && !hiddenByMaximize
+              }
               handlers={handlers}
               onPickDocument={(instanceId, documentId) =>
                 handlers.current.replacePaneDocument(instanceId, documentId)
@@ -458,7 +506,13 @@ export const TabSurface = memo(function TabSurface({
   }
   return (
     <div
-      className="tab-surface"
+      ref={surfaceRef}
+      className={[
+        'tab-surface',
+        maximizedInstanceId != null ? 'tab-surface--maximized' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       hidden={!visible}
       data-tab-title={tabTitle}
     >
@@ -475,6 +529,13 @@ export const TabSurface = memo(function TabSurface({
           onStateChange={(next) => handlers.current.onCascadeChange(next)}
         />
       )}
+      {/* Overlay-слой разворота окна (PBT-071 D1): сюда эффект WidgetWindow
+          переносит DOM-узел максимизированного окна без размонтирования. */}
+      <div
+        className="widget-maximize-layer"
+        hidden={maximizedInstanceId == null}
+        data-testid="widget-maximize-layer"
+      />
     </div>
   );
 }, tabSurfaceAreEqual);
@@ -568,6 +629,12 @@ export default function App({
 
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null);
+
+  // Развёрнутое окно по вкладкам (PBT-071, design D2): память вкладки,
+  // не персистится — перезапуск восстанавливает обычный вид (PBT-024).
+  const [maximizedByTab, setMaximizedByTab] = useState<
+    Record<string, string | null>
+  >({});
 
   // Режим размещения: сетка (PBT-021) или каскад (PBT-022). Переключатель
   // временен: продуктовое переключение с раздельными раскладками — PBT-023.
@@ -685,7 +752,29 @@ export default function App({
     });
   };
 
+  const toggleMaximize = (instanceId: string): void => {
+    if (!activeTab) {
+      return;
+    }
+    // Разворот делает окно активным (прототип: focusWidget), в каскаде
+    // поднимает обёртку наверх порядка глубины.
+    activatePane(instanceId);
+    setMaximizedByTab((previous) => ({
+      ...previous,
+      [activeTab.id]:
+        previous[activeTab.id] === instanceId ? null : instanceId,
+    }));
+  };
+
   const toggleCollapse = (instanceId: string): void => {
+    // Сворачивание развёрнутого окна возвращает обычный вид (PBT-071 D5,
+    // поведение прототипа), затем сворачивает как обычно.
+    if (activeTab && maximizedByTab[activeTab.id] === instanceId) {
+      setMaximizedByTab((previous) => ({
+        ...previous,
+        [activeTab.id]: null,
+      }));
+    }
     const pane = activePanes.find((entry) => entry.instanceId === instanceId);
     if (layoutMode === 'cascade') {
       // В каскаде полная высота хранится в области окна; свёрнутое окно
@@ -738,6 +827,20 @@ export default function App({
   };
 
   const closePane = (instanceId: string): void => {
+    // Закрытие развёрнутого окна снимает максимизацию вкладки (PBT-071):
+    // узел удаляется из overlay сам (React убирает от фактического родителя).
+    setMaximizedByTab((previous) => {
+      const next: Record<string, string | null> = {};
+      let changed = false;
+      for (const [tabId, maximized] of Object.entries(previous)) {
+        const value = maximized === instanceId ? null : maximized;
+        if (value !== maximized) {
+          changed = true;
+        }
+        next[tabId] = value;
+      }
+      return changed ? next : previous;
+    });
     setPanesByTab((previous) => {
       const next: Record<string, PaneInstance[]> = {};
       for (const [tabId, panes] of Object.entries(previous)) {
@@ -983,6 +1086,7 @@ export default function App({
   paneHandlersRef.current = {
     activatePane,
     toggleCollapse,
+    toggleMaximize,
     closePane,
     replacePaneDocument,
     createDocumentForPane,
@@ -1270,7 +1374,9 @@ export default function App({
       >
         {/* Keep-mounted (design D1): панели скрытых вкладок остаются
             смонтированы в hidden-контейнерах, состояние представления живо. */}
-        {workspace.tabs.map((tab) => (
+        {workspace.tabs.map((tab) => {
+          const maximizedId = maximizedByTab[tab.id] ?? null;
+          return (
           <TabSurface
             key={tab.id}
             tabTitle={tab.title}
@@ -1282,12 +1388,21 @@ export default function App({
               cascadeByTab[tab.id] ?? { areas: {}, order: [] }
             }
             activeInstanceId={activeInstanceId}
+            maximizedInstanceId={
+              maximizedId &&
+              (panesByTab[tab.id] ?? []).some(
+                (pane) => pane.instanceId === maximizedId,
+              )
+                ? maximizedId
+                : null
+            }
             registry={widgetRegistry}
             documentService={documentService}
             documents={allDocuments}
             handlers={paneHandlersRef}
           />
-        ))}
+          );
+        })}
       </section>
     </main>
   );
