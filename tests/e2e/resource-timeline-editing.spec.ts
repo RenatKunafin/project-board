@@ -290,8 +290,10 @@ test('форма задачи по dblclick; правка попеременно
   const chart = pane.locator('[data-rt-chart]');
 
   // Двойной клик по элементу открывает общую форму задачи.
+  // Предварительный click() не нужен: выделение RCT перекладывает стек
+  // дорожки — элемент смещается между кликами, и dblclick открывал
+  // соседнюю задачу (находка ревью PR#51 после растяжки виджетов).
   const item = chart.locator('[data-rt-task="t-c"]');
-  await item.click();
   await item.dblclick();
   const dialog = pane.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -325,6 +327,13 @@ test('форма задачи по dblclick; правка попеременно
   const ganttPane = page.getByRole('group', { name: 'План · Дорожки-ред' });
   await expect(ganttPane).toBeVisible();
   await expect(ganttPane.locator('.wx-row[data-id=":t-c"]')).toBeVisible();
+  // Разворот окна: строка :t-c у нижней границы низкого окна — SVAR
+  // сдвигает строку между кликами dblclick (диагностика PR#51);
+  // в развёрнутом окне dblclick стабилен.
+  await ganttPane
+    .getByRole('button', { name: /^Развернуть на весь дашборд/ })
+    .click();
+  await page.waitForTimeout(600);
   await ganttPane
     .locator('.plan-gantt__chart')
     .locator('.wx-row[data-id=":t-c"]')

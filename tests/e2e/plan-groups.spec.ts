@@ -124,6 +124,13 @@ test('из плоского плана строится структура «н�
   await expect(dialog).not.toBeAttached();
 
   // Задачи переносятся в «Платформу» через форму задачи.
+  // Разворот окна (PBT-071): после создания групп строки задач уходят
+  // за нижнюю границу низкого окна сетки (растяжка виджетов, ревью
+  // PR#51) — в развёрнутом окне все строки видимы, dblclick стабилен.
+  await pane
+    .getByRole('button', { name: /^Развернуть на весь дашборд/ })
+    .click();
+  await page.waitForTimeout(600);
   for (const taskTitle of ['Аналитика', 'Разработка']) {
     await chart.getByText(taskTitle).first().dblclick();
     const taskDialog = pane.getByRole('dialog');
@@ -134,6 +141,11 @@ test('из плоского плана строится структура «н�
     await taskDialog.locator('[data-task-save]').click();
     await expect(taskDialog).not.toBeAttached();
   }
+  // Возврат размера: reload-проверка ниже идёт в обычном окне.
+  await pane
+    .getByRole('button', { name: /^Вернуть прежний размер/ })
+    .click();
+  await page.waitForTimeout(400);
 
   // Автосохранение 1500 мс → reload → структура и порядок восстановлены.
   await page.waitForTimeout(1500);
