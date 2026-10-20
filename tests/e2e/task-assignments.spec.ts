@@ -113,13 +113,14 @@ test('несколько исполнителей в одной строке, т
   await dialog.locator('[data-task-save]').click();
   await expect(dialog).not.toBeAttached();
 
-  // Одна строка, оба исполнителя и тип видны, дублирования нет.
+  // Одна строка, оба исполнителя видны, дублирования нет.
+  // Типы работ из таблицы убраны (ревью PR#51: 5 колонок) — тип
+  // проверяется содержимым документа ниже и в форме задачи.
   const rows = pane.locator('.wx-row', { hasText: 'Задача 1' });
   await expect(rows).toHaveCount(1);
   const row = rows.first();
   await expect(row).toContainText('QA');
   await expect(row).toContainText('QA2');
-  await expect(row).toContainText('ПСИ');
 
   const content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.tasks?.[0],
@@ -174,14 +175,20 @@ test('назначение видно во втором виджете и пос
   await expect(
     first.locator('.wx-row', { hasText: 'Задача 1' }).first(),
   ).toContainText('QA');
+  // Типы работ из таблицы убраны (ревью PR#51: 5 колонок) — второй
+  // экземпляр проверяем по исполнителю, тип — содержимым документа.
   await expect(
     second.locator('.wx-row', { hasText: 'Задача 1' }).first(),
-  ).toContainText('Разработка');
+  ).toContainText('QA');
+  const savedTypes = await page.evaluate(
+    (id) => window.__projectBoard.readDocument(id)?.content?.tasks?.[0],
+    documentId,
+  );
+  expect(savedTypes.workTypeIds).toEqual(['wt-dev']);
 
   await page.waitForTimeout(1500);
   await page.reload();
   const restored = page.getByRole('group', { name: 'План · Второй' }).nth(0);
   const row = restored.locator('.wx-row', { hasText: 'Задача 1' }).first();
   await expect(row).toContainText('QA');
-  await expect(row).toContainText('Разработка');
 });

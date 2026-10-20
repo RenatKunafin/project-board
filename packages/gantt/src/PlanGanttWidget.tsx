@@ -1384,29 +1384,32 @@ export default function PlanGanttWidget({
       return formatIsoDayMonth(task[edge]);
     };
     return [
+      // Состав таблицы — 5 колонок (ревью PR#51): задача (главная,
+      // flexgrow), даты дд.мм, рабочая длительность, исполнители.
+      // Типы работ — только в форме задачи (спека MODIFIED).
       { id: 'text', header: 'Задача', flexgrow: 1 },
       {
         id: 'start',
         header: 'Начало',
-        width: 80,
+        width: 68,
         cell: ({ row }) => dateCell(String(row.id), 'start'),
       },
       {
         id: 'end',
         header: 'Окончание',
-        width: 80,
+        width: 88,
         cell: ({ row }) => dateCell(String(row.id), 'end'),
       },
       {
         id: 'work-days',
-        header: 'Раб. дни',
-        width: 80,
+        header: 'Раб. дней',
+        width: 72,
         cell: ({ row }) => workingDaysCell(String(row.id)),
       },
       {
         id: 'assignees',
         header: 'Исполнители',
-        width: 130,
+        width: 120,
         cell: ({ row }) => {
           const current = planRef.current;
           if (!current) {
@@ -1424,31 +1427,6 @@ export default function PlanGanttWidget({
             .map(
               (id) =>
                 current.resources.find((entry) => entry.id === id)?.title ?? '—',
-            )
-            .join(', ');
-        },
-      },
-      {
-        id: 'work-types',
-        header: 'Типы',
-        width: 110,
-        cell: ({ row }) => {
-          const current = planRef.current;
-          if (!current) {
-            return null;
-          }
-          const rowId = String(row.id);
-          const task = current.tasks.find((entry) => entry.id === rowId);
-          if (task === undefined || task.workTypeIds === undefined) {
-            return null;
-          }
-          if (task.workTypeIds.length === 0) {
-            return '—';
-          }
-          return task.workTypeIds
-            .map(
-              (id) =>
-                current.workTypes.find((entry) => entry.id === id)?.title ?? '—',
             )
             .join(', ');
         },

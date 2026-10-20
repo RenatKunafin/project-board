@@ -121,11 +121,30 @@
   border-color: var(--border);
 }
 
-/* Даты «Начало»/«Конец» — моноширинно (PBT-073, design D4;
-   прототип, строки 147–148). */
+/* Даты «Начало»/«Конец» — моноширинно (PBT-073, design D4; прототип,
+   строки 147–148). data-col-id контентных ячеек SVAR — с префиксом «:»
+   (кастомный cell-рендер), заголовков/дефолтных — без: покрываем оба. */
 .plan-gantt .wx-cell[data-col-id='start'],
-.plan-gantt .wx-cell[data-col-id='end'] {
+.plan-gantt .wx-cell[data-col-id=':start'],
+.plan-gantt .wx-cell[data-col-id='end'],
+.plan-gantt .wx-cell[data-col-id=':end'] {
   font-family: var(--font-mono);
+}
+
+/* Состав таблицы — 5 колонок (ревью PR#51): заголовки и содержимое
+   узких колонок переносятся по пробелам вместо наезда на соседние.
+   Контент кастомных ячеек SVAR лежит прямо в .wx-cell без .wx-text —
+   без этого правила длинные имена вылезали на соседнюю колонку
+   (нет ни nowrap, ни ellipsis). Главная колонка «Задача» (flexgrow,
+   дефолтный рендер через .wx-text) сохраняет ellipsis. */
+.plan-gantt .wx-cell[data-col-id='end'],
+.plan-gantt .wx-cell[data-col-id=':end'],
+.plan-gantt .wx-cell[data-col-id='work-days'],
+.plan-gantt .wx-cell[data-col-id=':work-days'],
+.plan-gantt .wx-cell[data-col-id='assignees'],
+.plan-gantt .wx-cell[data-col-id=':assignees'] {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .plan-gantt .wx-gantt-holidays > * {
