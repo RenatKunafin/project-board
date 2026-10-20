@@ -18,7 +18,7 @@ async function createPlan(page: Page, title: string): Promise<void> {
   // Новая вкладка: стартовое пространство с чек-листами сжимает панель
   // в сетке — тулбар плана не влезает; на чистой вкладке панель одна.
   await page.getByRole('button', { name: 'Новая вкладка' }).click();
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })
@@ -158,7 +158,7 @@ test('преобразование: выбор ресурса, атомарна�
   await issues.locator('[data-issues-close]').click();
 
   // Отпуск на дорожке ресурса: виджет «Ресурсы» на тот же документ.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })

@@ -4,7 +4,7 @@ test('план создаётся через каталог, переживае�
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
 
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await expect(catalog.getByText('📅')).toBeVisible();
@@ -30,7 +30,7 @@ test('план создаётся через каталог, переживае�
 
   // Панели живут в памяти: после перезагрузки документ открывается заново по каталогу.
   await page.reload();
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -49,7 +49,7 @@ test('второе представление существующего пла�
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -63,7 +63,7 @@ test('второе представление существующего пла�
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
   await page.waitForTimeout(1500);
 
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })

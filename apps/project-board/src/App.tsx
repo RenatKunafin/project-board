@@ -1,3 +1,4 @@
+import { FileText, Layers, LayoutGrid } from 'lucide-react';
 import type {
   AutosavingDocumentService,
   WidgetRegistry,
@@ -18,6 +19,7 @@ import {
   documentTypeInfos,
   sortDocumentsByRecency,
   UnknownWidgetType,
+  AppTopBar,
   WidgetWindow,
   TiledLayout,
   CascadeLayout,
@@ -271,6 +273,9 @@ interface TabSurfaceProps {
   readonly activeInstanceId: string | null;
   /** Развёрнутое окно вкладки или null (PBT-071; память вкладки, не персистится). */
   readonly maximizedInstanceId?: string | null;
+  /** Открыть каталог виджетов из пустого состояния (PBT-072 D6);
+   *  стабильная ссылка — в memo-сравнении не участвует. */
+  readonly onAddWidget?: () => void;
   readonly registry: WidgetRegistry;
   readonly documentService: AutosavingDocumentService;
   readonly documents: readonly ManagedDocument[];
@@ -389,6 +394,7 @@ export const TabSurface = memo(function TabSurface({
   cascade,
   activeInstanceId,
   maximizedInstanceId,
+  onAddWidget,
   registry,
   documentService,
   documents,
@@ -500,7 +506,7 @@ export const TabSurface = memo(function TabSurface({
         className="tab-surface"
         hidden={!visible}
       >
-        <EmptyWorkspace />
+        <EmptyWorkspace onAddWidget={onAddWidget} />
       </div>
     );
   }
@@ -655,12 +661,14 @@ export default function App({
   // Прежняя высота свёрнутых окон: разворачивание возвращает область (ADR-7).
   const collapsedHeights = useRef<Map<string, number>>(new Map());
 
-  const [saveState, setSaveState] = useState(
-    documentService.getSaveState(list1Id),
+  // Индикатор топ-бара — сводное состояние записи всех документов (PBT-072
+  // D9; прежде отслеживался только документ среза «Список 1»).
+  const [saveStatus, setSaveStatus] = useState(() =>
+    documentService.getAggregateSaveStatus(),
   );
   useEffect(
-    () => documentService.subscribeSaveState(list1Id, setSaveState),
-    [documentService, list1Id],
+    () => documentService.subscribeAggregateSaveStatus(setSaveStatus),
+    [documentService],
   );
 
   const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeId);
@@ -1124,6 +1132,12 @@ export default function App({
     setRenamingTabId(null);
   };
 
+  // Пустое состояние (PBT-072 D6): стабильная ссылка — TabSurface-memo
+  // не сравнивает её (см. TabSurfaceProps).
+  const openWidgetCatalog = useCallback(() => {
+    setHeaderPanel({ kind: 'widgets' });
+  }, []);
+
   const focusNeighbourTab = (tabId: string, delta: -1 | 1): void => {
     const index = workspace.tabs.findIndex((tab) => tab.id === tabId);
     const neighbour = workspace.tabs[index + delta];
@@ -1151,8 +1165,17 @@ export default function App({
 
   return (
     <main className="shell shell--workspace">
+      {/* Топ-бар каркаса (PBT-072 D1): название + индикатор сохранения. */}
+      <AppTopBar title="Project Board">
+        <p
+          className={`save-state is-${saveStatus}`}
+          role="status"
+          aria-label="Состояние сохранения"
+        >
+          {SAVE_STATE_LABELS[saveStatus] ?? saveStatus}
+        </p>
+      </AppTopBar>
       <header className="tabs-header">
-        <h1 className="shell__title">Project Board</h1>
         <div
           className="tablist"
           role="tablist"
@@ -1241,17 +1264,7 @@ export default function App({
           </button>
         </div>
         <div className="tabs-header__right">
-          {saveState && (
-            <p
-              className={`save-state is-${saveState.status}`}
-              role="status"
-              aria-label="Состояние сохранения"
-            >
-              {SAVE_STATE_LABELS[saveState.status] ?? saveState.status}
-            </p>
-          )}
-          {/* Временное управление режимами: заменяется продуктовым
-              переключением PBT-023 (раздельные раскладки per вкладка). */}
+          {/* Сегмент-контрол режима вкладки (PBT-023; оформление PBT-072 D3). */}
           <div
             className="layout-mode-switch"
             role="group"
@@ -1262,6 +1275,7 @@ export default function App({
               aria-pressed={layoutMode === 'grid'}
               onClick={() => setLayoutMode('grid')}
             >
+              <LayoutGrid aria-hidden="true" />
               Сетка
             </button>
             <button
@@ -1269,6 +1283,7 @@ export default function App({
               aria-pressed={layoutMode === 'cascade'}
               onClick={() => setLayoutMode('cascade')}
             >
+              <Layers aria-hidden="true" />
               Каскад
             </button>
           </div>
@@ -1287,6 +1302,7 @@ export default function App({
                 )
               }
             >
+              <FileText aria-hidden="true" />
               Документы
             </button>
             <DropdownPanel
@@ -1320,6 +1336,16 @@ export default function App({
                   isFutureVersion={(documentId) =>
                     documentService.isFutureVersion(documentId)
                   }
+                  openWindowCount={(documentId) =>
+                    Object.values(panesByTab).reduce(
+                      (sum, panes) =>
+                        sum +
+                        panes.filter(
+                          (pane) => pane.documentId === documentId,
+                        ).length,
+                      0,
+                    )
+                  }
                   onOpen={openFromCatalog}
                   onCreate={createFromCatalog}
                   onRename={renameDocument}
@@ -1343,6 +1369,7 @@ export default function App({
                 )
               }
             >
+              <LayoutGrid aria-hidden="true" />
               + Виджет
             </button>
             <DropdownPanel
@@ -1400,6 +1427,7 @@ export default function App({
             documentService={documentService}
             documents={allDocuments}
             handlers={paneHandlersRef}
+            onAddWidget={openWidgetCatalog}
           />
           );
         })}

@@ -60,7 +60,7 @@ const planContent = {
 };
 
 async function createPlan(page: Page, title: string): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })
@@ -131,7 +131,7 @@ test('проектный вид: фильтры и раскрытие групп
   await loadPlan(page, documentId);
 
   // Второй экземпляр того же документа.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })
@@ -220,7 +220,7 @@ test('ресурсный вид: масштаб и фильтры экземпл
   // дополнительное представление через каталог (DoD-5).
   const documentId = await createPlan(page, 'Состояния');
   await loadPlan(page, documentId);
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })
@@ -258,7 +258,7 @@ test('ресурсный вид: масштаб и фильтры экземпл
   expect(sidebar1).toEqual(['QA2']);
 
   // Пустое состояние текстового фильтра во втором (новом) экземпляре.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })

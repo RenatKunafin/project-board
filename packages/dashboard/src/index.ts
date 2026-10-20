@@ -5,6 +5,8 @@ export type {
   UnknownWidgetType as UnknownWidgetTypeData,
 } from './widget-registry';
 export { UnknownWidgetType } from './UnknownWidgetType';
+export { AppTopBar } from './AppTopBar';
+export type { AppTopBarProps } from './AppTopBar';
 export { WidgetWindow } from './WidgetWindow';
 export type { WidgetWindowProps } from './WidgetWindow';
 export { WidgetErrorBoundary } from './WidgetErrorBoundary';

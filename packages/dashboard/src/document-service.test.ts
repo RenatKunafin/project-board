@@ -247,6 +247,59 @@ describe('автосохранение — сбои и повторы', () => {
   });
 });
 
+describe('сводное состояние записи (PBT-072, индикатор топ-бара)', () => {
+  const create = (
+    service: ReturnType<typeof createDocumentService>,
+    title: string,
+  ) =>
+    service.create({
+      moduleId: 'checklist',
+      documentType: 'list',
+      schemaVersion: 1,
+      title,
+      content: 'v1',
+    });
+
+  it('без записей — saved; запись любого документа — saving → saved', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    expect(service.getAggregateSaveStatus()).toBe('saved');
+
+    const first = create(service, 'Первый');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+    const second = create(service, 'Второй');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    const seen: string[] = [];
+    service.subscribeAggregateSaveStatus((status) => seen.push(status));
+    service.update(second.id, second.revision, 'v2');
+    expect(service.getAggregateSaveStatus()).toBe('saving');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    expect(service.getAggregateSaveStatus()).toBe('saved');
+    expect(seen).toEqual(['saving', 'saved']);
+    expect(service.getSaveState(first.id)?.status).toBe('saved');
+  });
+
+  it('ошибка одного документа перекрывает saved других и снимается удалением', async () => {
+    const store = new FakeStore();
+    const service = createDocumentService({ store, saveDelayMs: SAVE_DELAY });
+    create(service, 'Здоровый');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+    const broken = create(service, 'Сбойный');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY);
+
+    store.failWritesLeft = 10;
+    service.update(broken.id, broken.revision, 'v2');
+    await vi.advanceTimersByTimeAsync(SAVE_DELAY + 250 + 500 + 1000 + 1000);
+    expect(service.getAggregateSaveStatus()).toBe('error');
+
+    store.failWritesLeft = 0;
+    await service.delete(broken.id);
+    expect(service.getAggregateSaveStatus()).toBe('saved');
+  });
+});
+
 describe('автосохранение — конфликт двух окон', () => {
   it('устаревшая запись отклоняется, сервис перечитывает документ и уведомляет', async () => {
     const store = new FakeStore();

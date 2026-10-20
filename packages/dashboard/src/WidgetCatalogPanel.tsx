@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { WidgetTypeDefinition } from '@project-board/widget-sdk';
 
 export interface WidgetCatalogPanelProps {
@@ -6,15 +6,21 @@ export interface WidgetCatalogPanelProps {
   readonly onPick: (type: WidgetTypeDefinition) => void;
 }
 
-/** Каталог типов виджетов: поиск по подстроке названия (макет 04). */
+/** Каталог типов виджетов: карточки с иконкой-плиткой, названием и
+ *  описанием; поиск по подстроке названия и описания (PBT-072 D4–D5). */
 export function WidgetCatalogPanel({
   types,
   onPick,
 }: WidgetCatalogPanelProps) {
   const [query, setQuery] = useState('');
+  const idPrefix = useId();
   const needle = query.trim().toLowerCase();
   const visible = needle
-    ? types.filter((type) => type.title.toLowerCase().includes(needle))
+    ? types.filter(
+        (type) =>
+          type.title.toLowerCase().includes(needle) ||
+          (type.description ?? '').toLowerCase().includes(needle),
+      )
     : types;
 
   return (
@@ -32,20 +38,34 @@ export function WidgetCatalogPanel({
         </p>
       ) : (
         <ul className="widget-catalog__list">
-          {visible.map((type) => (
-            <li key={type.id}>
-              <button
-                type="button"
-                className="widget-catalog__item"
-                onClick={() => onPick(type)}
-              >
-                <span className="widget-catalog__icon" aria-hidden="true">
-                  {type.icon ?? '🧩'}
-                </span>
-                <span className="widget-catalog__name">{type.title}</span>
-              </button>
-            </li>
-          ))}
+          {visible.map((type) => {
+            const descriptionId = `${idPrefix}-${type.id}-desc`;
+            return (
+              <li key={type.id}>
+                {/* Доступное имя карточки — только название типа (контракт
+                    локаторов «План»/«Ресурсы»); описание — aria-describedby. */}
+                <button
+                  type="button"
+                  className="widget-catalog__item"
+                  aria-label={type.title}
+                  aria-describedby={type.description ? descriptionId : undefined}
+                  onClick={() => onPick(type)}
+                >
+                  <span className="widget-catalog__tile" aria-hidden="true">
+                    {type.icon ?? '🧩'}
+                  </span>
+                  <span className="widget-catalog__body">
+                    <span className="widget-catalog__name">{type.title}</span>
+                    {type.description && (
+                      <span id={descriptionId} className="widget-catalog__desc">
+                        {type.description}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -28,7 +28,7 @@ const planContent = {
 };
 
 async function createPlan(page: Page, title: string): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -155,7 +155,7 @@ test('отмена формы сохраняет исходные данные, 
   ).toBeVisible();
 
   // Второй экземпляр того же документа.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })

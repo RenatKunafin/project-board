@@ -69,7 +69,7 @@ async function createResourcesView(
   page: Page,
   title: string,
 ): Promise<{ documentId: string; pane: Locator }> {
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })
@@ -313,7 +313,7 @@ test('форма задачи по dblclick; правка попеременно
   expect(state.tasks['t-c']?.assigneeIds).toEqual(['r-qa2']);
 
   // Проектный вид на том же документе: форма показывает те же даты.
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })

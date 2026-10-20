@@ -15,11 +15,22 @@ export interface DocumentCatalogPanelProps {
   readonly loadError: boolean;
   /** Документ записан версией новее поддерживаемой: запись запрещена (design D4). */
   readonly isFutureVersion: (documentId: string) => boolean;
+  /** Счётчик окон документа на всех вкладках (PBT-072 D4). */
+  readonly openWindowCount: (documentId: string) => number;
   readonly onOpen: (document: ManagedDocument) => void;
   readonly onCreate: (info: DocumentTypeInfo, title: string) => void;
   readonly onRename: (documentId: string, title: string) => void;
   readonly onDelete: (documentId: string) => void;
 }
+
+const pluralWindows = (count: number): string => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return 'окне';
+  }
+  return 'окнах';
+};
 
 /** Каталог документов: список по метаданным, фильтр по типу, переименование, удаление. */
 export function DocumentCatalogPanel({
@@ -27,6 +38,7 @@ export function DocumentCatalogPanel({
   typeInfos,
   loadError,
   isFutureVersion,
+  openWindowCount,
   onOpen,
   onCreate,
   onRename,
@@ -223,23 +235,38 @@ export function DocumentCatalogPanel({
                     className="doc-catalog__open"
                     onClick={() => onOpen(document)}
                   >
-                    <span className="doc-catalog__title">{document.title}</span>
-                    {isFutureVersion(document.id) ? (
-                      <span
-                        className="doc-catalog__badge"
-                        title="Документ записан версией приложения новее текущей: доступен только для чтения"
-                      >
-                        Версия {document.schemaVersion} — новее поддерживаемой
-                      </span>
-                    ) : (
-                      <span className="doc-catalog__kind">
-                        {typeInfos.find(
-                          (info) =>
-                            info.moduleId === document.moduleId &&
-                            info.documentType === document.documentType,
-                        )?.label ?? `${document.moduleId}/${document.documentType}`}
-                      </span>
-                    )}
+                    <span className="doc-catalog__tile" aria-hidden="true">
+                      {typeInfos.find(
+                        (info) =>
+                          info.moduleId === document.moduleId &&
+                          info.documentType === document.documentType,
+                      )?.icon ?? '📄'}
+                    </span>
+                    <span className="doc-catalog__body">
+                      <span className="doc-catalog__title">{document.title}</span>
+                      {isFutureVersion(document.id) ? (
+                        <span
+                          className="doc-catalog__badge"
+                          title="Документ записан версией приложения новее текущей: доступен только для чтения"
+                        >
+                          Версия {document.schemaVersion} — новее поддерживаемой
+                        </span>
+                      ) : (
+                        <span className="doc-catalog__kind">
+                          {typeInfos.find(
+                            (info) =>
+                              info.moduleId === document.moduleId &&
+                              info.documentType === document.documentType,
+                          )?.label ?? `${document.moduleId}/${document.documentType}`}
+                          {(() => {
+                            const count = openWindowCount(document.id);
+                            return count > 0
+                              ? ` · открыт в ${count} ${pluralWindows(count)}`
+                              : '';
+                          })()}
+                        </span>
+                      )}
+                    </span>
                   </button>
                   {!isFutureVersion(document.id) && (
                     <span className="doc-catalog__row-actions">

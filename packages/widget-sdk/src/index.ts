@@ -92,6 +92,8 @@ export interface WidgetTypeDefinition {
   readonly title: string;
   /** Текстовый символ иконки (emoji) до появления набора иконок темы. */
   readonly icon?: string;
+  /** Краткое описание назначения типа — показывается каталогом (PBT-072). */
+  readonly description?: string;
   readonly component: ComponentType<WidgetProps>;
   readonly startSettings: WidgetTypeSettings;
   readonly sizeConstraints: WidgetSizeConstraints;

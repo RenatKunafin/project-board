@@ -143,25 +143,45 @@ body {
   bottom: 2px;
 }
 
+/* Сегмент-контрол режима (PBT-072 D3): общая рамка, активный сегмент — accent. */
 .layout-mode-switch {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .layout-mode-switch button {
-  border: 1px solid var(--border);
-  background: var(--secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  border: none;
+  background: transparent;
   color: var(--muted-foreground);
+  font: inherit;
   font-size: 12px;
-  border-radius: var(--radius-md);
-  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
   cursor: pointer;
 }
 
+.layout-mode-switch button:hover {
+  color: var(--foreground);
+}
+
 .layout-mode-switch button[aria-pressed='true'] {
-  border-color: var(--primary);
-  color: var(--primary);
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.layout-mode-switch svg,
+.add-widget-button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
 }
 
 .tiled-grid__cell {
@@ -466,11 +486,94 @@ body {
   margin-bottom: 8px;
 }
 
+/* Топ-бар каркаса (PBT-072 D1): хром-поверхность, лого, статусная зона. */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  /* Фиксированная полоса: без flex: none колонка .shell сжимает хром
+     пропорционально базису .instances (высоте контента) — при росте числа
+     окон топ-бар и вкладки «проседали» до ~30px, раскладка сдвигалась
+     при монтировании окон (найдено e2e PBT-072: промах dblclick). */
+  flex: none;
+  padding: 0 12px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-topbar__logo {
+  display: inline-flex;
+  color: var(--primary);
+}
+
+.app-topbar__logo svg {
+  width: 16px;
+  height: 16px;
+}
+
+.app-topbar__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Индикатор сохранения в топ-баре (PBT-072 D1): точка статуса +
+   приглушённая подпись, как в прототипе; цвет статуса — у точки. */
+.app-topbar .save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  color: var(--muted-foreground);
+}
+
+.app-topbar .save-state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.app-topbar .save-state.is-saved::before {
+  background: var(--success);
+}
+
+.app-topbar .save-state.is-saving::before {
+  background: var(--muted-foreground);
+}
+
+.app-topbar .save-state.is-error {
+  color: var(--destructive);
+}
+
+.app-topbar .save-state.is-error::before {
+  background: var(--destructive);
+}
+
+.app-topbar .save-state.is-conflict {
+  color: var(--warning);
+}
+
+.app-topbar .save-state.is-conflict::before {
+  background: var(--warning);
+}
+
 .shell--workspace {
   justify-content: flex-start;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 0;
   height: 100vh;
+  padding-top: 0;
 }
 
 /* Полоса вкладок — поверхность каркаса (chrome): темнее канваса
@@ -480,38 +583,62 @@ body {
   align-items: center;
   gap: 16px;
   width: 100%;
-  padding: 8px 16px;
+  height: 40px;
+  flex: none; /* см. .app-topbar: хром не сжимается контентом канваса */
+  padding: 0 8px 0 0;
   background: var(--chrome);
   border-bottom: 1px solid var(--border);
 }
 
 .tablist {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
+  align-items: stretch;
+  /* Вкладки — на всю высоту полосы: фон активной и полоса акцента от края. */
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
 }
 
+/* Вкладка прототипа: активная — фон канваса и полоса акцента сверху,
+   неактивная — приглушённая с hover (PBT-072 D2). */
 .tab {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-bottom: none;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  min-width: 140px;
+  padding: 0 12px;
+  border-right: 1px solid var(--border);
   background: transparent;
   color: var(--muted-foreground);
   cursor: pointer;
   font: inherit;
   font-size: 13px;
+  justify-content: center;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tab:hover {
+  background: var(--surface);
+  color: var(--foreground);
 }
 
 .tab.is-active {
   background: var(--background);
   color: var(--foreground);
   border-color: var(--border);
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.tab.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--primary);
 }
 
 .tab__title {
@@ -528,41 +655,87 @@ body {
   min-width: 0;
 }
 
+/* Управление вкладкой проявляется по hover/focus (PBT-072 D2):
+   прозрачность не блокирует клики и клавиатуру (aria сохранены). */
 .tab__move,
-.tab__close,
-.tablist__add {
+.tab__close {
   border: none;
   background: transparent;
   color: var(--muted-foreground);
   cursor: pointer;
   font-size: 13px;
   padding: 0 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.tab:hover .tab__move,
+.tab:hover .tab__close,
+.tab:focus-within .tab__move,
+.tab:focus-within .tab__close {
+  opacity: 1;
+}
+
+.tab__close:hover {
+  color: var(--destructive);
 }
 
 .tab__move:disabled,
 .tab__close:disabled {
-  opacity: 0.35;
   cursor: default;
 }
 
-.tablist__add {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 4px 10px;
-  font-size: 14px;
-  background: var(--secondary);
-  color: inherit;
+/* Недоступные действия проявляются вместе с остальными, но приглушённо;
+   вне hover/focus вкладка показывает только название (PBT-072 D2). */
+.tab:hover .tab__move:disabled,
+.tab:hover .tab__close:disabled,
+.tab:focus-within .tab__move:disabled,
+.tab:focus-within .tab__close:disabled {
+  opacity: 0.35;
 }
 
+.tablist__add {
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 10px;
+  flex: none;
+  align-self: stretch;
+}
+
+.tablist__add:hover {
+  color: var(--foreground);
+}
+
+/* Пустое состояние (PBT-072 D6). */
 .empty-workspace {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 48px 24px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  width: min(560px, 90vw);
+  /* Центр канваса, как в прототипе: заполняет поверхность вкладки. */
+  flex: 1 1 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.empty-workspace__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--muted-foreground);
+  margin-bottom: 8px;
+}
+
+.empty-workspace__icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .empty-workspace__title {
@@ -576,22 +749,50 @@ body {
   font-size: 13px;
 }
 
+.empty-workspace__add {
+  margin-top: 12px;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  cursor: pointer;
+}
+
+.empty-workspace__add:hover {
+  background: color-mix(in oklch, var(--primary) 90%, var(--foreground));
+}
+
 .tabs-header__right {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
+  flex: none;
 }
 
 .add-widget-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
   font: inherit;
   font-size: 13px;
-  padding: 4px 12px;
-  border: 1px solid var(--border);
+  padding: 0 10px;
+  border: none;
   border-radius: var(--radius-md);
-  background: var(--secondary);
-  color: inherit;
+  background: transparent;
+  color: var(--muted-foreground);
   cursor: pointer;
+}
+
+/* Ghost-кнопки шапки (PBT-072): hover и раскрытая панель — accent. */
+.add-widget-button:hover,
+.add-widget-button[aria-expanded='true'] {
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .header-anchor {
@@ -651,23 +852,55 @@ body {
   gap: 4px;
 }
 
+/* Карточка типа (PBT-072 D4–D5): иконка-плитка + название и описание. */
 .widget-catalog__item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   text-align: left;
   font: inherit;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-md);
-  background: var(--secondary);
+  background: transparent;
   color: inherit;
   cursor: pointer;
 }
 
 .widget-catalog__item:hover {
-  border-color: var(--muted-foreground);
+  background: var(--accent);
+}
+
+.widget-catalog__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: 15px;
+}
+
+.widget-catalog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.widget-catalog__name {
+  font-size: 14px;
+}
+
+.widget-catalog__desc {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .widget-catalog__icon {
@@ -781,21 +1014,42 @@ body {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   text-align: left;
   font: inherit;
   padding: 7px 10px;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-md);
-  background: var(--secondary);
+  background: transparent;
   color: inherit;
   cursor: pointer;
 }
 
 .doc-catalog__open:hover {
-  border-color: var(--muted-foreground);
+  background: var(--accent);
+}
+
+/* Плитка типа документа и тело строки (PBT-072 D4). */
+.doc-catalog__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: 13px;
+}
+
+.doc-catalog__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .doc-catalog__title {
@@ -822,6 +1076,15 @@ body {
 .doc-catalog__row-actions {
   display: flex;
   gap: 4px;
+  /* Действия проявляются по hover/focus строки (PBT-072 D4):
+     прозрачность не блокирует клики и клавиатуру. */
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.doc-catalog__row:hover .doc-catalog__row-actions,
+.doc-catalog__row:focus-within .doc-catalog__row-actions {
+  opacity: 1;
 }
 
 .doc-catalog__action {
@@ -880,14 +1143,40 @@ body {
 
 .doc-picker__item {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-align: left;
   font: inherit;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-md);
-  background: var(--secondary);
+  background: transparent;
   color: inherit;
   cursor: pointer;
+}
+
+.doc-picker__item:hover {
+  background: var(--accent);
+}
+
+.doc-picker__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: 13px;
+}
+
+.doc-picker__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .doc-picker__cancel {

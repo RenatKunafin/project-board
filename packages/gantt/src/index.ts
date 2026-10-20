@@ -44,6 +44,7 @@ export function createGanttModule() {
         id: 'plan',
         title: 'План',
         icon: '📅',
+        description: 'Диаграмма Ганта: задачи, сроки, зависимости',
         component: PlanGanttWidget,
         startSettings: {},
         // Шкала Гантта требует заметной ширины: в более узком окне
@@ -62,6 +63,7 @@ export function createGanttModule() {
         id: 'plan-resources',
         title: 'Ресурсы',
         icon: '👥',
+        description: 'Загрузка и отсутствия команды',
         component: ResourceTimelineWidget,
         startSettings: {},
         sizeConstraints: { minWidth: 4, minHeight: 3 },

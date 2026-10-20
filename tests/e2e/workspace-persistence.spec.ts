@@ -37,7 +37,7 @@ test('рабочее пространство восстанавливается
   await secondTab.getByText('Новая вкладка').dblclick();
   await page.getByLabel('Название вкладки').fill('Планы');
   await page.getByLabel('Название вкладки').press('Enter');
-  await page.getByRole('button', { name: 'Добавить виджет' }).click();
+  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
