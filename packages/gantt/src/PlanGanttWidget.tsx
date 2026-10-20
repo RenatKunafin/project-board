@@ -91,7 +91,6 @@ export default function PlanGanttWidget({
   settings,
   updateSettings,
   switchDocument,
-  onResize,
 }: WidgetProps) {
   const [document, setDocument] = useState<ManagedDocument | undefined>(
     undefined,
@@ -1111,96 +1110,14 @@ export default function PlanGanttWidget({
   // Ревизия своей записи жеста продолжает прежний ключ: пересборка чарта
   // на неё не нужна (стор уже синхронен документу). Внешние ревизии
   // (второй экземпляр, формы) меняют ключ и пересобирают представление.
-  // PBT-071: разворот окна на весь дашборд (и возврат) — существенный
-  // скачок ширины контейнера. SVAR после пересборки отрисовывает шкалу
-  // виртуализированно (видимая область + буфер) от начала диапазона:
-  // при запасе −60 дней слева развёрнутое окно целиком занимает пустая
-  // зона до плана. Пересоздание чарта по скачку ширины + старт шкалы
-  // от якоря плана (−2 дня) держат план у левого края в обоих размерах.
-  const [widthEpoch, setWidthEpoch] = useState(0);
-  const lastWidthRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (!onResize) {
-      return;
-    }
-    return onResize(({ width }) => {
-      const previous = lastWidthRef.current;
-      lastWidthRef.current = width;
-      if (previous === null || previous <= 0) {
-        return;
-      }
-      const change = Math.abs(width - previous) / previous;
-      if (change > 0.4) {
-        setWidthEpoch((epoch) => epoch + 1);
-      }
-    });
-  }, [onResize]);
-  const baseRemountKey =
+  const chartRemountKey =
     document === undefined
       ? 'init'
       : localRevisionRef.current !== null &&
           document.revision === localRevisionRef.current
         ? remountKeyRef.current
         : String(document.revision);
-  const chartRemountKey = baseRemountKey;
   remountKeyRef.current = chartRemountKey;
-  // Пересоздание чарта по скачку ширины — без суффикса ключа ревизии
-  // (изменение формата ключа ломало применение жестов PBT-039). Само
-  // размонтирование тоже отвергнуто (живая проверка владельца): SVAR
-  // при повторном монтаже в момент нестабильного layout строит шкалу
-  // пустой до первого скролла. Итоговая механика PBT-071 D8: чарт не
-  // трогаем — SVAR сам пересобирает шкалу по resize и сбрасывает
-  // прокрутку; пассивно запоминаем позицию и удерживаем её поллингом
-  // кадров (~1.5 с), пока пересборка не стабилизируется.
-  const chartHostRef = useRef<HTMLDivElement | null>(null);
-  const chartScrollLeftRef = useRef(0);
-  useEffect(() => {
-    const host = chartHostRef.current;
-    if (!host) {
-      return;
-    }
-    const onScroll = (event: Event) => {
-      const target =
-        event.target instanceof HTMLElement ? event.target : null;
-      if (
-        target?.classList.contains('wx-chart') &&
-        target.scrollLeft > 0
-      ) {
-        chartScrollLeftRef.current = target.scrollLeft;
-      }
-    };
-    host.addEventListener('scroll', onScroll, {
-      capture: true,
-      passive: true,
-    });
-    return () => host.removeEventListener('scroll', onScroll, { capture: true });
-  }, []);
-  useEffect(() => {
-    if (widthEpoch === 0) {
-      return;
-    }
-    const saved = chartScrollLeftRef.current;
-    if (saved <= 0) {
-      return;
-    }
-    // SVAR пересобирает шкалу серией DOM-мутаций и может сбрасывать
-    // прокрутку уже после установки — удерживаем позицию кадрами.
-    let frames = 0;
-    let raf = 0;
-    const hold = () => {
-      const chart =
-        chartHostRef.current?.querySelector<HTMLElement>('.wx-chart');
-      if (chart && chart.scrollWidth > 0 && chart.scrollLeft < saved - 1) {
-        chart.scrollLeft = saved;
-      }
-      frames += 1;
-      if (frames < 90) {
-        raf = requestAnimationFrame(hold);
-      }
-    };
-    raf = requestAnimationFrame(hold);
-    return () => cancelAnimationFrame(raf);
-  }, [widthEpoch]);
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
@@ -1520,11 +1437,7 @@ export default function PlanGanttWidget({
               Ничего не найдено по фильтру. Задачи документа не изменены.
             </p>
           ) : null}
-          <div
-            className="plan-gantt__chart"
-            ref={chartHostRef}
-            onDoubleClick={onChartDoubleClick}
-          >
+          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
             <Willow>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
