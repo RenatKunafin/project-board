@@ -1384,32 +1384,34 @@ export default function PlanGanttWidget({
       return formatIsoDayMonth(task[edge]);
     };
     return [
-      // Состав таблицы — 5 колонок (ревью PR#51): задача (главная,
-      // flexgrow), даты дд.мм, рабочая длительность, исполнители.
+      // Состав таблицы — 5 колонок (ревью PR#51): задача (главная),
+      // даты дд.мм, рабочая длительность, исполнители. Ширины фикс:
+      // таблица не сжимается при узком окне — правые колонки скрываются
+      // под чартом (CSS в gantt.css), последней видимой остаётся «Задача».
       // Типы работ — только в форме задачи (спека MODIFIED).
-      { id: 'text', header: 'Задача', flexgrow: 1 },
+      { id: 'text', header: 'Задача', width: 240 },
       {
         id: 'start',
         header: 'Начало',
-        width: 68,
+        width: 76,
         cell: ({ row }) => dateCell(String(row.id), 'start'),
       },
       {
         id: 'end',
         header: 'Окончание',
-        width: 88,
+        width: 96,
         cell: ({ row }) => dateCell(String(row.id), 'end'),
       },
       {
         id: 'work-days',
         header: 'Раб. дней',
-        width: 72,
+        width: 96,
         cell: ({ row }) => workingDaysCell(String(row.id)),
       },
       {
         id: 'assignees',
         header: 'Исполнители',
-        width: 120,
+        width: 140,
         cell: ({ row }) => {
           const current = planRef.current;
           if (!current) {
