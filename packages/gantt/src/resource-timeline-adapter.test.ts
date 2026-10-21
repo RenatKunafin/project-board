@@ -131,9 +131,12 @@ describe('planToTimelineItems — назначения и границы (ADR-4)
     expect(items[0].className).toBeUndefined();
   });
 
-  it('стили задач — токены accent; data-атрибуты для e2e-локаторов', () => {
+  it('стили полос — токены прототипа (PBT-074); data-атрибуты для e2e-локаторов', () => {
     const plan: PlanContent = {
       ...createPlanContent(),
+      workTypes: [
+        { id: 'wt-dev', title: 'Разработка', allowsParallel: false },
+      ],
       resources: [{ id: 'r-qa', title: 'QA' }],
       tasks: [
         {
@@ -143,17 +146,47 @@ describe('planToTimelineItems — назначения и границы (ADR-4)
           end: '2026-10-13',
           assigneeIds: ['r-qa'],
         },
+        {
+          id: 't-2',
+          title: 'Конфликтная',
+          start: '2026-10-12',
+          end: '2026-10-13',
+          assigneeIds: ['r-qa'],
+          workTypeIds: ['wt-dev'],
+        },
+      ],
+      unavailability: [
+        { id: 'u-1', resourceId: 'r-qa', start: '2026-10-26', end: '2026-10-27' },
       ],
     };
-    const [item] = planToTimelineItems(plan);
+    // Отметки переданы напрямую (unit стилей, не диагностика конфликтов):
+    // t-2 — конфликтная задача, u-1 — конфликтная недоступность.
+    const items = planToTimelineItems(plan, {
+      taskIds: new Set(['t-2']),
+      unavailabilityIds: new Set(['u-1']),
+    });
+    const byId = new Map(items.map((item) => [item.id, item] as const));
     // Стиль — в itemProps.style: дефолтный itemRenderer беты мерджит
-    // только itemProps (поле item.style игнорирует).
-    expect(item.itemProps?.style).toMatchObject({
-      background: 'var(--color-accent)',
+    // только itemProps (поле item.style игнорирует). Токены — только
+    // определённые в tokens.css (регресс PBT-069: висячие имена).
+    expect(byId.get('t-1:r-qa')?.itemProps?.style).toMatchObject({
+      background: 'var(--color-rt-task-bg)',
       // бордер темнее фона — стык соседних задач не сливается
       borderColor: 'var(--color-rt-task-border)',
+      color: 'var(--foreground)',
     });
-    expect(item.itemProps).toMatchObject({ 'data-rt-task': 't-1' });
+    expect(byId.get('t-2:r-qa')?.itemProps?.style).toMatchObject({
+      background: 'var(--color-rt-conflict-bg)',
+      borderColor: 'var(--color-rt-conflict-border)',
+    });
+    expect(byId.get('u-u-1')?.itemProps?.style).toMatchObject({
+      background: 'var(--color-rt-unavailability-bg)',
+      borderColor: 'var(--color-rt-conflict-border)',
+      color: 'var(--warning)',
+    });
+    expect(byId.get('t-1:r-qa')?.itemProps).toMatchObject({
+      'data-rt-task': 't-1',
+    });
   });
 
   it('недоступность — элемент у своего ресурса без жестов, отличен от задач', () => {

@@ -100,9 +100,18 @@ test('дорожки, укладка, отпуск у своего ресурс�
   const pane = page.getByRole('group', { name: 'Ресурсы · Контрольный план' });
   const chart = pane.locator('[data-rt-chart]');
 
-  // Дорожка на каждый ресурс, в порядке документа.
+  // Дорожка на каждый ресурс, в порядке документа. Аватар — инициалы по
+  // алгоритму прототипа (первые буквы слов: «QA»/«QA2» → «Q»).
   const sidebar = chart.locator('.rct-sidebar-row');
-  await expect(sidebar).toHaveText(['QA', 'QA2']);
+  await expect(sidebar).toHaveCount(2);
+  await expect(sidebar.locator('.resource-timeline__avatar')).toHaveText([
+    'Q',
+    'Q',
+  ]);
+  await expect(sidebar.locator('.resource-timeline__group-name')).toHaveText([
+    'QA',
+    'QA2',
+  ]);
 
   // Элементы: t-a, t-b, t-c (QA), t-c (QA2), t-d (QA2), отпуск QA.
   // Задача без назначений отсутствует (D2).
@@ -243,4 +252,45 @@ test('оба вида одного документа: изменение в п�
   await expect(item).toBeVisible();
   const after = await item.evaluate((el) => el.getBoundingClientRect().left);
   expect(after).toBeGreaterThan(before + 20);
+});
+
+test('легенда и диапазон видимой области; футер с названием документа (PBT-074)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  const documentId = await createResourcesView(page, 'Легенда плана');
+  await page.evaluate(
+    ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
+    { id: documentId, value: planContent },
+  );
+  const pane = page.getByRole('group', { name: 'Ресурсы · Легенда плана' });
+
+  // Легенда: три образца + mono-диапазон видимой области (производное).
+  const legend = pane.locator('[data-rt-legend]');
+  await expect(legend).toBeVisible();
+  await expect(legend.locator('.resource-timeline__legend-item')).toHaveText(
+    ['Задачи', 'Отсутствия', 'Конфликты'],
+  );
+  const range = pane.locator('[data-rt-visible-range]');
+  await expect(range).toHaveText(/^\d{4}-\d{2}-\d{2} — \d{4}-\d{2}-\d{2}$/);
+
+  // Зум меняет видимую область — диапазон обновляется, документ не меняется.
+  const before = await range.textContent();
+  const revisionBefore = await page.evaluate(
+    (id) => window.__projectBoard?.readDocument(id)?.revision,
+    documentId,
+  );
+  await pane.locator('[data-rt-zoom-in]').click();
+  await expect.poll(async () => range.textContent()).not.toBe(before);
+  const revisionAfter = await page.evaluate(
+    (id) => window.__projectBoard?.readDocument(id)?.revision,
+    documentId,
+  );
+  expect(revisionAfter).toBe(revisionBefore);
+
+  // Футер — название документа (паттерн PBT-073).
+  await expect(pane.locator('.resource-timeline__footer-title')).toHaveText(
+    'Легенда плана',
+  );
 });

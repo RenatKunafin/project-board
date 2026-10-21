@@ -31,29 +31,34 @@ export interface TimelineItem {
 }
 
 /**
- * Стили полос через токены :root: инлайн-стили дефолтного itemRenderer
- * RCT (синий/жёлтый) перекрываются полем item.style (Object.assign
- * дефолтов и item.style в Item). className остаётся для e2e-локаторов.
+ * Стили полос через токены :root (PBT-074, по прототипу .resource-bar):
+ * задачи — primary mix 35% + primary-рамка, недоступность — warning,
+ * конфликты — destructive. Инлайн-стили — единственный путь в дефолтном
+ * itemRenderer 0.30.0-beta.19 (itemProps.style мерджится поверх дефолтных
+ * синих/жёлтых; поле item.style бета игнорирует — находка PBT-047).
+ * Закрывает регресс PBT-069: прежние значения ссылались на удалённые
+ * токены (--color-accent/--color-on-accent/--color-danger) — фон обычных
+ * полос был прозрачным, конфликтные теряли destructive-акценты.
  */
 const taskStyle: CSSProperties = {
-  background: 'var(--color-accent)',
+  background: 'var(--color-rt-task-bg)',
   // Бордер темнее фона: стык соседних задач читается как граница,
   // полосы не сливаются (правка владельца).
   borderColor: 'var(--color-rt-task-border)',
-  color: 'var(--color-on-accent)',
-  fontSize: 12,
+  color: 'var(--foreground)',
+  fontSize: 13,
 };
 const conflictTaskStyle: CSSProperties = {
   background: 'var(--color-rt-conflict-bg)',
-  borderColor: 'var(--color-danger)',
-  color: 'var(--color-danger)',
-  fontSize: 12,
+  borderColor: 'var(--color-rt-conflict-border)',
+  color: 'var(--foreground)',
+  fontSize: 13,
 };
 const unavailabilityStyle: CSSProperties = {
   background: 'var(--color-rt-unavailability-bg)',
   borderColor: 'var(--color-rt-unavailability-border)',
-  color: 'var(--color-danger)',
-  fontSize: 11,
+  color: 'var(--warning)',
+  fontSize: 12,
 };
 
 /**
@@ -165,7 +170,10 @@ export function planToTimelineItems(
         : 'rtl-item--unavailability',
       itemProps: {
         style: conflict
-          ? { ...unavailabilityStyle, borderColor: 'var(--color-danger)' }
+          ? {
+              ...unavailabilityStyle,
+              borderColor: 'var(--color-rt-conflict-border)',
+            }
           : unavailabilityStyle,
         'data-rt-unavailability': unavailability.id,
       } as HTMLProps<HTMLDivElement>,

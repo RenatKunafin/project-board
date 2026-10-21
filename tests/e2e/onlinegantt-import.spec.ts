@@ -115,13 +115,18 @@ test('рабочий файл: предпросмотр со сводкой и �
     name: `Ресурсы · ${IMPORTED_TITLE}`,
   });
   await expect(resourcesPane).toBeVisible();
-  // Дорожки ресурсов (паттерн resource-timeline.spec: .rct-sidebar-row):
-  // все 9 исполнителей импортированного справочника.
+  // Дорожки ресурсов (паттерн resource-timeline.spec): все 9 исполнителей
+  // импортированного справочника. Имя ресурса — отдельный элемент строки
+  // (аватар-инициалы рядом, PBT-074).
   const sidebarRows = resourcesPane
     .locator('[data-rt-chart]')
     .locator('.rct-sidebar-row');
   await expect(sidebarRows).toHaveCount(9);
-  await expect(sidebarRows.filter({ hasText: /^QA$/ })).toHaveCount(1);
+  await expect(
+    sidebarRows
+      .locator('.resource-timeline__group-name')
+      .filter({ hasText: /^QA$/ }),
+  ).toHaveCount(1);
 });
 
 test('отмена предпросмотра ничего не меняет', async ({ page }) => {
