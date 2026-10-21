@@ -140,9 +140,21 @@
 }
 
 /* primary-строка после общей (равная специфичность, дефолт беты даёт
-   background-color: initial — порядок решает, по прототипу строка 167). */
+   background-color: initial — порядок решает, по прототипу строка 167).
+   Границы месячных колонок — тем же токеном и той же толщиной, что
+   дневные (дефолт беты красит правую границу месяца в светлый #bbb —
+   ревью PR#53). */
 .resource-timeline .rct-dateHeader-primary {
   background: var(--chrome);
+  border-color: var(--border);
+  border-left-width: 1px;
+  border-right-width: 1px;
+}
+
+/* Дефолт беты утолщает первые границы (2px) — приводим к единой 1px,
+   как у дневных линий. */
+.resource-timeline .rct-dateHeader {
+  border-left-width: 1px;
 }
 
 /* Заголовок сайдбара (SidebarHeader «Исполнитель»). */
@@ -226,6 +238,12 @@
 
 .resource-timeline .rct-vertical-lines .rct-vl {
   z-index: 1;
+}
+
+/* Первая вертикальная линия канвы толще (дефолт 2px) — выравниваем
+   к дневной 1px, границы месяцев не выделяются (ревью PR#53). */
+.resource-timeline .rct-vertical-lines .rct-vl.rct-vl-first {
+  border-left-width: 1px;
 }
 
 /* Линия курсора при жесте — акцент (по прототипу). */
