@@ -21,6 +21,7 @@ import {
   planToTimelineItems,
   timelineConflictMarks,
   timelineDayIso,
+  timelineDayStartMs,
   timelineRange,
   type TimelineGroup,
   type TimelineItem,
@@ -523,6 +524,11 @@ export default function ResourceTimelineWidget({
   const [canvasTimeStart, setCanvasTimeStart] = useState<number | undefined>(
     undefined,
   );
+  // Замороженное начало канвы до первого onBoundsChange: коллбэк беты
+  // приходит только при ИЗМЕНЕНИИ canvasTimeStart (скролл внутри буфера
+  // канву не трогает), а пересчёт fallback от текущей видимой области
+  // «плавал» колонками при скролле до первого зума (баг ревью PR#52).
+  const canvasStartRef = useRef<number | null>(null);
   // Ширина хоста — через ResizeObserver: clientWidth меняется при
   // развороте/ресайзе окна, а useMemo слоя не зависит от DOM-узла сам
   // (замороженный clientWidth давал растянутые колонки — ревью PR#52).
@@ -607,15 +613,40 @@ export default function ResourceTimelineWidget({
     }
     const visibleSpan = effectiveVisible.end - effectiveVisible.start;
     const pxPerMs = hostWidth / visibleSpan;
-    const canvasStart =
-      canvasTimeStart ?? effectiveVisible.start - visibleSpan;
     if (!(pxPerMs > 0)) {
       return null;
     }
+    // Начало канвы: фактическое из onBoundsChange (после зума/ресайза);
+    // до первого события — замороженное. Вычисляется один раз: точная
+    // привязка по позиции полосы (style.left беты — canvas-координата
+    // известной даты задачи); без полос — оценка формулой беты
+    // (canvasStart = visibleStart − span, buffer 3).
+    let canvasStart = canvasTimeStart;
+    if (canvasStart === undefined && canvasStartRef.current !== null) {
+      canvasStart = canvasStartRef.current;
+    }
+    if (canvasStart === undefined) {
+      const bar = scrollHost.querySelector<HTMLElement>(
+        '[data-rt-task], [data-rt-unavailability]',
+      );
+      const taskId = bar?.getAttribute('data-rt-task') ?? null;
+      const task =
+        taskId !== null
+          ? plan.tasks.find((entry) => entry.id === taskId)
+          : undefined;
+      const barLeft =
+        bar !== null && task !== undefined
+          ? Number.parseFloat(bar.style.left)
+          : Number.NaN;
+      canvasStartRef.current =
+        task !== undefined && Number.isFinite(barLeft)
+          ? timelineDayStartMs(task.start) - barLeft / pxPerMs
+          : effectiveVisible.start - visibleSpan;
+      canvasStart = canvasStartRef.current;
+    }
     // Канва шире видимой области (буфер беты ~2–3 span): колонки — на
     // всю канву, чтобы подсветка не обрывалась при скролле внутри буфера.
-    const canvasEnd =
-      canvasStart + scrollHost.scrollWidth / pxPerMs + DAY_MS;
+    const canvasEnd = canvasStart + scrollHost.scrollWidth / pxPerMs + DAY_MS;
     const columns: Array<{
       readonly key: number;
       readonly iso: string;
