@@ -340,80 +340,15 @@ body {
   padding: 0 12px 12px;
 }
 
-.checklist__items {
-  list-style: none;
-  margin: 0 0 10px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 
-.checklist__item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
 
-.checklist__label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
 
-.checklist__text.is-done {
-  text-decoration: line-through;
-  color: var(--muted-foreground);
-}
 
-.checklist__edit {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  padding: 2px 6px;
-}
 
-.checklist__remove {
-  border: none;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 16px;
-  cursor: pointer;
-}
 
-.checklist__form {
-  display: flex;
-  gap: 8px;
-}
 
-.checklist__input {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--background);
-  color: inherit;
-}
 
-.checklist__add {
-  font: inherit;
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--secondary);
-  color: inherit;
-  cursor: pointer;
-}
 
-.checklist__hint {
-  margin: 0 0 10px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-}
 
 .selftest__result {
   margin: 0;
@@ -483,14 +418,6 @@ body {
   cursor: pointer;
 }
 
-.checklist__setting {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  margin-bottom: 8px;
-}
 
 /* Топ-бар каркаса (PBT-072 D1): хром-поверхность, лого, статусная зона. */
 .app-topbar {
@@ -1221,10 +1148,6 @@ body {
   border-color: var(--muted-foreground);
 }
 
-.checklist__title {
-  margin: 0 0 8px;
-  font-size: 14px;
-}
 
 .pane-document-missing {
   display: flex;

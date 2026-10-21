@@ -23,7 +23,7 @@ test('топ-бар показывает название и индикатор 
   // Правка документа, отличного от «Список 1» (прежде индикатор следил
   // только за ним): дебаунс записи 250 мс — «Сохраняется…» наблюдаемо.
   const pane = page.getByRole('group', { name: 'Экземпляр 3 · Список 2' });
-  await pane.getByPlaceholder('Новый пункт').fill('Топ-бар виден');
+  await pane.getByPlaceholder('Новая задача…').fill('Топ-бар виден');
   await pane.getByRole('button', { name: 'Добавить', exact: true }).click();
   await expect(indicator).toHaveText('Сохраняется…');
   await expect(indicator).toHaveText('Сохранено', { timeout: 5000 });

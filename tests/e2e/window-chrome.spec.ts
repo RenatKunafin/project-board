@@ -6,18 +6,18 @@ test('сворачивание прячет содержимое, развора
   await page.goto('/');
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Черновик сохраняется');
+  await pane1.getByPlaceholder('Новая задача…').fill('Черновик сохраняется');
   await pane1
     .getByRole('button', { name: 'Свернуть Экземпляр 1 · Список 1' })
     .click();
 
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeHidden();
   await expect(pane1.getByText('Экземпляр 1 · Список 1').first()).toBeVisible();
 
   await pane1
     .getByRole('button', { name: 'Развернуть Экземпляр 1 · Список 1' })
     .click();
-  const draft = pane1.getByPlaceholder('Новый пункт');
+  const draft = pane1.getByPlaceholder('Новая задача…');
   await expect(draft).toBeVisible();
   await expect(draft).toHaveValue('Черновик сохраняется');
 
@@ -25,7 +25,7 @@ test('сворачивание прячет содержимое, развора
   await draft.fill('Пункт поверх рамки');
   await draft.press('Enter');
   await expect(pane1.getByText('Пункт поверх рамки')).toBeVisible();
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeVisible();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeVisible();
   await expect(
     pane1.getByRole('button', { name: 'Свернуть Экземпляр 1 · Список 1' }),
   ).toBeVisible();
@@ -38,7 +38,7 @@ test('закрытие одного из двух представлений с�
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   const pane2 = page.getByRole('group', { name: 'Экземпляр 2 · Список 1' });
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Живёт во втором окне');
+  await pane1.getByPlaceholder('Новая задача…').fill('Живёт во втором окне');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
@@ -92,12 +92,12 @@ test('кнопки окна доступны с клавиатуры', async ({ 
     .focus();
   await page.keyboard.press('Enter');
 
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeHidden();
 
   await pane1
     .getByRole('button', { name: 'Развернуть Экземпляр 1 · Список 1' })
     .focus();
   await page.keyboard.press('Enter');
 
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeVisible();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeVisible();
 });

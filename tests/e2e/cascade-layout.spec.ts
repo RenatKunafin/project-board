@@ -145,7 +145,7 @@ test('каскад: поле ввода не двигает окно; возвр
   const label = 'Экземпляр 1 · Список 1';
   const pane = page.getByRole('group', { name: label });
   const before = await cascadeWindowBox(page, label);
-  const input = pane.getByPlaceholder('Новый пункт');
+  const input = pane.getByPlaceholder('Новая задача…');
   const inputBox = await input.boundingBox();
   if (!inputBox) {
     throw new Error('Нет поля ввода');

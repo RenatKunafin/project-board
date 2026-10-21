@@ -1,0 +1,240 @@
+/* Чек-лист: тёмная тема по прототипу flexi-dashboard-hub
+ * (widgets.tsx → TodoWidget, PBT-075). Только токены :root — литеральные
+ * цвета запрещены до PBT-066; полупрозрачные состояния прототипа
+ * (/50, /10, /90) — color-mix от токенов. */
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  font-size: 14px;
+  min-height: 160px;
+}
+
+.checklist__title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ─── Шапка: производный прогресс + кнопка-чип скрытия ─────────────────── */
+
+.checklist__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  margin-bottom: 8px;
+}
+
+.checklist__progress {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.checklist__progress-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.checklist__progress-percent {
+  font-family: var(--font-mono);
+  color: var(--foreground);
+}
+
+.checklist__progress-track {
+  margin-top: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.checklist__progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--success);
+  transition: width 0.2s ease;
+}
+
+.checklist__hide-toggle {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.checklist__hide-toggle:hover {
+  color: var(--foreground);
+}
+
+.checklist__hide-toggle[aria-pressed='true'] {
+  border-color: color-mix(in oklch, var(--primary) 50%, transparent);
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  color: var(--foreground);
+}
+
+/* ─── Список пунктов ────────────────────────────────────────────────────── */
+
+.checklist__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  min-width: 0;
+}
+
+.checklist__item:hover {
+  background: color-mix(in oklch, var(--accent) 50%, transparent);
+}
+
+.checklist__item input[type='checkbox'] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  margin: 0;
+}
+
+.checklist__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.checklist__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.checklist__text.is-done {
+  text-decoration: line-through;
+  color: var(--muted-foreground);
+}
+
+.checklist__edit {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 2px 6px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: inherit;
+}
+
+.checklist__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.checklist__item:hover .checklist__remove,
+.checklist__remove:focus-visible {
+  opacity: 1;
+}
+
+.checklist__remove:hover {
+  color: var(--destructive);
+}
+
+.checklist__remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ─── Пустые состояния ──────────────────────────────────────────────────── */
+
+.checklist__hint {
+  margin: 0 0 10px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+/* ─── Ввод: поле + primary-кнопка «+» ───────────────────────────────────── */
+
+.checklist__form {
+  display: flex;
+  gap: 6px;
+  flex: none;
+  margin-top: 8px;
+}
+
+.checklist__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: inherit;
+  outline: none;
+}
+
+.checklist__input:focus {
+  border-color: var(--primary);
+}
+
+.checklist__add {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.checklist__add:hover {
+  background: color-mix(in oklch, var(--primary) 90%, var(--foreground));
+}
+
+.checklist__add svg {
+  width: 16px;
+  height: 16px;
+}

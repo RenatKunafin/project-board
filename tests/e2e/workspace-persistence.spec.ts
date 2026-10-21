@@ -20,7 +20,7 @@ test('рабочее пространство восстанавливается
   await page.getByLabel('Название вкладки').press('Enter');
 
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
-  await pane1.getByPlaceholder('Новый пункт').fill('Переживает перезапуск');
+  await pane1.getByPlaceholder('Новая задача…').fill('Переживает перезапуск');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
 
   await page

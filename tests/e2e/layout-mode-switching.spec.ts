@@ -71,7 +71,7 @@ test('тайлинг → каскад → изменение состава → 
   // Сетка: запоминаем области, добавляем пункт в документ.
   const gridBefore = await paneBox(page, label1);
   const pane1 = page.getByRole('group', { name: label1 });
-  await pane1.getByPlaceholder('Новый пункт').fill('Живёт через смены режимов');
+  await pane1.getByPlaceholder('Новая задача…').fill('Живёт через смены режимов');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
@@ -170,6 +170,6 @@ test('сворачивание переживает смену режима', as
     .getByRole('button', { name: `Развернуть ${label}` })
     .click();
   await expect(
-    page.getByRole('group', { name: label }).getByPlaceholder('Новый пункт'),
+    page.getByRole('group', { name: label }).getByPlaceholder('Новая задача…'),
   ).toBeVisible();
 });

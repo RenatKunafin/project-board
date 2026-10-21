@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { WidgetProps } from '@project-board/widget-sdk';
+import { Plus, Trash2 } from 'lucide-react';
 import {
   addItem,
   parseChecklistContent,
@@ -9,21 +10,26 @@ import {
   type ChecklistContent,
   type ChecklistItem,
 } from './model';
+import './checklist.css';
 
 export default function ChecklistWidget({
   widgetInstanceId,
   documentId,
   documentService,
   visible,
+  settings,
+  updateSettings,
 }: WidgetProps) {
   const [content, setContent] = useState<ChecklistContent>(() => ({
     items: [],
   }));
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Скрытие выполненных — persisted-состояние экземпляра (PBT-075,
+  // механизм PBT-049): settings вида view:<instanceId>; прежний in-memory
+  // флаг сервиса reload не переживал (карточка: должно переживать).
   const [hideDone, setHideDone] = useState(
-    () =>
-      documentService?.getViewSettings(widgetInstanceId)?.hideDone === true,
+    () => settings.hideDone === true,
   );
 
   useEffect(() => {
@@ -74,22 +80,50 @@ export default function ChecklistWidget({
   const toggleHideDone = () => {
     const next = !hideDone;
     setHideDone(next);
-    // Локальная настройка представления: в документ не попадает (PBT-007).
-    documentService.setViewSettings(widgetInstanceId, {
-      ...documentService.getViewSettings(widgetInstanceId),
-      hideDone: next,
-    });
+    // Настройка представления — в settings экземпляра (в документ
+    // не попадает); необязательный API — окружение без поддержки
+    // просто держит флаг в памяти (design D2).
+    updateSettings?.({ hideDone: next });
   };
+
+  const doneCount = content.items.filter((item) => item.done).length;
+  const totalCount = content.items.length;
+  const donePercent =
+    totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
   return (
     <div className="checklist" data-instance={widgetInstanceId}>
       {typeof content.title === 'string' && content.title !== '' && (
         <h2 className="checklist__title">{content.title}</h2>
       )}
-      <label className="checklist__setting">
-        <input type="checkbox" checked={hideDone} onChange={toggleHideDone} />
-        Скрывать выполненные
-      </label>
+      {/* Шапка (PBT-075, по прототипу TodoWidget): производный прогресс
+          документа + кнопка-чип скрытия выполненных. */}
+      <div className="checklist__header">
+        <div className="checklist__progress">
+          <p className="checklist__progress-label" data-checklist-progress>
+            {doneCount}/{totalCount} выполнено{' '}
+            <span className="checklist__progress-percent">
+              ({donePercent}%)
+            </span>
+          </p>
+          <div className="checklist__progress-track">
+            <div
+              className="checklist__progress-bar"
+              data-checklist-progress-bar
+              style={{ width: `${donePercent}%` }}
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          className="checklist__hide-toggle"
+          data-checklist-hide-done
+          aria-pressed={hideDone}
+          onClick={toggleHideDone}
+        >
+          Скрыть выполненные
+        </button>
+      </div>
 
       {content.items.length === 0 ? (
         <p className="checklist__hint">
@@ -141,7 +175,7 @@ export default function ChecklistWidget({
                 aria-label={`Удалить: ${item.text}`}
                 onClick={() => commit(removeItem(content, item.id))}
               >
-                ×
+                <Trash2 aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -158,12 +192,16 @@ export default function ChecklistWidget({
       >
         <input
           className="checklist__input"
-          placeholder="Новый пункт"
+          placeholder="Новая задача…"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
         />
-        <button type="submit" className="checklist__add">
-          Добавить
+        <button
+          type="submit"
+          className="checklist__add"
+          aria-label="Добавить"
+        >
+          <Plus aria-hidden="true" />
         </button>
       </form>
     </div>

@@ -24,13 +24,13 @@ test('операция синхронизирует экземпляры 1-2 и 
   const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
   const pane3 = page.getByLabel('Экземпляр 3 · Список 2');
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Из первого списка');
+  await pane1.getByPlaceholder('Новая задача…').fill('Из первого списка');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
 
   await expect(pane2.getByText('Из первого списка')).toBeVisible();
   await expect(pane3.getByText('Из первого списка')).toHaveCount(0);
 
-  await pane3.getByPlaceholder('Новый пункт').fill('Из второго списка');
+  await pane3.getByPlaceholder('Новая задача…').fill('Из второго списка');
   await pane3.getByRole('button', { name: 'Добавить' }).click();
   await expect(pane3.getByText('Из второго списка')).toBeVisible();
   await expect(pane1.getByText('Из второго списка')).toHaveCount(0);
@@ -41,17 +41,20 @@ test('локальная настройка экземпляра изолиро�
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
   const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Выполненный пункт');
+  await pane1.getByPlaceholder('Новая задача…').fill('Выполненный пункт');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await pane1.getByRole('checkbox', { name: 'Выполненный пункт' }).check();
 
-  await pane1.getByRole('checkbox', { name: 'Скрывать выполненные' }).check();
+  await pane1.getByRole('button', { name: 'Скрыть выполненные' }).click();
+  await expect(
+    pane1.getByRole('button', { name: 'Скрыть выполненные' }),
+  ).toHaveAttribute('aria-pressed', 'true');
   await expect(pane1.getByText('Выполненный пункт')).toHaveCount(0);
   await expect(pane2.getByText('Выполненный пункт')).toBeVisible();
 
   await pane1
-    .getByRole('checkbox', { name: 'Скрывать выполненные' })
-    .uncheck();
+    .getByRole('button', { name: 'Скрыть выполненные' })
+    .click();
   await expect(pane1.getByText('Выполненный пункт')).toBeVisible();
 });
 
@@ -59,7 +62,7 @@ test('закрытие и перезагрузка сохраняют докум
   await page.goto('/');
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
 
-  await pane1.getByPlaceholder('Новый пункт').fill('Переживает закрытие');
+  await pane1.getByPlaceholder('Новая задача…').fill('Переживает закрытие');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   // Ждём старт именно тестовой записи: «Сохранено» может висеть от bootstrap.
   await expect(page.getByText('Сохраняется…')).toBeVisible();
@@ -136,7 +139,7 @@ test('удаление активной вкладки делает активн
     name: 'Вкладки рабочего пространства',
   });
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
-  await pane1.getByPlaceholder('Новый пункт').fill('Документ жив');
+  await pane1.getByPlaceholder('Новая задача…').fill('Документ жив');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
@@ -204,13 +207,13 @@ test('каталог: новый чек-лист создаётся из пус�
 
   const pane = page.getByRole('group', { name: 'Чек-лист · Покупки' });
   await expect(pane).toBeVisible();
-  await expect(pane.getByPlaceholder('Новый пункт')).toBeVisible();
+  await expect(pane.getByPlaceholder('Новая задача…')).toBeVisible();
 });
 
 test('каталог: второе представление существующего документа', async ({ page }) => {
   await page.goto('/');
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
-  await pane1.getByPlaceholder('Новый пункт').fill('Общий пункт');
+  await pane1.getByPlaceholder('Новая задача…').fill('Общий пункт');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохранено')).toBeVisible();
 
@@ -226,7 +229,7 @@ test('каталог: второе представление существую
   const secondView = page.getByRole('group', { name: 'Чек-лист · Список 1' });
   await expect(secondView.getByText('Общий пункт')).toBeVisible();
 
-  await secondView.getByPlaceholder('Новый пункт').fill('Второе представление');
+  await secondView.getByPlaceholder('Новая задача…').fill('Второе представление');
   await secondView.getByRole('button', { name: 'Добавить' }).click();
   await expect(pane1.getByText('Второе представление')).toBeVisible();
 });
@@ -254,4 +257,65 @@ test('каталог: отмена не создаёт документов и �
   await expect(
     page.getByRole('group', { name: 'Чек-лист · Список 1' }),
   ).toHaveCount(0);
+});
+
+test('производный прогресс: счётчик и полоса из документа (PBT-075)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const pane = page.getByLabel('Экземпляр 1 · Список 1');
+  const progress = pane.locator('[data-checklist-progress]');
+  const bar = pane.locator('[data-checklist-progress-bar]');
+
+  // Пустой список: нулевой прогресс, полоса пустая.
+  await expect(progress).toContainText('0/0 выполнено (0%)');
+  await expect(bar).toHaveCSS('width', '0px');
+
+  // Сценарий карточки: 3 пункта, 2 выполнено → 67%.
+  for (const text of ['Собрать метрики', 'Обновить документацию', 'Подготовить демо']) {
+    await pane.getByPlaceholder('Новая задача…').fill(text);
+    await pane.getByRole('button', { name: 'Добавить' }).click();
+  }
+  const boxes = pane.locator('.checklist__item input[type="checkbox"]');
+  await boxes.nth(0).check();
+  await boxes.nth(1).check();
+  await expect(progress).toContainText('2/3 выполнено (67%)');
+  // Полоса анимируется (transition width — прототип): ждём стабилизации.
+  await expect
+    .poll(async () =>
+      bar.evaluate((el) => el.getBoundingClientRect().width),
+    )
+    .toBeGreaterThan(20); // ≈ две трети дорожки
+});
+
+test('скрытие выполненных переживает reload (PBT-075)', async ({ page }) => {
+  await page.goto('/');
+  const pane = page.getByLabel('Экземпляр 1 · Список 1');
+  const toggle = pane.getByRole('button', { name: 'Скрыть выполненные' });
+
+  await pane.getByPlaceholder('Новая задача…').fill('Выполненный пункт');
+  await pane.getByRole('button', { name: 'Добавить' }).click();
+  await pane
+    .locator('.checklist__item input[type="checkbox"]')
+    .first()
+    .check();
+  await expect(pane.locator('[data-checklist-progress]')).toContainText(
+    '1/1 выполнено (100%)',
+  );
+
+  // Настройка — persisted-состояние экземпляра: до PBT-075 флаг был
+  // in-memory и reload терял его.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(pane.getByText('Выполненный пункт')).toHaveCount(0);
+  await expect(pane.getByText('Все пункты выполнены.')).toBeVisible();
+
+  await page.waitForTimeout(800); // дебаунс снапшота настроек (PBT-024)
+  await page.reload();
+  const paneAfter = page.getByLabel('Экземпляр 1 · Список 1');
+  const toggleAfter = paneAfter.getByRole('button', {
+    name: 'Скрыть выполненные',
+  });
+  await expect(toggleAfter).toHaveAttribute('aria-pressed', 'true');
+  await expect(paneAfter.getByText('Выполненный пункт')).toHaveCount(0);
 });
