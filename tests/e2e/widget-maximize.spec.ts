@@ -22,7 +22,19 @@ test('разворот занимает вкладку и скрывает со�
   const layer = page.getByTestId('widget-maximize-layer');
 
   // Черновик соседа — свидетельство жизни состояния (keep-mounted).
-  await pane2.getByPlaceholder('Новый пункт').fill('Черновик соседа');
+  await pane2.getByPlaceholder('Новая задача…').fill('Черновик соседа');
+
+  // Фокус поля соседа автоскроллит канвас вкладки (.instances): с шапкой
+  // чек-листа (PBT-075) контент стал выше и браузер добавил 21px скролла —
+  // до-замер ловил прокрутку, а возврат из разворота (PBT-071 D4)
+  // нормализует scrollTop в 0, и координаты сравнивались в разных системах
+  // (91 против 112). Оба замера — при scrollTop=0 (прецедент правил
+  // флаки-фиксов AGENTS.md: корень → фикс с комментарием).
+  const normalizeCanvasScroll = () =>
+    page.evaluate(() => {
+      document.querySelector('.instances')?.scrollTo(0, 0);
+    });
+  await normalizeCanvasScroll();
 
   const tabpanelBox = await page
     .getByRole('tabpanel')
@@ -53,12 +65,13 @@ test('разворот занимает вкладку и скрывает со�
 
   await expect(layer).toBeHidden();
   expect(await isInMaximizeLayer(pane1)).toBe(false);
+  await normalizeCanvasScroll();
   const restoredBox = await pane1.boundingBox();
   expect(Math.round(restoredBox!.x)).toBe(Math.round(pane1Box!.x));
   expect(Math.round(restoredBox!.y)).toBe(Math.round(pane1Box!.y));
   expect(Math.round(restoredBox!.width)).toBe(Math.round(pane1Box!.width));
   await expect(pane2).toBeVisible();
-  await expect(pane2.getByPlaceholder('Новый пункт')).toHaveValue(
+  await expect(pane2.getByPlaceholder('Новая задача…')).toHaveValue(
     'Черновик соседа',
   );
 });
@@ -80,7 +93,7 @@ test('сворачивание развёрнутого окна возвращ�
   await expect(layer).toBeHidden();
   expect(await isInMaximizeLayer(pane1)).toBe(false);
   // Окно свёрнуто заголовком в обычной раскладке.
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeHidden();
   await expect(
     pane1.getByRole('button', { name: `Развернуть ${PANE_1}` }),
   ).toBeVisible();
@@ -101,7 +114,7 @@ test('разворот свёрнутого окна показывает сод
 
   await pane1.getByRole('button', { name: `Свернуть ${PANE_1}` }).click();
   await expect(layer).toBeHidden();
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeHidden();
 
   await pane1
     .getByRole('button', { name: `Развернуть на весь дашборд ${PANE_1}` })
@@ -109,14 +122,14 @@ test('разворот свёрнутого окна показывает сод
   await expect(layer).toBeVisible();
   expect(await isInMaximizeLayer(pane1)).toBe(true);
   // Развёрнутое свёрнутое окно показывает содержимое, а не пустой заголовок.
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeVisible();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeVisible();
 
   // Возврат прежнего размера возвращает свёрнутый вид в раскладке.
   await pane1
     .getByRole('button', { name: `Вернуть прежний размер ${PANE_1}` })
     .click();
   await expect(layer).toBeHidden();
-  await expect(pane1.getByPlaceholder('Новый пункт')).toBeHidden();
+  await expect(pane1.getByPlaceholder('Новая задача…')).toBeHidden();
 });
 
 test('перезапуск восстанавливает окно в обычном виде', async ({ page }) => {

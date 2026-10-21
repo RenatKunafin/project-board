@@ -85,7 +85,7 @@ test('поле ввода не переносит окно', async ({ page }) =>
   const before = await paneBox(page, 'Экземпляр 1 · Список 1');
   const input = page
     .getByRole('group', { name: 'Экземпляр 1 · Список 1' })
-    .getByPlaceholder('Новый пункт');
+    .getByPlaceholder('Новая задача…');
   const inputBox = await input.boundingBox();
   if (!inputBox) {
     throw new Error('Нет поля ввода');

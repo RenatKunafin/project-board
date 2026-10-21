@@ -48,14 +48,14 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
   test('черновик переживает переключение вкладок', async ({ page }) => {
     await page.goto('/');
     const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
-    await pane1.getByPlaceholder('Новый пункт').fill('Живой черновик');
+    await pane1.getByPlaceholder('Новая задача…').fill('Живой черновик');
 
     const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
     await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
     await tablist.getByRole('tab', { name: /Чек-листы/ }).click();
 
     await expect(
-      pane1.getByPlaceholder('Новый пункт'),
+      pane1.getByPlaceholder('Новая задача…'),
     ).toHaveValue('Живой черновик');
   });
 
@@ -75,7 +75,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
     // На первой вкладке другой экземпляр меняет общий документ.
     await tablist.getByRole('tab', { name: /Чек-листы/ }).click();
     const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
-    await pane2.getByPlaceholder('Новый пункт').fill('Пришло с активной');
+    await pane2.getByPlaceholder('Новая задача…').fill('Пришло с активной');
     await pane2.getByRole('button', { name: 'Добавить' }).click();
     await expect(page.getByText('Сохранено')).toBeVisible();
 

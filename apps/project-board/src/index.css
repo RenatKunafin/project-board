@@ -115,32 +115,29 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* Уголок resize каскада — двойной диагональный штрих прототипа
-   (PBT-070 D3): две полоски на 45°, цвет токеном, без SVG-файлов. */
-.cascade-resize-se {
-  width: 16px;
-  height: 16px;
+/* Уголок resize каскада — геометрия прототипа (PBT-070 D3 → ревью
+   PR#54): путь «M9 3 L3 9 M9 6 L6 9», stroke-width 1.2/10. Хэндл
+   react-rnd (inline: 20×20, right/bottom −10px) центрирован на углу
+   и наполовину ЗА окном — маска привязана к углу ОКНА: right/bottom
+   11px от хэндла (10px вылета + 1px зазор), размер 16×16. */
+.cascade-resize-se::before {
+  content: none;
 }
 
-.cascade-resize-se::before,
 .cascade-resize-se::after {
   content: '';
   position: absolute;
-  width: 8px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--muted-foreground);
-  transform: rotate(-45deg);
-}
-
-.cascade-resize-se::before {
-  right: 2px;
-  bottom: 5px;
-}
-
-.cascade-resize-se::after {
-  right: 5px;
-  bottom: 2px;
+  right: 11px;
+  bottom: 11px;
+  width: 16px;
+  height: 16px;
+  background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 /* Сегмент-контрол режима (PBT-072 D3): общая рамка, активный сегмент — accent. */
@@ -201,9 +198,12 @@ body {
   transition-duration: 100ms;
 }
 
+/* Хэндл ресайза тайлинга — та же маска прототипа, что у каскада
+   (ревью PR#54): 16×16, к правому-нижнему углу с отступом 1px.
+   Только визуал ::after: геометрия и жесты RGL не тронуты. */
 .react-grid-item > .react-resizable-handle {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 0 0 var(--radius-md) 0;
 }
 
@@ -212,9 +212,26 @@ body {
   pointer-events: none;
 }
 
+.react-grid-item > .react-resizable-handle::before {
+  content: none;
+}
+
 .react-grid-item > .react-resizable-handle::after {
-  border-right: 2px solid var(--muted-foreground);
-  border-bottom: 2px solid var(--muted-foreground);
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+  -webkit-mask-position: calc(100% - 1px) calc(100% - 1px);
+  mask-position: calc(100% - 1px) calc(100% - 1px);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .widget-window {
@@ -231,10 +248,11 @@ body {
     border-color 150ms ease;
 }
 
-/* Активное окно — рамка акцентного цвета и «плавающая» тень (прототип,
-   spec app-theme; спека требует рамку + тень). */
+/* Активное окно — «плавающая» тень без акцентной рамки (ревью PR#54:
+   голубой аутлайн убран по решению владельца; спека app-theme будет
+   скорректирована при архивации change). */
 .widget-window--active {
-  border-color: var(--primary);
+  border-color: var(--border);
   box-shadow: var(--shadow-float);
 }
 
@@ -340,80 +358,15 @@ body {
   padding: 0 12px 12px;
 }
 
-.checklist__items {
-  list-style: none;
-  margin: 0 0 10px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 
-.checklist__item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
 
-.checklist__label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
 
-.checklist__text.is-done {
-  text-decoration: line-through;
-  color: var(--muted-foreground);
-}
 
-.checklist__edit {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  padding: 2px 6px;
-}
 
-.checklist__remove {
-  border: none;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 16px;
-  cursor: pointer;
-}
 
-.checklist__form {
-  display: flex;
-  gap: 8px;
-}
 
-.checklist__input {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--background);
-  color: inherit;
-}
 
-.checklist__add {
-  font: inherit;
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--secondary);
-  color: inherit;
-  cursor: pointer;
-}
 
-.checklist__hint {
-  margin: 0 0 10px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-}
 
 .selftest__result {
   margin: 0;
@@ -483,14 +436,6 @@ body {
   cursor: pointer;
 }
 
-.checklist__setting {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  margin-bottom: 8px;
-}
 
 /* Топ-бар каркаса (PBT-072 D1): хром-поверхность, лого, статусная зона. */
 .app-topbar {
@@ -1221,10 +1166,6 @@ body {
   border-color: var(--muted-foreground);
 }
 
-.checklist__title {
-  margin: 0 0 8px;
-  font-size: 14px;
-}
 
 .pane-document-missing {
   display: flex;

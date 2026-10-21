@@ -17,7 +17,7 @@ test.describe.serial('каталог документов', () => {
 
     const firstView = page.getByRole('group', { name: 'Чек-лист · Покупки' });
     await expect(firstView).toBeVisible();
-    await firstView.getByPlaceholder('Новый пункт').fill('Хлеб');
+    await firstView.getByPlaceholder('Новая задача…').fill('Хлеб');
     await firstView.getByRole('button', { name: 'Добавить' }).click();
     await expect(page.getByText('Сохранено')).toBeVisible();
 
@@ -131,7 +131,7 @@ test.describe.serial('каталог документов', () => {
   test('отмена подтверждения удаления ничего не меняет', async ({ page }) => {
     await page.goto('/');
     const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
-    await pane1.getByPlaceholder('Новый пункт').fill('Живой пункт');
+    await pane1.getByPlaceholder('Новая задача…').fill('Живой пункт');
     await pane1.getByRole('button', { name: 'Добавить' }).click();
     await expect(page.getByText('Сохранено')).toBeVisible();
 
