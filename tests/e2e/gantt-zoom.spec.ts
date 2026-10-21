@@ -96,10 +96,10 @@ async function createPlan(
 }
 
 /** Признак формата подписи нижней строки шкалы: дд.мм (days) или
- * диапазон недели «12–18 окт» (weeks). Шкала виртуализирована —
+ * диапазон недели «12.10–18.10» (weeks). Шкала виртуализирована —
  * конкретная клетка может отсутствовать в DOM, поэтому формат
  * проверяется паттерном по видимым подписям (PBT-076: «Недели» —
- * недельные колонки с подписями-диапазонами). */
+ * недельные колонки с подписями-диапазонами дд.мм). */
 async function scaleRowFormat(
   page: import('@playwright/test').Page,
 ): Promise<'dayMonth' | 'weekRange' | 'unknown'> {
@@ -107,7 +107,7 @@ async function scaleRowFormat(
     const scale = document.querySelector('.plan-gantt__chart .wx-scale');
     return scale ? (scale.textContent || '') : '';
   });
-  if (/\d{1,2}\s*[–-]\s*\d{1,2}\s+[а-яё]/i.test(text)) {
+  if (/\d{2}\.\d{2}\s*[–-]\s*\d{2}\.\d{2}/.test(text)) {
     return 'weekRange';
   }
   if (/\d{2}\.\d{2}/.test(text)) {

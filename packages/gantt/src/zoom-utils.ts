@@ -3,8 +3,9 @@
  * недельная семантика: «Недели» = одна колонка шкалы — одна неделя).
  *
  * «Дни»: дневные колонки, cellWidth 48, подпись дд.мм.
- * «Недели»: недельные колонки (unit 'week' SVAR), cellWidth ~100 на неделю
- * (≈14px/день), подпись-диапазон «12–18 окт» — решения владельца 2026-10-21.
+ * «Недели»: недельные колонки (unit 'week' SVAR), cellWidth 112 на неделю
+ * (16px/день), подпись-диапазон дд.мм–дд.мм «12.10–18.10» — решения
+ * владельца 2026-10-21 и 2026-10-22 (ревью PR#55).
  * Полосы задач и подсветка нерабочих дней сохраняют дневую точность в обоих
  * режимах: позиции считаются в пикселях дня (zoomPxPerDay).
  * Состояние экземпляра (settings), документ не меняется.
@@ -55,26 +56,17 @@ export function formatZoomDayLabel(date: Date): string {
   return `${day}.${month}`;
 }
 
-/** Локализованный короткий месяц ru-RU без точки («окт», «дек», «янв»). */
-function shortMonth(date: Date): string {
-  const month = date.toLocaleDateString('ru-RU', { month: 'short' });
-  return month.replace(/\.$/, '');
-}
-
 /**
- * Подпись недельной колонки шкалы — диапазон дат её дней
- * (решение владельца 2026-10-21): «12–18 окт» внутри месяца,
- * «28 окт – 3 ноя» на стыке (год — в строке месяцев над ней).
- * next — начало следующей клетки (контракт IScaleConfig.format);
+ * Подпись недельной колонки шкалы — диапазон дат её дней в формате
+ * дд.мм (ревью PR#55, решение владельца 2026-10-22): «12.10–18.10»,
+ * на стыке месяцев — «28.10–03.11»; единый числовой стиль с колонками
+ * таблицы. next — начало следующей клетки (контракт IScaleConfig.format);
  * последняя клетка шкалы без next добирает 6 дней по датам
  * (защита, не влияет на типичный случай).
  */
 export function formatWeekRangeLabel(start: Date, next?: Date): string {
   const end = next === undefined ? addDays(start, 6) : addDays(next, -1);
-  if (start.getMonth() === end.getMonth()) {
-    return `${start.getDate()}–${end.getDate()} ${shortMonth(start)}`;
-  }
-  return `${start.getDate()} ${shortMonth(start)} – ${end.getDate()} ${shortMonth(end)}`;
+  return `${formatZoomDayLabel(start)}–${formatZoomDayLabel(end)}`;
 }
 
 /** Дата через N календарных дней (локальная, без мутации исходной). */
