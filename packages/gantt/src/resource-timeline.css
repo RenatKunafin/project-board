@@ -130,10 +130,6 @@
   color: var(--foreground);
 }
 
-.resource-timeline .rct-dateHeader-primary {
-  background: var(--chrome);
-}
-
 .resource-timeline .rct-dateHeader {
   background-color: var(--surface-raised);
   border-bottom: 1px solid var(--border);
@@ -141,6 +137,12 @@
   color: var(--muted-foreground);
   font-family: var(--font-mono);
   font-size: 12px;
+}
+
+/* primary-строка после общей (равная специфичность, дефолт беты даёт
+   background-color: initial — порядок решает, по прототипу строка 167). */
+.resource-timeline .rct-dateHeader-primary {
+  background: var(--chrome);
 }
 
 /* Заголовок сайдбара (SidebarHeader «Исполнитель»). */
@@ -155,10 +157,14 @@
 
 /* ─── Сайдбар: аватары ресурсов (PBT-074, по прототипу groupRenderer) ──── */
 
-.resource-timeline .rct-sidebar-row-odd,
-.resource-timeline .rct-sidebar-row-even,
-.resource-timeline .rct-hl-even,
-.resource-timeline .rct-hl-odd {
+/* Фон строк — одним цветом surface, зебра снимается. Усиление селекторов:
+   дефолты беты для hl-odd (0,3,0) и sidebar-row-odd (0,4,0:
+   `.rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd`) специфичнее
+   коротких — без усиления строки остаются в дефолтной зебре #0000000d. */
+.resource-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd,
+.resource-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd {
   background: var(--surface);
 }
 
@@ -204,6 +210,22 @@
 .resource-timeline .rct-horizontal-lines .rct-hl-odd,
 .resource-timeline .rct-calendar-header {
   border-color: var(--border);
+}
+
+/* Усиление (по прототипу, строки 171/183–190): дефолтный селектор беты
+   `.react-calendar-timeline .rct-vertical-lines .rct-vl` специфичнее
+   (0,3,0) — без усиления вертикальные линии остаются дефолтным светлым
+   #bbb и выглядят ярко на тёмной теме (ревью PR#52); z-index 1 уводит
+   линии под строки. */
+.resource-timeline .rct-vertical-lines .rct-vl,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd,
+.resource-timeline .rct-sidebar .rct-sidebar-row {
+  border-color: var(--border);
+}
+
+.resource-timeline .rct-vertical-lines .rct-vl {
+  z-index: 1;
 }
 
 /* Линия курсора при жесте — акцент (по прототипу). */
