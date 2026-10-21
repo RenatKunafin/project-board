@@ -46,14 +46,15 @@ test('локальная настройка экземпляра изолиро�
   await pane1.getByRole('checkbox', { name: 'Выполненный пункт' }).check();
 
   await pane1.getByRole('button', { name: 'Скрыть выполненные' }).click();
+  // В нажатом состоянии кнопка зовёт «Показать выполненные» (ревью PR#54).
   await expect(
-    pane1.getByRole('button', { name: 'Скрыть выполненные' }),
+    pane1.getByRole('button', { name: 'Показать выполненные' }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expect(pane1.getByText('Выполненный пункт')).toHaveCount(0);
   await expect(pane2.getByText('Выполненный пункт')).toBeVisible();
 
   await pane1
-    .getByRole('button', { name: 'Скрыть выполненные' })
+    .getByRole('button', { name: 'Показать выполненные' })
     .click();
   await expect(pane1.getByText('Выполненный пункт')).toBeVisible();
 });
@@ -304,17 +305,22 @@ test('скрытие выполненных переживает reload (PBT-075
   );
 
   // Настройка — persisted-состояние экземпляра: до PBT-075 флаг был
-  // in-memory и reload терял его.
+  // in-memory и reload терял его. В нажатом состоянии кнопка зовёт
+  // «Показать выполненные» (ревью PR#54).
   await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  const toggleOn = pane.getByRole('button', {
+    name: 'Показать выполненные',
+  });
+  await expect(toggleOn).toHaveAttribute('aria-pressed', 'true');
   await expect(pane.getByText('Выполненный пункт')).toHaveCount(0);
   await expect(pane.getByText('Все пункты выполнены.')).toBeVisible();
 
   await page.waitForTimeout(800); // дебаунс снапшота настроек (PBT-024)
   await page.reload();
   const paneAfter = page.getByLabel('Экземпляр 1 · Список 1');
+  // После reload флаг включён: кнопка в нажатом состоянии — «Показать…».
   const toggleAfter = paneAfter.getByRole('button', {
-    name: 'Скрыть выполненные',
+    name: 'Показать выполненные',
   });
   await expect(toggleAfter).toHaveAttribute('aria-pressed', 'true');
   await expect(paneAfter.getByText('Выполненный пункт')).toHaveCount(0);

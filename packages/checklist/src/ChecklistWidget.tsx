@@ -121,7 +121,7 @@ export default function ChecklistWidget({
           aria-pressed={hideDone}
           onClick={toggleHideDone}
         >
-          Скрыть выполненные
+          {hideDone ? 'Показать выполненные' : 'Скрыть выполненные'}
         </button>
       </div>
 

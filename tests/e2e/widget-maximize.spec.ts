@@ -24,6 +24,18 @@ test('разворот занимает вкладку и скрывает со�
   // Черновик соседа — свидетельство жизни состояния (keep-mounted).
   await pane2.getByPlaceholder('Новая задача…').fill('Черновик соседа');
 
+  // Фокус поля соседа автоскроллит канвас вкладки (.instances): с шапкой
+  // чек-листа (PBT-075) контент стал выше и браузер добавил 21px скролла —
+  // до-замер ловил прокрутку, а возврат из разворота (PBT-071 D4)
+  // нормализует scrollTop в 0, и координаты сравнивались в разных системах
+  // (91 против 112). Оба замера — при scrollTop=0 (прецедент правил
+  // флаки-фиксов AGENTS.md: корень → фикс с комментарием).
+  const normalizeCanvasScroll = () =>
+    page.evaluate(() => {
+      document.querySelector('.instances')?.scrollTo(0, 0);
+    });
+  await normalizeCanvasScroll();
+
   const tabpanelBox = await page
     .getByRole('tabpanel')
     .boundingBox();
@@ -53,6 +65,7 @@ test('разворот занимает вкладку и скрывает со�
 
   await expect(layer).toBeHidden();
   expect(await isInMaximizeLayer(pane1)).toBe(false);
+  await normalizeCanvasScroll();
   const restoredBox = await pane1.boundingBox();
   expect(Math.round(restoredBox!.x)).toBe(Math.round(pane1Box!.x));
   expect(Math.round(restoredBox!.y)).toBe(Math.round(pane1Box!.y));

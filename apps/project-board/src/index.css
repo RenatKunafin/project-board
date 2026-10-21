@@ -201,9 +201,13 @@ body {
   transition-duration: 100ms;
 }
 
+/* Хэндл ресайза тайлинга — два диагональных штриха по прототипу
+   (WidgetFrame.tsx: svg «M9 3 L3 9 M9 6 L6 9», stroke muted/70) — как
+   в каскаде (PBT-070). Только визуал ::before/::after: геометрия и
+   поведение жестов RGL не тронуты (прецедент PBT-068/070). */
 .react-grid-item > .react-resizable-handle {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 0 0 var(--radius-md) 0;
 }
 
@@ -212,9 +216,26 @@ body {
   pointer-events: none;
 }
 
+.react-grid-item > .react-resizable-handle::before,
 .react-grid-item > .react-resizable-handle::after {
-  border-right: 2px solid var(--muted-foreground);
-  border-bottom: 2px solid var(--muted-foreground);
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  border: none;
+  border-radius: 1px;
+  background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  transform: rotate(-45deg);
+}
+
+.react-grid-item > .react-resizable-handle::before {
+  right: 2px;
+  bottom: 5px;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  right: 5px;
+  bottom: 2px;
 }
 
 .widget-window {
