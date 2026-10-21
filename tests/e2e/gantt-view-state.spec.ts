@@ -253,7 +253,7 @@ test('ресурсный вид: масштаб и фильтры экземпл
     label: 'QA2',
   });
   const sidebar1 = await rt1
-    .locator('.rct-sidebar-row')
+    .locator('.rct-sidebar-row .resource-timeline__group-name')
     .evaluateAll((nodes) => nodes.map((el) => el.textContent?.trim()));
   expect(sidebar1).toEqual(['QA2']);
 
@@ -282,7 +282,7 @@ test('ресурсный вид: масштаб и фильтры экземпл
   expect(rtIdsAfter.sort()).toEqual([...rtIds2].sort());
   const rt1After = pane(page, rtIds[0]);
   const rt2After = pane(page, rtIds2.find((id) => id !== rtIds[0]) as string);
-  await expect(rt1After.locator('.rct-sidebar-row')).toHaveText(['QA2']);
+  await expect(rt1After.locator('.rct-sidebar-row .resource-timeline__group-name')).toHaveText(['QA2']);
   await expect(rt2After.locator('[data-rt-filter-query]')).toHaveValue(
     'нет-такой',
   );

@@ -56,13 +56,20 @@
  * Спец. токены производных представлений: имена прежние (используются
  * стилями пакетов), значения — производные семантических токенов по
  * прототипу (.demo-weekend/.demo-holiday, resource-bar-absence/conflict).
- * Тонкая настройка тем SVAR/RCT — PBT-073/PBT-074.
+ * Тонкая настройка тем SVAR/RCT — PBT-073/PBT-074: ресурсный вид (PBT-074)
+ * использует собственные rt-токены полос и слоя дней (полупрозрачные,
+ * по прототипу .resource-bar/.resource-day), значения расходятся с
+ * проектным Гантом (--color-gantt-*) сознательно.
  */
 :root {
   --color-gantt-weekend: var(--muted);
   --color-gantt-holiday: color-mix(in oklch, var(--warning) 15%, var(--surface));
+  --color-rt-task-bg: color-mix(in oklch, var(--primary) 35%, var(--surface));
   --color-rt-task-border: var(--primary);
   --color-rt-unavailability-bg: color-mix(in oklch, var(--warning) 14%, var(--surface));
   --color-rt-unavailability-border: var(--warning);
   --color-rt-conflict-bg: color-mix(in oklch, var(--destructive) 18%, var(--surface));
+  --color-rt-conflict-border: var(--destructive);
+  --color-rt-weekend: color-mix(in oklch, var(--muted) 60%, transparent);
+  --color-rt-holiday: color-mix(in oklch, var(--warning) 12%, transparent);
 }

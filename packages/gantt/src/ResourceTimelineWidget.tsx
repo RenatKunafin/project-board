@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Timeline from 'react-calendar-timeline';
-import type { TimelineKeys } from 'react-calendar-timeline';
+import type { DateHeaderProps, TimelineKeys } from 'react-calendar-timeline';
+import { DateHeader, SidebarHeader, TimelineHeaders } from 'react-calendar-timeline';
+import { Search, ZoomIn, ZoomOut } from 'lucide-react';
 import 'react-calendar-timeline/dist/style.css';
 import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
 import {
@@ -57,6 +59,69 @@ function snapToDayIso(ms: number): string {
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
 }
+
+/**
+ * Инициалы ресурса для аватара сайдбара (PBT-074, по прототипу
+ * groupRenderer): первые буквы слов названия, точки отбрасываются
+ * («Иванов И.И.» → «ИИ»). Презентационная логика, без доменных правил.
+ */
+function resourceInitials(title: string): string {
+  return title
+    .split(' ')
+    .filter((word) => word.length > 0)
+    .map((word) => word[0])
+    .join('')
+    .replace(/\./g, '');
+}
+
+/** Строка дорожки сайдбара: аватар-инициалы + имя ресурса (PBT-074). */
+function renderGroup({ group }: { group: TimelineGroup }) {
+  return (
+    <div className="resource-timeline__group" data-rt-group={group.id}>
+      <span className="resource-timeline__avatar" aria-hidden="true">
+        {resourceInitials(group.title)}
+      </span>
+      <span className="resource-timeline__group-name">{group.title}</span>
+    </div>
+  );
+}
+
+/**
+ * Подписи шапки шкалы (PBT-074): дефолтные форматы беты латинские
+ * («Mo 5», «August 2026») — задаю ru-RU явно. Primary-строка — «октябрь
+ * 2026 г.» (годовая колонка в узких окнах — только год); вторичная —
+ * число дня, неделя — дд.мм (бета укрупняет единицу при узкой ширине,
+ * наблюдение PBT-047).
+ */
+type HeaderLabelFormat = NonNullable<DateHeaderProps<unknown>['labelFormat']>;
+
+const primaryHeaderLabelFormat: HeaderLabelFormat = ([date], unit) =>
+  date.toDate().toLocaleDateString(
+    'ru-RU',
+    unit === 'year'
+      ? { year: 'numeric' }
+      : { month: 'long', year: 'numeric' },
+  );
+
+const dayHeaderLabelFormat: HeaderLabelFormat = ([date], unit) => {
+  const value = date.toDate();
+  if (unit === 'day') {
+    return String(value.getDate());
+  }
+  if (unit === 'week') {
+    return value.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+  }
+  if (unit === 'month') {
+    return value.toLocaleDateString('ru-RU', {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+  return value.toLocaleDateString('ru-RU', { year: 'numeric' });
+};
 
 interface PendingGesture {
   readonly eventType: 'move' | 'resize';
@@ -640,16 +705,19 @@ export default function ResourceTimelineWidget({
       data-plan-title={document.title}
     >
       <div className="resource-timeline__toolbar">
-        <input
-          type="search"
-          className="resource-timeline__filter-input"
-          data-rt-filter-query
-          placeholder="Фильтр: задача"
-          value={filterQuery}
-          onChange={(event) =>
-            applyFilters(event.target.value, filterResourceId)
-          }
-        />
+        <div className="resource-timeline__filter-field">
+          <Search aria-hidden="true" />
+          <input
+            type="search"
+            className="resource-timeline__filter-input"
+            data-rt-filter-query
+            placeholder="Фильтр: задача"
+            value={filterQuery}
+            onChange={(event) =>
+              applyFilters(event.target.value, filterResourceId)
+            }
+          />
+        </div>
         <select
           className="resource-timeline__filter-select"
           data-rt-filter-resource
@@ -669,19 +737,21 @@ export default function ResourceTimelineWidget({
           type="button"
           className="resource-timeline__zoom-button"
           data-rt-zoom-in
+          aria-label="Крупнее"
           title="Крупнее"
           onClick={() => zoomBy(0.6)}
         >
-          +
+          <ZoomIn aria-hidden="true" />
         </button>
         <button
           type="button"
           className="resource-timeline__zoom-button"
           data-rt-zoom-out
+          aria-label="Мельче"
           title="Мельче"
           onClick={() => zoomBy(1.6)}
         >
-          −
+          <ZoomOut aria-hidden="true" />
         </button>
       </div>
       {visible === false ? (
@@ -718,8 +788,8 @@ export default function ResourceTimelineWidget({
             onTimeChange={handleTimeChange}
             sidebarWidth={150}
             rightSidebarWidth={0}
-            lineHeight={34}
-            itemHeightRatio={0.72}
+            lineHeight={42}
+            itemHeightRatio={0.7}
             minZoom={7 * DAY_MS}
             maxZoom={730 * DAY_MS}
             timeSteps={{
@@ -739,9 +809,75 @@ export default function ResourceTimelineWidget({
             onItemDoubleClick={onItemDoubleClick}
             scrollRef={setScrollHost}
             onBoundsChange={(start, end) => setBounds({ start, end })}
-          />
+            groupRenderer={renderGroup}
+          >
+            {/* Шапки шкалы по прототипу (PBT-074): primaryHeader — месяц
+                год (chrome), вторичная — дни (mono из css, D2). */}
+            <TimelineHeaders>
+              <SidebarHeader>
+                {({ getRootProps }) => (
+                  <div
+                    {...getRootProps()}
+                    className="resource-timeline__sidebar-header"
+                  >
+                    Исполнитель
+                  </div>
+                )}
+              </SidebarHeader>
+              <DateHeader
+                unit="primaryHeader"
+                height={28}
+                labelFormat={primaryHeaderLabelFormat}
+              />
+              <DateHeader height={28} labelFormat={dayHeaderLabelFormat} />
+            </TimelineHeaders>
+          </Timeline>
         </div>
       )}
+      {visible !== false &&
+        !(filterActive && items.length === 0) &&
+        groups.length > 0 && (
+          // Легенда (PBT-074): свотчи полос + mono-диапазон видимой
+          // области; производное отображения — записей не создаёт.
+          <div className="resource-timeline__legend" data-rt-legend>
+            <span className="resource-timeline__legend-item">
+              <span
+                className="resource-timeline__swatch resource-timeline__swatch--task"
+                aria-hidden="true"
+              />
+              Задачи
+            </span>
+            <span className="resource-timeline__legend-item">
+              <span
+                className="resource-timeline__swatch resource-timeline__swatch--unavailability"
+                aria-hidden="true"
+              />
+              Отсутствия
+            </span>
+            <span className="resource-timeline__legend-item">
+              <span
+                className="resource-timeline__swatch resource-timeline__swatch--conflict"
+                aria-hidden="true"
+              />
+              Конфликты
+            </span>
+            <span
+              className="resource-timeline__legend-range"
+              data-rt-visible-range
+            >
+              {timelineDayIso(effectiveVisible.start)} —{' '}
+              {timelineDayIso(effectiveVisible.end)}
+            </span>
+          </div>
+        )}
+      {/* Строка состояния виджета (PBT-074, паттерн PBT-073): название
+          документа; без role=status — в ресурсном виде нет действий,
+          порождающих статусы. */}
+      <footer className="resource-timeline__footer">
+        <span className="resource-timeline__footer-title">
+          {document.title}
+        </span>
+      </footer>
       {editor !== undefined && editor.mode === 'edit' && plan !== undefined && (
         <TaskEditorDialog
           plan={plan}
