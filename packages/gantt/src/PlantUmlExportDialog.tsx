@@ -65,7 +65,12 @@ export default function PlantUmlExportDialog({
         aria-label="Экспорт PlantUML"
       >
         <header className="plantuml-export__head">
-          <h3 className="plantuml-export__title">Экспорт PlantUML</h3>
+          <div>
+            <h3 className="plantuml-export__title">Экспорт PlantUML</h3>
+            <p className="plantuml-export__description">
+              Диаграмма для публикации: полный план без влияния фильтров.
+            </p>
+          </div>
           <button
             type="button"
             className="plantuml-export__close"

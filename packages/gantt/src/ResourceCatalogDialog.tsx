@@ -253,7 +253,12 @@ export default function ResourceCatalogDialog({
         aria-label="Настройки плана"
       >
         <header className="task-editor__head">
-          <h3 className="task-editor__title">Справочники плана</h3>
+          <div>
+            <h3 className="task-editor__title">Справочники плана</h3>
+            <p className="task-editor__description">
+              Ресурсы, типы работ, отпуска и календарь этого плана.
+            </p>
+          </div>
           <button
             type="button"
             className="task-editor__close"
