@@ -1,10 +1,11 @@
-import type { ComponentType, ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentType, ReactNode } from 'react';
 import { Rnd } from 'react-rnd';
 import type { WidgetSizeConstraints } from '@project-board/widget-sdk';
 import {
   CASCADE_COLLAPSED_HEIGHT,
   areaOf,
   cascadeSizeBounds,
+  clampCascadeArea,
   depthOf,
   orderFrom,
   type CascadeArea,
@@ -81,6 +82,44 @@ export function CascadeLayout({
   const instanceIds = new Set(items.map((item) => item.instanceId));
   const order = orderFrom(state.order, instanceIds);
 
+  // Размер канваса вкладки (PBT-076, design D3): ResizeObserver —
+  // клампинг работает при восстановлении сохранённой геометрии
+  // (записанной на большем экране) и при сжатии канваса вживую.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
+  useEffect(() => {
+    const element = containerRef.current;
+    if (
+      element === null ||
+      typeof window === 'undefined' ||
+      typeof window.ResizeObserver !== 'function'
+    ) {
+      return;
+    }
+    const observer = new window.ResizeObserver(() => {
+      setCanvasSize({
+        width: element.clientWidth,
+        height: element.clientHeight,
+      });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  /** Клампинг при фиксации жеста: в раскладку (и БД) — валидная геометрия. */
+  const clampFor = (
+    constraints: WidgetSizeConstraints,
+    raw: CascadeArea,
+  ): CascadeArea => {
+    const canvas = canvasSizeRef.current;
+    return canvas === null ? raw : clampCascadeArea(raw, canvas, constraints);
+  };
+
   const applyArea = (instanceId: string, area: CascadeArea): void => {
     onStateChange({
       areas: { ...state.areas, [instanceId]: area },
@@ -89,14 +128,21 @@ export function CascadeLayout({
   };
 
   return (
-    <div className="cascade-layout">
+    <div className="cascade-layout" ref={containerRef}>
       {items.map((item, index) => {
-        const area: CascadeArea = areaOf(
+        const storedArea = areaOf(
           item.instanceId,
           item.constraints,
           index,
           state,
         );
+        // Отображение через клампинг: восстановленные и «убежавшие»
+        // за край области показываются внутри канваса (запись в БД —
+        // только пользовательской операцией, см. clampFor).
+        const area =
+          canvasSize === null
+            ? storedArea
+            : clampCascadeArea(storedArea, canvasSize, item.constraints);
         const bounds = cascadeSizeBounds(item.constraints);
         const depth = depthOf(order, item.instanceId);
         return (
@@ -115,19 +161,25 @@ export function CascadeLayout({
             resizeHandleClasses={RESIZE_HANDLE_CLASSES}
             style={{ zIndex: depth }}
             onDragStop={(_event, data) => {
-              applyArea(item.instanceId, {
-                ...area,
-                x: data.x,
-                y: data.y,
-              });
+              applyArea(
+                item.instanceId,
+                clampFor(item.constraints, {
+                  ...area,
+                  x: data.x,
+                  y: data.y,
+                }),
+              );
             }}
             onResizeStop={(_event, _direction, ref, _delta, position) => {
-              applyArea(item.instanceId, {
-                x: position.x,
-                y: position.y,
-                width: ref.offsetWidth,
-                height: ref.offsetHeight,
-              });
+              applyArea(
+                item.instanceId,
+                clampFor(item.constraints, {
+                  x: position.x,
+                  y: position.y,
+                  width: ref.offsetWidth,
+                  height: ref.offsetHeight,
+                }),
+              );
             }}
           >
             {item.node}

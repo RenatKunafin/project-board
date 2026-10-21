@@ -175,3 +175,122 @@ test('каскад: скриншот перекрытых окон', async ({ pa
     fullPage: false,
   });
 });
+
+test('каскад: resize за уголок не уводит окно за край канваса (PBT-076)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await switchToCascade(page);
+
+  const label = 'Экземпляр 1 · Список 1';
+  const canvas = page.locator('.cascade-layout');
+  const pane = page.getByRole('group', { name: label });
+
+  // Переносим окно к правому краю канваса (drag уже ограничен bounds).
+  const winBox = await cascadeWindowBox(page, label);
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) {
+    throw new Error('Нет канваса');
+  }
+  const dx = canvasBox.width - winBox.width - winBox.x + 60;
+  await page.mouse.move(winBox.x + 40, winBox.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(winBox.x + 40 + dx, winBox.y + 10, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+
+  // Тянем уголок ресайза вправо за границу канваса (resize bounds'
+  // не ограничивает — клампинг PBT-076, design D3).
+  const handle = page
+    .locator('.cascade-layout__window')
+    .filter({ has: pane })
+    .locator('.cascade-resize-se');
+  const handleBox = await handle.boundingBox();
+  if (!handleBox) {
+    throw new Error('Нет уголка ресайза');
+  }
+  await page.mouse.move(handleBox.x + 8, handleBox.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(handleBox.x + 700, handleBox.y + 8, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+
+  const after = await cascadeWindowBox(page, label);
+  const afterCanvas = await canvas.boundingBox();
+  if (!afterCanvas) {
+    throw new Error('Нет канваса после ресайза');
+  }
+  expect(after.x + after.width).toBeLessThanOrEqual(
+    afterCanvas.x + afterCanvas.width + 1,
+  );
+  // Окно остаётся управляемым: заголовок и кнопки достижимы.
+  await expect(
+    page
+      .getByRole('group', { name: label })
+      .getByRole('button', { name: /Закрыть/ }),
+  ).toBeVisible();
+});
+
+test('каскад: сжатие канваса и восстановление ограничивают окно в области (PBT-076)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto('/');
+  await switchToCascade(page);
+
+  const label = 'Экземпляр 1 · Список 1';
+  const canvas = page.locator('.cascade-layout');
+
+  // Окно у правого края широкого вьюпорта.
+  const winBox = await cascadeWindowBox(page, label);
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) {
+    throw new Error('Нет канваса');
+  }
+  const dx = canvasBox.width - winBox.width - winBox.x + 40;
+  await page.mouse.move(winBox.x + 40, winBox.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(winBox.x + 40 + dx, winBox.y + 10, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(600);
+
+  // Сжимаем вьюпорт: сохранённая геометрия оказывается за краем —
+  // отображение переклампывается (ResizeObserver, design D3.2).
+  await page.setViewportSize({ width: 820, height: 600 });
+  await page.waitForTimeout(500);
+  let box = await cascadeWindowBox(page, label);
+  let bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error('Нет канваса после сжатия');
+  }
+  expect(box.x + box.width).toBeLessThanOrEqual(
+    bounds.x + bounds.width + 1,
+  );
+  expect(box.y + box.height).toBeLessThanOrEqual(
+    bounds.y + bounds.height + 1,
+  );
+
+  // Перезапуск: восстановление сохранённой геометрии из БД тоже
+  // ограничивается текущей областью вкладки.
+  await page.waitForTimeout(700);
+  await page.reload();
+  const restored = page.getByRole('group', { name: label });
+  await expect(restored).toBeVisible();
+  await page.waitForTimeout(600);
+  box = await cascadeWindowBox(page, label);
+  bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error('Нет канваса после перезапуска');
+  }
+  expect(box.x + box.width).toBeLessThanOrEqual(
+    bounds.x + bounds.width + 1,
+  );
+  expect(box.y + box.height).toBeLessThanOrEqual(
+    bounds.y + bounds.height + 1,
+  );
+  // Заголовок и кнопки рамки достижимы.
+  await expect(
+    restored.getByRole('button', { name: /Закрыть/ }),
+  ).toBeVisible();
+});
