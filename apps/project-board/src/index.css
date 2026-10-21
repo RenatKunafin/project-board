@@ -115,15 +115,11 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* Уголок resize каскада — ТОЧНО по прототипу (PBT-070 D3 → уточнение
-   ревью PR#54): svg viewBox 10×10 с путями «M9 3 L3 9» (длинная
-   диагональ) и «M9 6 L6 9» (короткая), stroke-width 1.2. Геометрия —
-   SVG-маской (data-URI без литеральных цветов — красит токен 70%). */
-.cascade-resize-se {
-  width: 16px;
-  height: 16px;
-}
-
+/* Уголок resize каскада — геометрия прототипа (PBT-070 D3 → ревью
+   PR#54): путь «M9 3 L3 9 M9 6 L6 9», stroke-width 1.2/10. Хэндл
+   react-rnd (inline: 20×20, right/bottom −10px) центрирован на углу
+   и наполовину ЗА окном — маска привязана к углу ОКНА: right/bottom
+   11px от хэндла (10px вылета + 1px зазор), размер 16×16. */
 .cascade-resize-se::before {
   content: none;
 }
@@ -131,15 +127,13 @@ body {
 .cascade-resize-se::after {
   content: '';
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  right: 11px;
+  bottom: 11px;
+  width: 16px;
+  height: 16px;
   background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-0.625 -0.625 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-0.625 -0.625 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
-  /* Штрихи сдвинуты на 1px вверх-влево от правого/нижнего краёв
-     уголка (ревью PR#54): размер прежний, окно viewBox смещено
-     на −0.625 юнита = −1px при 16px). */
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
@@ -204,10 +198,9 @@ body {
   transition-duration: 100ms;
 }
 
-/* Хэндл ресайза тайлинга — та же SVG-маска прототипа, что и у каскада
-   (ревью PR#54, п.3): пути «M9 3 L3 9 M9 6 L6 9», stroke 1.2/10,
-   muted-foreground/70. Только визуал ::after: геометрия и поведение
-   жестов RGL не тронуты (прецедент PBT-068/070). */
+/* Хэндл ресайза тайлинга — та же маска прототипа, что у каскада
+   (ревью PR#54): 16×16, к правому-нижнему углу с отступом 1px.
+   Только визуал ::after: геометрия и жесты RGL не тронуты. */
 .react-grid-item > .react-resizable-handle {
   width: 16px;
   height: 16px;
@@ -231,13 +224,12 @@ body {
   height: 100%;
   border: none;
   background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-0.625 -0.625 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-0.625 -0.625 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
-  /* Штрихи сдвинуты на 1px вверх-влево от правого/нижнего краёв
-     уголка (ревью PR#54): размер прежний, окно viewBox смещено
-     на −0.625 юнита = −1px при 16px). */
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+  -webkit-mask-position: calc(100% - 1px) calc(100% - 1px);
+  mask-position: calc(100% - 1px) calc(100% - 1px);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }
@@ -256,10 +248,11 @@ body {
     border-color 150ms ease;
 }
 
-/* Активное окно — рамка акцентного цвета и «плавающая» тень (прототип,
-   spec app-theme; спека требует рамку + тень). */
+/* Активное окно — «плавающая» тень без акцентной рамки (ревью PR#54:
+   голубой аутлайн убран по решению владельца; спека app-theme будет
+   скорректирована при архивации change). */
 .widget-window--active {
-  border-color: var(--primary);
+  border-color: var(--border);
   box-shadow: var(--shadow-float);
 }
 
