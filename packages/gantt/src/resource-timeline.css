@@ -211,6 +211,19 @@
   background: var(--primary);
 }
 
+/* Канва вне полос — курсор-рука (ручья проверка владельца PR#52):
+   канва RCT панорамируется колесом; полосы имеют собственный курсор
+   из инлайн-стилей беты (pointer/move) и приоритетнее. */
+.resource-timeline .rct-scroll,
+.resource-timeline .rct-canvas {
+  cursor: grab;
+}
+
+.resource-timeline .rct-scroll:active,
+.resource-timeline .rct-canvas:active {
+  cursor: grabbing;
+}
+
 /* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
    нерабочих дней задаётся календарём плана собственным слоем дней
    (rt-day-*), а не днём недели и не линиями RCT (календарь настраиваемый,

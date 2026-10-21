@@ -510,23 +510,33 @@ export default function ResourceTimelineWidget({
   // ─── Слой нерабочих дней (уточнение владельца 2026-10-15) ───────────────  // verticalLineClassNamesForTime зависит от единицы шкалы беты: в узких
   // окнах RCT укрупняет колонки до недели/месяца, и подсветка отдельных
   // дней пропадает. Собственный слой рисует колонки дней в canvas-
-  // координатах (те же, что у элементов) независимо от единицы: canvas-
-  // диапазон даёт onBoundsChange, ширину канвы — scrollWidth хоста.
+  // координатах (те же, что у элементов) независимо от единицы.
+  //
+  // Ревью PR#52 (замечание «окраска при зуме»): onBoundsChange беты врёт
+  // по end (canvasStart + 3×visibleSpan — а фактическая ширина канвы
+  // зависит от clientWidth), и слой растягивался при зуме. Масштаб теперь
+  // берём фактический: видимая ширина ↔ видимый диапазон; начало канвы —
+  // canvasTimeStart из onBoundsChange (гистерезис беты меняет только
+  // видимую область, канва стабильна), до первого события — формула беты
+  // (canvasStart = visibleStart − span, buffer 3).
   const [scrollHost, setScrollHost] = useState<HTMLDivElement | null>(null);
-  const [bounds, setBounds] = useState<
-    { readonly start: number; readonly end: number } | undefined
-  >(undefined);
-  // onBoundsChange беты не вызывается при первом монтировании (только при
-  // изменении канвы) — стартовый диапазон берётся из default-шкалы.
+  const [canvasTimeStart, setCanvasTimeStart] = useState<number | undefined>(
+    undefined,
+  );
+  // Ширина хоста — через ResizeObserver: clientWidth меняется при
+  // развороте/ресайзе окна, а useMemo слоя не зависит от DOM-узла сам
+  // (замороженный clientWidth давал растянутые колонки — ревью PR#52).
+  const [hostWidth, setHostWidth] = useState(0);
   useEffect(() => {
-    setBounds((previous) =>
-      previous === undefined ||
-      previous.start > range.start ||
-      previous.end < range.end
-        ? { start: range.start, end: range.end }
-        : previous,
-    );
-  }, [range]);
+    if (!scrollHost) {
+      return;
+    }
+    const update = () => setHostWidth(scrollHost.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(scrollHost);
+    return () => observer.disconnect();
+  }, [scrollHost]);
 
   // ─── Масштаб: контролируемая видимая область (PBT-049) ──────────────────
   // Восстановление — из настроек экземпляра; изменение (кнопки, колесо,
@@ -592,18 +602,20 @@ export default function ResourceTimelineWidget({
   const effectiveVisible = visibleRange ?? { start: range.start, end: range.end };
 
   const dayLayer = useMemo(() => {
-    if (!scrollHost || !bounds || plan === undefined) {
+    if (!scrollHost || hostWidth === 0 || plan === undefined) {
       return null;
     }
-    const canvasWidth = scrollHost.scrollWidth;
-    const spanMs = bounds.end - bounds.start;
-    if (canvasWidth <= 0 || spanMs <= 0) {
+    const visibleSpan = effectiveVisible.end - effectiveVisible.start;
+    const pxPerMs = hostWidth / visibleSpan;
+    const canvasStart =
+      canvasTimeStart ?? effectiveVisible.start - visibleSpan;
+    if (!(pxPerMs > 0)) {
       return null;
     }
-    const pxPerMs = canvasWidth / spanMs;
-    // Первый день канвы: локальная полночь дня canvasTimeStart.
-    const firstDay = new Date(bounds.start);
-    firstDay.setHours(0, 0, 0, 0);
+    // Канва шире видимой области (буфер беты ~2–3 span): колонки — на
+    // всю канву, чтобы подсветка не обрывалась при скролле внутри буфера.
+    const canvasEnd =
+      canvasStart + scrollHost.scrollWidth / pxPerMs + DAY_MS;
     const columns: Array<{
       readonly key: number;
       readonly iso: string;
@@ -612,8 +624,8 @@ export default function ResourceTimelineWidget({
       readonly kind: 'weekend' | 'holiday';
     }> = [];
     for (
-      let dayMs = firstDay.getTime();
-      dayMs < bounds.end;
+      let dayMs = new Date(canvasStart).setHours(0, 0, 0, 0);
+      dayMs < canvasEnd;
       dayMs += DAY_MS
     ) {
       const iso = timelineDayIso(dayMs);
@@ -622,7 +634,7 @@ export default function ResourceTimelineWidget({
         columns.push({
           key: dayMs,
           iso,
-          left: (dayMs - bounds.start) * pxPerMs,
+          left: (dayMs - canvasStart) * pxPerMs,
           width: DAY_MS * pxPerMs + 0.5, // перекрытие стыков округления
           kind,
         });
@@ -650,8 +662,8 @@ export default function ResourceTimelineWidget({
       </div>,
       canvas,
     );
-    // Ревизия в deps: после ремоунта чарта портал переносится в новый DOM.
-  }, [scrollHost, bounds, plan, document?.revision]);
+    // Ревизия — после ремоунта чарта портал переносится в новый DOM.
+  }, [scrollHost, hostWidth, canvasTimeStart, effectiveVisible, plan, document?.revision]);
 
   if (!documentId || !documentService) {
     return (
@@ -808,8 +820,9 @@ export default function ResourceTimelineWidget({
             onItemDrag={onItemDrag}
             onItemDoubleClick={onItemDoubleClick}
             scrollRef={setScrollHost}
-            onBoundsChange={(start, end) => setBounds({ start, end })}
+            onBoundsChange={(start) => setCanvasTimeStart(start)}
             groupRenderer={renderGroup}
+            dragSnap={DAY_MS}
           >
             {/* Шапки шкалы по прототипу (PBT-074): primaryHeader — месяц
                 год (chrome), вторичная — дни (mono из css, D2). */}
