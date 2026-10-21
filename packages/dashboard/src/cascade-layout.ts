@@ -85,6 +85,48 @@ export function cascadeSizeBounds(constraints: WidgetSizeConstraints): {
   };
 }
 
+/**
+ * Клампинг области окна в границы канваса вкладки (PBT-076, design D3):
+ * окно целиком остаётся в области вкладки — заголовок, кнопки рамки и
+ * ручка ресайза достижимы. Размер ограничен и типом виджета, и канвасом;
+ * если минимум типа не влезает в канвас — окно прижимается к 0,0 с
+ * минимальным размером (достижимость важнее вписывания). Применяется
+ * на отображение (включая восстановление из БД и сжатие канваса) и на
+ * фиксацию жестов (в БД попадает валидная геометрия).
+ */
+export function clampCascadeArea(
+  area: CascadeArea,
+  canvas: { width: number; height: number },
+  constraints: WidgetSizeConstraints,
+): CascadeArea {
+  const minWidth = constraints.minWidth * CASCADE_CELL.width;
+  const minHeight = constraints.minHeight * CASCADE_CELL.height;
+  const maxWidth =
+    constraints.maxWidth === undefined
+      ? undefined
+      : constraints.maxWidth * CASCADE_CELL.width;
+  const maxHeight =
+    constraints.maxHeight === undefined
+      ? undefined
+      : constraints.maxHeight * CASCADE_CELL.height;
+  const width = Math.min(
+    clampToConstraints(area.width, minWidth, maxWidth),
+    Math.max(minWidth, canvas.width),
+  );
+  const height = Math.min(
+    clampToConstraints(area.height, minHeight, maxHeight),
+    Math.max(minHeight, canvas.height),
+  );
+  const x = Math.min(Math.max(0, area.x), Math.max(0, canvas.width - width));
+  const y = Math.min(Math.max(0, area.y), Math.max(0, canvas.height - height));
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    width: Math.round(width),
+    height: Math.round(height),
+  };
+}
+
 /** Область окна из состояния; для нового — стартовая по типу и стеку. */
 export function areaOf(
   instanceId: string,

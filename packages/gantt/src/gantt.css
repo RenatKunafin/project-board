@@ -282,14 +282,15 @@
   background: var(--border);
 }
 
-/* Поиск с иконкой (строка 2, по прототипу). */
+/* Поиск с иконкой (строка 2, по прототипу): растягивается на всю
+   доступную ширину, прижимая контролы строки вправо (PBT-076, D1 —
+   max-width снят по замечанию владельца 2026-10-21). */
 .plan-gantt__search {
   position: relative;
   display: inline-flex;
   align-items: center;
   flex: 1 1 auto;
   min-width: 128px;
-  max-width: 260px;
   color: var(--muted-foreground);
 }
 
@@ -385,6 +386,16 @@
   background: var(--surface);
   color: var(--foreground);
   max-width: 160px;
+}
+
+/* Счётчик задач (PBT-076, design D1): общий стиль подписей строки —
+   12px muted, как у прототипа (text-xs text-muted-foreground);
+   прежде класс не был оформлен и шрифт выбивался из ряда строки. */
+.plan-gantt__count {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
 }
 
 .plan-gantt__filter-empty {

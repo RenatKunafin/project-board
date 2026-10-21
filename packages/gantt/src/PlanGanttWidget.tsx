@@ -46,6 +46,10 @@ import {
 } from './plantuml-export';
 import { createWorkingCalendar } from './working-calendar';
 import {
+  createMondayFirstLocale,
+  svarI18nContext,
+} from './svar-locale';
+import {
   ganttDate,
   ganttDayIso,
   nonWorkingDayKind,
@@ -84,9 +88,10 @@ import {
 import {
   convertZoomScrollLeft,
   formatIsoDayMonth,
+  formatWeekRangeLabel,
   formatZoomDayLabel,
   normalizeGanttZoom,
-  ZOOM_CELL_WIDTH,
+  ZOOM_SCALE,
   type GanttZoom,
 } from './zoom-utils';
 import './gantt.css';
@@ -177,7 +182,11 @@ export default function PlanGanttWidget({
   const [ganttZoom, setGanttZoom] = useState<GanttZoom>(() =>
     normalizeGanttZoom(settings.ganttZoom),
   );
-  const zoomCellWidth = ZOOM_CELL_WIDTH[ganttZoom];
+  const zoomCellWidth = ZOOM_SCALE[ganttZoom];
+  // Локаль SVAR с началом недели в понедельник (PBT-076, design D2.3):
+  // Gantt берёт weekStart из i18n-контекста;.Provider ниже оборачивает
+  // чарт (null — деградация до дефолта библиотеки, см. svar-locale.ts).
+  const mondayFirstLocale = useMemo(() => createMondayFirstLocale(), []);
 
   useEffect(() => {
     if (!documentId || !documentService) {
@@ -1130,6 +1139,61 @@ export default function PlanGanttWidget({
     });
   }, [source, chartRange]);
 
+  // ─── Подсветка нерабочих дней в недельном режиме (PBT-076, D2.3) ──
+  // highlightTime SVAR не срабатывает для week-клеток (сторож в
+  // react-gantt: только day/hour) — блоки нерабочих дней рисуем сами
+  // в слой .wx-gantt-holidays: он внутри скролл-контента (позиция и
+  // прокрутка наследуются) и уже растянут нашим CSS (PBT-037/053);
+  // классы gantt-weekend/gantt-holiday — те же цвета, что в «Днях».
+  // Дневная точность: x/ширина из пикселей дня шкалы (lengthUnitWidth),
+  // границы блока — подряд идущие дни одного вида (выходные парами,
+  // праздники отдельно — различимость сохраняется).
+  useEffect(() => {
+    if (ganttZoom !== 'weeks' || source === null) {
+      return;
+    }
+    const root = window.document.querySelector(
+      `.plan-gantt[data-widget-instance="${widgetInstanceId}"]`,
+    );
+    const layer = root?.querySelector<HTMLElement>('.wx-gantt-holidays');
+    const scalesData = apiRef.current?.getState()._scales;
+    if (layer === null || layer === undefined || scalesData === undefined) {
+      return;
+    }
+    const pxPerDay = scalesData.lengthUnitWidth;
+    const startDay = scalesData.start;
+    const endDay = scalesData.end;
+    const dayMs = 86400000;
+    const startMs = startDay.getTime();
+    const totalDays = Math.round((endDay.getTime() - startMs) / dayMs) + 1;
+    const blocks: HTMLElement[] = [];
+    let index = 0;
+    while (index < totalDays) {
+      const date = new Date(startMs + index * dayMs);
+      const kind = nonWorkingDayKind(source.plan, ganttDayIso(date));
+      if (kind === undefined) {
+        index += 1;
+        continue;
+      }
+      let length = 1;
+      while (index + length < totalDays) {
+        const next = new Date(startMs + (index + length) * dayMs);
+        if (nonWorkingDayKind(source.plan, ganttDayIso(next)) !== kind) {
+          break;
+        }
+        length += 1;
+      }
+      const stripe = window.document.createElement('div');
+      stripe.className = kind === 'holiday' ? 'gantt-holiday' : 'gantt-weekend';
+      stripe.style.left = `${Math.round(index * pxPerDay)}px`;
+      stripe.style.width = `${Math.max(1, Math.round(length * pxPerDay))}px`;
+      stripe.setAttribute('data-gantt-nonworking', kind);
+      blocks.push(stripe);
+      index += length;
+    }
+    layer.replaceChildren(...blocks);
+  }, [ganttZoom, source, chartRange, rangeTick, widgetInstanceId]);
+
   // ─── Позиция прокрутки шкалы (PBT-073, design D6; техдолг D8 PBT-071) ──
   // SVAR при скачке ширины контейнера пересобирает шкалу и сбрасывает
   // прокрутку. Механизм: пассивный трекинг scrollLeft скролл-контейнеров
@@ -1439,8 +1503,11 @@ export default function PlanGanttWidget({
     // строки при update-task, значение читается из свежего planRef.
   }, [source]);
 
-  // Шкала дат (PBT-073, design D3, по прототипу SvarGanttChart): месяц —
-  // «октябрь 2026 г.», день — дд.мм в «Днях» / число месяца в «Неделях».
+  // Шкала дат (PBT-073 design D3; PBT-076 D2 — недельная семантика).
+  // «Дни»: месяц + день (дд.мм). «Недели»: месяц + неделя — одна
+  // колонка = одна неделя, подпись-диапазон её дней «12–18 окт»
+  // (format(date, next) — границы самой клетки; полосы и подсветка
+  // остаются дневной точности, см. слой ниже).
   const scales = useMemo<IScaleConfig[]>(
     () => [
       {
@@ -1452,11 +1519,18 @@ export default function PlanGanttWidget({
             year: 'numeric',
           }),
       },
-      {
-        unit: 'day',
-        step: 1,
-        format: (date: Date) => formatZoomDayLabel(date, ganttZoom),
-      },
+      ganttZoom === 'days'
+        ? {
+            unit: 'day',
+            step: 1,
+            format: (date: Date) => formatZoomDayLabel(date),
+          }
+        : {
+            unit: 'week',
+            step: 1,
+            format: (date: Date, next?: Date) =>
+              formatWeekRangeLabel(date, next),
+          },
     ],
     [ganttZoom],
   );
@@ -1736,24 +1810,31 @@ export default function PlanGanttWidget({
                   Компонент зума в ключе — пересборка при смене масштаба
                   (PBT-073, design D3). */}
               {/* Компактная плотность по референсу OnlineGantt (PBT-068,
-                  замер 2026-10-16): день ≈ 33px (зум «Недели», дефолт),
-                  строка 36px; зум «Дни» — 48px (PBT-073). */}
-              <Gantt
-                key={chartKey}
-                tasks={tasks}
-                links={links}
-                columns={columns}
-                gridWidth={712}
-                inclusiveEnd={true}
-                cellWidth={zoomCellWidth}
-                cellHeight={36}
-                autoScale={false}
-                start={chartRange?.start}
-                end={chartRange?.end}
-                scales={scales}
-                init={initApi}
-                highlightTime={highlightTime}
-              />
+                  замер 2026-10-16): строка 36px. Зум (PBT-076, design D2):
+                  «Дни» — клетка дня 48px; «Недели» (дефолт) — клетка
+                  недели ~100px (≈14px/день), дневная точность сохраняется. */}
+              {/* Неделя шкалы с понедельника (PBT-076, design D2.3): локаль
+                  i18n-контекста SVAR; недели Вс–Сб разбивали бы выходные
+                  пн–пт календаря плана на две колонки. Null-значение —
+                  дефолт библиотеки (см. svar-locale.ts). */}
+              <svarI18nContext.Provider value={mondayFirstLocale}>
+                <Gantt
+                  key={chartKey}
+                  tasks={tasks}
+                  links={links}
+                  columns={columns}
+                  gridWidth={712}
+                  inclusiveEnd={true}
+                  cellWidth={zoomCellWidth}
+                  cellHeight={36}
+                  autoScale={false}
+                  start={chartRange?.start}
+                  end={chartRange?.end}
+                  scales={scales}
+                  init={initApi}
+                  highlightTime={highlightTime}
+                />
+              </svarI18nContext.Provider>
             </WillowDark>
           </div>
           {/* Строка состояния виджета (PBT-073, design D5): название

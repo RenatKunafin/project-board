@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   convertZoomScrollLeft,
   formatIsoDayMonth,
+  formatWeekRangeLabel,
   formatZoomDayLabel,
   normalizeGanttZoom,
-  ZOOM_CELL_WIDTH,
+  ZOOM_SCALE,
+  zoomPxPerDay,
 } from './zoom-utils';
 
 describe('normalizeGanttZoom', () => {
@@ -23,16 +25,16 @@ describe('convertZoomScrollLeft', () => {
     expect(convertZoomScrollLeft(0, 'weeks', 'weeks')).toBe(0);
   });
 
-  it('недели → дни: пиксели растут пропорционально клетке', () => {
-    // 10 дней в «Неделях» (33px) = 330px; в «Днях» (48px) = 480px.
-    expect(convertZoomScrollLeft(330, 'weeks', 'days')).toBeCloseTo(480);
+  it('недели → дни: пиксели пересчитываются по пикселям дня', () => {
+    // 10 дней в «Неделях» (16px/день) = 160px; в «Днях» (48px/день) = 480px.
+    expect(convertZoomScrollLeft(160, 'weeks', 'days')).toBeCloseTo(480);
   });
 
   it('дни → недели: позиция сохраняет дробную часть дня', () => {
-    // 480px в «Днях» → 330px в «Неделях».
-    expect(convertZoomScrollLeft(480, 'days', 'weeks')).toBeCloseTo(330);
-    // Полдня в «Днях» (24px) → полдня в «Неделях» (16.5px).
-    expect(convertZoomScrollLeft(24, 'days', 'weeks')).toBeCloseTo(16.5);
+    // 480px в «Днях» → 160px в «Неделях».
+    expect(convertZoomScrollLeft(480, 'days', 'weeks')).toBeCloseTo(160);
+    // Полдня в «Днях» (24px) → полдня в «Неделях» (8px).
+    expect(convertZoomScrollLeft(24, 'days', 'weeks')).toBeCloseTo(8);
   });
 
   it('нулевая позиция остаётся нулевой в любом направлении', () => {
@@ -40,20 +42,46 @@ describe('convertZoomScrollLeft', () => {
     expect(convertZoomScrollLeft(0, 'weeks', 'days')).toBe(0);
   });
 
-  it('ширины клеток соответствуют спеке зума (48/33)', () => {
-    expect(ZOOM_CELL_WIDTH.days).toBe(48);
-    expect(ZOOM_CELL_WIDTH.weeks).toBe(33);
+  it('ширины клеток и пиксели дня соответствуют спеке зума', () => {
+    // «Дни» — клетка дня 48px; «Недели» — клетка недели 112px = 16px/день
+    // (PBT-076, design D2.2: плотность недельного режима).
+    expect(ZOOM_SCALE.days).toBe(48);
+    expect(ZOOM_SCALE.weeks).toBe(112);
+    expect(zoomPxPerDay('days')).toBe(48);
+    expect(zoomPxPerDay('weeks')).toBe(16);
   });
 });
 
 describe('formatZoomDayLabel', () => {
   it('«Дни» — дд.мм с ведущими нулями', () => {
-    expect(formatZoomDayLabel(new Date(2026, 9, 5), 'days')).toBe('05.10');
-    expect(formatZoomDayLabel(new Date(2026, 11, 31), 'days')).toBe('31.12');
+    expect(formatZoomDayLabel(new Date(2026, 9, 5))).toBe('05.10');
+    expect(formatZoomDayLabel(new Date(2026, 11, 31))).toBe('31.12');
+  });
+});
+
+describe('formatWeekRangeLabel', () => {
+  it('неделя внутри месяца — «12.10–18.10»', () => {
+    // Пн 12.10 — Вс 18.10.2026.
+    expect(formatWeekRangeLabel(new Date(2026, 9, 12), new Date(2026, 9, 19))).toBe(
+      '12.10–18.10',
+    );
   });
 
-  it('«Недели» — только число дня', () => {
-    expect(formatZoomDayLabel(new Date(2026, 9, 5), 'weeks')).toBe('5');
+  it('неделя на стыке месяцев — «28.10–03.11»', () => {
+    expect(formatWeekRangeLabel(new Date(2026, 9, 28), new Date(2026, 10, 4))).toBe(
+      '28.10–03.11',
+    );
+  });
+
+  it('неделя на стыке годов — «29.12–04.01»', () => {
+    expect(formatWeekRangeLabel(new Date(2026, 11, 29), new Date(2027, 0, 5))).toBe(
+      '29.12–04.01',
+    );
+  });
+
+  it('без next (последняя клетка) — диапазон добирается по датам клетки', () => {
+    // Пн 12.10.2026 + 6 дней = Вс 18.10.
+    expect(formatWeekRangeLabel(new Date(2026, 9, 12))).toBe('12.10–18.10');
   });
 });
 
