@@ -77,6 +77,10 @@
   --wx-font-family: var(--font-sans);
   --wx-font-size: 14px;
   --wx-font-size-sm: 12px;
+  /* Таблица наследует размер от темы (SVAR не применяет --wx-font-size
+     к ячейкам): без явного размера ячейки получали body-16px вместо
+     14px прототипа — находка ревью PR#52, упущение PBT-073. */
+  font-size: var(--wx-font-size);
   --wx-background: var(--surface);
   --wx-background-alt: var(--surface-raised);
   --wx-background-hover: var(--accent);
