@@ -569,14 +569,14 @@ export default function App({
   );
   const updateViewState = useCallback(
     (instanceId: string, patch: Record<string, unknown>) => {
-      viewStatesRef.current[instanceId] = {
-        ...viewStatesRef.current[instanceId],
-        ...patch,
+      viewStatesRef.current = {
+        ...viewStatesRef.current,
+        [instanceId]: { ...viewStatesRef.current[instanceId], ...patch },
       };
       void workspaceStore.saveViewSetting(
         instanceId,
         viewStatesRef.current[instanceId],
-      );
+      ).catch((error) => console.error('view settings save failed', error));
     },
     [workspaceStore],
   );
@@ -952,12 +952,32 @@ export default function App({
       }
       const pending = snapshotRef.current;
       if (pending) {
-        void workspaceStore.save(pending);
+        void workspaceStore.save(pending).catch((error) => console.error('workspace flush failed', error));
       }
     };
     window.addEventListener('pagehide', flush);
     return () => window.removeEventListener('pagehide', flush);
   }, [workspaceStore]);
+
+  const prepareForUpdate = async (): Promise<void> => {
+    // Модальное окно блокирует ввод; завершившийся callback виджета всё же
+    // может обновить refs во время await — в таком случае фиксируем их снова.
+    let snapshot: WorkspaceSnapshot | null;
+    let views: Record<string, Record<string, unknown>>;
+    do {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      snapshot = snapshotRef.current;
+      views = viewStatesRef.current;
+      if (!snapshot) throw new Error('Рабочее пространство ещё не готово к сохранению.');
+      await Promise.all([
+        documentService.flushAll(),
+        workspaceStore.flush(snapshot, structuredClone(views)),
+      ]);
+    } while (snapshot !== snapshotRef.current || views !== viewStatesRef.current);
+  };
 
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
     if (!type.documentSupport) {
@@ -1168,7 +1188,7 @@ export default function App({
     <main className="shell shell--workspace">
       {/* Топ-бар каркаса (PBT-072 D1): название + индикатор сохранения. */}
       <AppTopBar title="Project Board">
-        <PwaStatus />
+        <PwaStatus prepareForUpdate={prepareForUpdate} />
         <p
           className={`save-state is-${saveStatus}`}
           role="status"

@@ -65,7 +65,7 @@ interface DocumentRecord {
 interface SaveQueueEntry {
   pending: ManagedDocument | null;
   lastSavedRevision: number;
-  inFlight: boolean;
+  inFlight: Promise<void> | null;
   timer: ReturnType<typeof setTimeout> | null;
   retryAttempt: number;
 }
@@ -76,7 +76,7 @@ const RETRY_DELAYS_MS = [250, 500, 1000];
 export interface AutosavingDocumentService extends DocumentService {
   /** Восстанавливает все документы из хранилища в память. */
   restoreAll(): Promise<ManagedDocument[]>;
-/** Немедленно записывает все отложенные правки (закрытие страницы). */
+  /** Подтверждает запись всей очереди, включая in-flight; отказ отклоняет Promise. */
   flushAll(): Promise<void>;
   /** Выборка документов из памяти, опционально по модулю и типу. */
   listDocuments(
@@ -116,6 +116,8 @@ export function createDocumentService(
   const documents = new Map<string, DocumentRecord>();
   const viewSettings = new Map<string, Record<string, unknown>>();
   const queue = new Map<string, SaveQueueEntry>();
+  const deletions = new Map<string, Promise<void>>();
+  const deleteErrors = new Map<string, unknown>();
   const saveStates = new Map<string, DocumentSaveState>();
   const saveStateHandlers = new Map<string, Set<SaveStateHandler>>();
   const aggregateHandlers = new Set<(status: DocumentSaveStatus) => void>();
@@ -222,72 +224,79 @@ export function createDocumentService(
       entry = {
         pending: null,
         lastSavedRevision: 0,
-        inFlight: false,
+        inFlight: null,
         timer: null,
         retryAttempt: 0,
       };
       queue.set(document.id, entry);
     }
+    deleteErrors.delete(document.id);
     entry.pending = document;
-    if (entry.timer !== null) {
+    setSaveState(document.id, 'saving');
+    if (entry.inFlight || entry.timer !== null) {
       // Flush уже запланирован: обновляем только pending, чтобы сохранить
       // порядок планирования между документами.
       return;
     }
-    setSaveState(document.id, 'saving');
     entry.timer = setTimeout(() => {
       entry.timer = null;
-      void flushDocument(document.id);
+      void flushDocument(document.id).catch(() => {});
     }, saveDelayMs);
   }
 
-  async function flushDocument(documentId: string): Promise<void> {
-    if (!store) {
-      return;
-    }
+  function flushDocument(documentId: string): Promise<void> {
     const entry = queue.get(documentId);
-    if (!entry || entry.inFlight || entry.pending === null) {
-      return;
+    if (!store || !entry || deletions.has(documentId)) return Promise.resolve();
+    if (entry.inFlight) return entry.inFlight;
+    if (entry.timer !== null) {
+      clearTimeout(entry.timer);
+      entry.timer = null;
     }
-    const document = entry.pending;
-    entry.pending = null;
-    entry.inFlight = true;
-    setSaveState(documentId, 'saving');
+    if (entry.pending === null) return Promise.resolve();
 
-    try {
-      await store.save(document, entry.lastSavedRevision);
-      entry.lastSavedRevision = document.revision;
+    // Один Promise владеет всеми попытками и следующими редакциями документа.
+    // Явный flush присоединяется к нему, а не возвращает успех при in-flight.
+    const drain = async (): Promise<void> => {
       entry.retryAttempt = 0;
-      entry.inFlight = false;
-      if (entry.pending !== null) {
-        void flushDocument(documentId);
-      } else {
-        setSaveState(documentId, 'saved');
-      }
-    } catch (error) {
-      entry.inFlight = false;
-      if (error instanceof DocumentConflictError) {
-        await resolveConflict(documentId, entry);
-        return;
-      }
-      if (entry.retryAttempt < MAX_SAVE_RETRIES) {
-        const delay =
-          RETRY_DELAYS_MS[
-            Math.min(entry.retryAttempt, RETRY_DELAYS_MS.length - 1)
-          ];
-        entry.retryAttempt += 1;
-        entry.pending = document;
-        entry.timer = setTimeout(() => {
-          entry.timer = null;
-          void flushDocument(documentId);
-        }, delay);
+      while (entry.pending !== null && !deletions.has(documentId)) {
+        const document = entry.pending;
+        entry.pending = null;
         setSaveState(documentId, 'saving');
-        return;
+        try {
+          await store.save(document, entry.lastSavedRevision);
+          entry.lastSavedRevision = document.revision;
+          entry.retryAttempt = 0;
+        } catch (error) {
+          if (error instanceof DocumentConflictError) {
+            try {
+              await resolveConflict(documentId, entry);
+            } catch (recoveryError) {
+              entry.pending ??= document;
+              setSaveState(documentId, 'error');
+              throw recoveryError;
+            }
+            throw error;
+          }
+          // Правка, поступившая во время await, имеет приоритет над повтором.
+          entry.pending ??= document;
+          if (deletions.has(documentId) || entry.retryAttempt >= MAX_SAVE_RETRIES) {
+            setSaveState(documentId, 'error');
+            throw error;
+          }
+          const delay = RETRY_DELAYS_MS[entry.retryAttempt++];
+          await new Promise<void>((resolve) => setTimeout(resolve, delay));
+        }
       }
-      entry.retryAttempt = 0;
-      entry.pending = document;
-      setSaveState(documentId, 'error');
-    }
+      if (!deletions.has(documentId)) setSaveState(documentId, 'saved');
+    };
+    entry.inFlight = drain().finally(() => {
+      entry.inFlight = null;
+      // Подписчик статуса мог добавить правку на уведомлении saved.
+      if (entry.pending && !deletions.has(documentId) && saveStates.get(documentId)?.status === 'saving') {
+        queueMicrotask(() => { void flushDocument(documentId).catch(() => {}); });
+      }
+    });
+    return entry.inFlight;
   }
 
   async function resolveConflict(
@@ -341,6 +350,7 @@ export function createDocumentService(
       expectedRevision: number,
       nextContent: ManagedDocument['content'],
     ): ManagedDocument {
+      if (deletions.has(documentId)) throw new Error('Документ удаляется. Дождитесь завершения операции.');
       if (notifyingDocumentId === documentId) {
         throw new Error(
           `Недопустимо обновлять документ "${documentId}" во время доставки его уведомлений.`,
@@ -398,6 +408,7 @@ export function createDocumentService(
       expectedRevision: number,
       title: string,
     ): ManagedDocument {
+      if (deletions.has(documentId)) throw new Error('Документ удаляется. Дождитесь завершения операции.');
       if (notifyingDocumentId === documentId) {
         throw new Error(
           `Недопустимо обновлять документ "${documentId}" во время доставки его уведомлений.`,
@@ -435,31 +446,39 @@ export function createDocumentService(
       return renamed;
     },
 
-    async delete(documentId: string): Promise<void> {
-      const existing = documents.get(documentId)?.document;
-      if (existing) {
-        assertNotFutureVersion(existing);
-      }
-      // Отложенная запись снимается первой: незавершённый таймер не должен
-      // вернуть документ в хранилище после удаления. Сама запись очереди
-      // удаляется после успеха store.delete: при сбое lastSavedRevision
-      // сохраняется для следующей операции над живым документом.
-      const entry = queue.get(documentId);
-      if (entry) {
-        if (entry.timer !== null) {
-          clearTimeout(entry.timer);
+    delete(documentId: string): Promise<void> {
+      const existingDelete = deletions.get(documentId);
+      if (existingDelete) return existingDelete;
+      const operation = (async () => {
+        const existing = documents.get(documentId)?.document;
+        if (existing) assertNotFutureVersion(existing);
+        const entry = queue.get(documentId);
+        if (entry) {
+          if (entry.timer !== null) clearTimeout(entry.timer);
           entry.timer = null;
+          entry.pending = null;
+          // Уже начатый put не должен воскресить документ после delete.
+          await entry.inFlight?.catch(() => {});
+          entry.pending = null;
         }
-        entry.pending = null;
-      }
-      if (store) {
-        await store.delete(documentId);
-      }
-      queue.delete(documentId);
-      documents.delete(documentId);
-      saveStates.delete(documentId);
-      saveStateHandlers.delete(documentId);
-      notifyAggregate();
+        if (store) await store.delete(documentId);
+        queue.delete(documentId);
+        documents.delete(documentId);
+        saveStates.delete(documentId);
+        saveStateHandlers.delete(documentId);
+        deleteErrors.delete(documentId);
+        notifyAggregate();
+      })();
+      deletions.set(documentId, operation);
+      void operation.then(
+        () => { deletions.delete(documentId); },
+        (error) => {
+          deletions.delete(documentId);
+          deleteErrors.set(documentId, error);
+          setSaveState(documentId, 'error');
+        },
+      );
+      return operation;
     },
 
     getViewSettings(
@@ -479,9 +498,19 @@ export function createDocumentService(
   return {
     ...base,
     async flushAll(): Promise<void> {
-      // Немедленный flush всех отложенных записей (например, при закрытии страницы).
-      const ids = [...queue.keys()];
-      await Promise.all(ids.map((id) => flushDocument(id)));
+      if (!store && documents.size > 0) {
+        throw new Error('Хранилище документов не подключено.');
+      }
+      do {
+        await Promise.all([
+          ...deletions.values(),
+          ...[...queue.keys()].map((id) => flushDocument(id)),
+        ]);
+        if (deleteErrors.size > 0) throw [...deleteErrors.values()][0];
+        if ([...saveStates.values()].some((state) => state.status === 'conflict')) {
+          throw new Error('Обнаружен конфликт сохранения. Проверьте документы перед обновлением.');
+        }
+      } while (deletions.size > 0 || [...queue.values()].some((entry) => entry.pending || entry.inFlight));
     },
     async restoreAll(): Promise<ManagedDocument[]> {
       if (!store) {
@@ -555,7 +584,7 @@ export function createDocumentService(
         const entry: SaveQueueEntry = {
           pending: null,
           lastSavedRevision: finalDocument.revision,
-          inFlight: false,
+          inFlight: null,
           timer: null,
           retryAttempt: 0,
         };

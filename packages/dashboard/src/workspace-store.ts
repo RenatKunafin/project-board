@@ -77,6 +77,7 @@ export class WorkspaceStore {
   private readonly instances: Table<InstanceRow, string>;
   private readonly settings: Table<SettingRow, string>;
   private opened = false;
+  private writes: Promise<void> = Promise.resolve();
 
   constructor(name: string) {
     this.db = new Dexie(name);
@@ -127,8 +128,22 @@ export class WorkspaceStore {
     };
   }
 
-  async save(snapshot: WorkspaceSnapshot): Promise<void> {
-    await this.openOnce();
+  save(snapshot: WorkspaceSnapshot): Promise<void> {
+    return this.enqueue(() => this.writeSnapshot(snapshot));
+  }
+
+  /** Запись актуального workspace и настроек после всех ранее начатых записей. */
+  flush(
+    snapshot: WorkspaceSnapshot,
+    viewSettings: Record<string, Record<string, unknown>>,
+  ): Promise<void> {
+    return this.enqueue(() => this.writeSnapshot(snapshot, viewSettings));
+  }
+
+  private async writeSnapshot(
+    snapshot: WorkspaceSnapshot,
+    viewSettings?: Record<string, Record<string, unknown>>,
+  ): Promise<void> {
     const tabRows: TabRow[] = snapshot.tabs.map((tab, index) => ({
       id: tab.id,
       title: tab.title,
@@ -159,6 +174,9 @@ export class WorkspaceStore {
           key: 'workspace',
           value: { activeTabId: snapshot.activeTabId },
         });
+        if (viewSettings) {
+          await this.settings.bulkPut(Object.entries(viewSettings).map(([id, value]) => ({ key: `view:${id}`, value })));
+        }
       },
     );
   }
@@ -188,12 +206,23 @@ export class WorkspaceStore {
     return result;
   }
 
-  async saveViewSetting(
+  saveViewSetting(
     instanceId: string,
     value: Record<string, unknown>,
   ): Promise<void> {
-    await this.openOnce();
-    await this.settings.put({ key: `view:${instanceId}`, value });
+    return this.enqueue(async () => {
+      await this.settings.put({ key: `view:${instanceId}`, value });
+    });
+  }
+
+  private enqueue(write: () => Promise<void>): Promise<void> {
+    const operation = this.writes.then(async () => {
+      await this.openOnce();
+      await write();
+    });
+    // Отказ виден вызывающему; следующий save/flush может повторить актуальное состояние.
+    this.writes = operation.catch(() => {});
+    return operation;
   }
 
   private async openOnce(): Promise<void> {

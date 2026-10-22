@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import Dexie from 'dexie';
 import { WorkspaceStore, type WorkspaceSnapshot } from './workspace-store';
 
@@ -50,6 +50,30 @@ const snapshot: WorkspaceSnapshot = {
 };
 
 describe('WorkspaceStore', () => {
+  it('финальный flush сохраняет последнюю раскладку и настройки после прежних записей', async () => {
+    const store = new WorkspaceStore(`${DB_NAME}-flush-order`);
+    const latest = { ...snapshot, activeTabId: 'tab-2' };
+    await Promise.all([
+      store.save(snapshot),
+      store.saveViewSetting('w-1', { hideDone: false }),
+      store.flush(latest, { 'w-1': { hideDone: true } }),
+    ]);
+    expect(await store.load()).toEqual(latest);
+    expect(await store.loadViewSettings()).toEqual({ 'w-1': { hideDone: true } });
+  });
+
+  it('сбой финальной транзакции виден вызывающему, следующая попытка работает', async () => {
+    const store = new WorkspaceStore(`${DB_NAME}-flush-retry`);
+    await store.save(snapshot);
+    const transaction = vi.spyOn(Dexie.prototype, 'transaction').mockRejectedValueOnce(new Error('write failed'));
+    try {
+      await expect(store.flush(snapshot, { 'w-1': { hideDone: true } })).rejects.toThrow('write failed');
+    } finally { transaction.mockRestore(); }
+    expect(await store.loadViewSettings()).toEqual({});
+    await store.flush(snapshot, { 'w-1': { hideDone: true } });
+    expect(await store.loadViewSettings()).toEqual({ 'w-1': { hideDone: true } });
+  });
+
   it('сохраняет и загружает полный снапшот', async () => {
     const store = new WorkspaceStore(`${DB_NAME}-roundtrip`);
     await store.save(snapshot);

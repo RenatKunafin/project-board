@@ -20,6 +20,7 @@ npm run typecheck  # tsc --noEmit по всем пакетам
 npm run lint       # ESLint: код + границы импортов (ADR PBT-002)
 npm test           # unit-тесты (Vitest)
 npm run test:browser  # UI-проверки (Playwright; локально: npx playwright install chromium)
+npm run test:pwa-updates  # две production-сборки: обновление, сохранение, миграции и офлайн
 ```
 
 CI (GitHub Actions) на каждый PR в `develop`: lint → typecheck → unit → build → `openspec validate --all --strict`.

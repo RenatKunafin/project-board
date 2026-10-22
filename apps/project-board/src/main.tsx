@@ -48,7 +48,7 @@ const workspaceStore = new WorkspaceStore('project-board');
 
 // Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
 window.addEventListener('pagehide', () => {
-  void documentService.flushAll();
+  void documentService.flushAll().catch((error) => console.error('document flush failed', error));
 });
 
 // Диагностика e2e (design D4, PBT-027): счётчик активных подписок

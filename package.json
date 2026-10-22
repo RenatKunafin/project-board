@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p apps/load-demo",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:pwa-updates": "node tests/pwa-updates/build.mjs && playwright test --config=playwright.pwa.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

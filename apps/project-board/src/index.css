@@ -489,6 +489,45 @@ body {
   color: var(--warning);
 }
 
+.pwa-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.pwa-update button,
+.pwa-update-dialog button {
+  font: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--foreground);
+}
+
+.pwa-update-dialog {
+  box-sizing: border-box;
+  width: min(576px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: var(--shadow-float);
+  font-size: 14px;
+}
+
+.pwa-update-dialog::backdrop { background: var(--overlay); }
+.pwa-update-dialog h2 { margin-top: 0; font-size: 18px; }
+.pwa-update-dialog p { line-height: 1.5; }
+.pwa-update-dialog [role='alert'] { color: var(--destructive); }
+.pwa-update-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pwa-update-dialog button:last-child { background: var(--primary); color: var(--primary-foreground); }
+.pwa-update-dialog button:disabled { opacity: 0.5; cursor: wait; }
+
 /* Индикатор сохранения в топ-баре (PBT-072 D1): точка статуса +
    приглушённая подпись, как в прототипе; цвет статуса — у точки. */
 .app-topbar .save-state {
