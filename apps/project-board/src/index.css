@@ -477,6 +477,18 @@ body {
   margin-left: auto;
 }
 
+.pwa-state {
+  margin: 0;
+  padding-right: 8px;
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.pwa-state.is-unavailable {
+  color: var(--warning);
+}
+
 /* Индикатор сохранения в топ-баре (PBT-072 D1): точка статуса +
    приглушённая подпись, как в прототипе; цвет статуса — у точки. */
 .app-topbar .save-state {

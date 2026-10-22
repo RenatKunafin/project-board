@@ -1,0 +1,50 @@
+{
+  "browser": "155.0.8059.86",
+  "manifest": {
+    "backgroundColor": "rgba(14,23,32,1)",
+    "description": "Локальное планирование проектов: Гантт и чек-листы",
+    "display": "kStandalone",
+    "icons": [
+      {
+        "url": "http://localhost:4173/icons/pwa-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "url": "http://localhost:4173/icons/pwa-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      },
+      {
+        "url": "http://localhost:4173/icons/maskable-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "id": "http://localhost:4173/",
+    "name": "Project Board",
+    "orientation": "DEFAULT",
+    "preferRelatedApplications": false,
+    "scope": "http://localhost:4173/",
+    "startUrl": "http://localhost:4173/",
+    "themeColor": "rgba(9,16,24,1)"
+  },
+  "installability": {
+    "installabilityErrors": []
+  },
+  "launch": {
+    "targetId": "A101F19D6202C51CFFC1C6047618213A"
+  },
+  "window": {
+    "windowId": 1552417707,
+    "bounds": {
+      "left": 22,
+      "top": 55,
+      "width": 1282,
+      "height": 846,
+      "windowState": "normal"
+    }
+  },
+  "standalone": true,
+  "offlineRelaunch": true
+}

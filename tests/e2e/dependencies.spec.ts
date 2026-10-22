@@ -74,6 +74,7 @@ test('два предшественника с лагами, изменение 
   // не меняются — C5).
   const rowA = dialogC.locator('li', { hasText: 'Задача A · лаг 2' });
   await rowA.getByRole('button', { name: 'Изменить лаг' }).click();
+  await dialogC.locator('[data-dep-lag-input]').fill('4');
   await dialogC.locator('[data-dep-lag-input]').press('Enter');
   await expect(dialogC.locator('[data-dep-list]')).toContainText('лаг 4');
 
