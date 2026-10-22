@@ -1,4 +1,5 @@
 import { FileText, Layers, LayoutGrid } from 'lucide-react';
+import { PwaStatus } from './PwaStatus';
 import type {
   AutosavingDocumentService,
   WidgetRegistry,
@@ -1167,6 +1168,7 @@ export default function App({
     <main className="shell shell--workspace">
       {/* Топ-бар каркаса (PBT-072 D1): название + индикатор сохранения. */}
       <AppTopBar title="Project Board">
+        <PwaStatus />
         <p
           className={`save-state is-${saveStatus}`}
           role="status"

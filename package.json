@@ -11,6 +11,8 @@
     "packages/*"
   ],
   "scripts": {
+    "generate:pwa-assets": "node scripts/generate-pwa-assets.mjs",
+    "verify:pwa-install": "node scripts/verify-pwa-install.mjs",
     "dev": "npm run dev -w apps/project-board",
     "dev:load-demo": "npm run dev -w apps/load-demo",
     "build": "npm run build -w apps/project-board",
