@@ -1,0 +1,75 @@
+
+> project-board-monorepo@0.1.0 test
+> vitest run --passWithNoTests packages/dashboard/src/workspace.test.ts
+
+
+ RUN  v3.2.7 /Users/brom/Documents/workspace/project-board
+
+ ❯ packages/dashboard/src/workspace.test.ts (19 tests | 2 failed) 6ms
+   ✓ workspace — создание и переключение > создаёт рабочее пространство с одной активной вкладкой 2ms
+   ✓ workspace — создание и переключение > новая вкладка становится активной, порядок сохраняется 0ms
+   ✓ workspace — создание и переключение > переключение активной вкладки 0ms
+   ✓ workspace — создание и переключение > неизвестный id отклоняется 0ms
+   ✓ workspace — переименование > переименовывает вкладку 0ms
+   ✓ workspace — переименование > пустое название не применяется 0ms
+   ✓ workspace — порядок > перемещает вкладку влево 0ms
+   ✓ workspace — порядок > перемещает вкладку вправо 0ms
+   ✓ workspace — порядок > на границе бездействует без ошибки 0ms
+   × workspace — удаление > сосед после закрытия: 2 вкладки, удалена +0, активна +0 2ms
+     → expected undefined to be 'B' // Object.is equality
+   ✓ workspace — удаление > сосед после закрытия: 3 вкладки, удалена +0, активна +0 0ms
+   × workspace — удаление > сосед после закрытия: 3 вкладки, удалена 1, активна 1 0ms
+     → expected undefined to be 'C' // Object.is equality
+   ✓ workspace — удаление > сосед после закрытия: 3 вкладки, удалена 2, активна 2 0ms
+   ✓ workspace — удаление > сосед после закрытия: 3 вкладки, удалена +0, активна 1 0ms
+   ✓ workspace — удаление > сосед после закрытия: 3 вкладки, удалена 2, активна 1 0ms
+   ✓ workspace — удаление > удаляет активную: активной становится соседняя справа 0ms
+   ✓ workspace — удаление > удаление крайней правой активной делает активной соседнюю слева 0ms
+   ✓ workspace — удаление > последняя вкладка не удаляется 0ms
+   ✓ workspace — удаление > неактивная вкладка удаляется без смены активной 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/dashboard/src/workspace.test.ts > workspace — удаление > сосед после закрытия: 2 вкладки, удалена +0, активна +0
+AssertionError: expected undefined to be 'B' // Object.is equality
+
+- Expected:
+"B"
+
++ Received:
+undefined
+
+ ❯ packages/dashboard/src/workspace.test.ts:96:72
+     94|     state = setActive(state, state.tabs[active].id);
+     95|     const result = removeTab(state, state.tabs[removed].id);
+     96|     expect(result.tabs.find(tab => tab.id === result.activeId)?.title)…
+       |                                                                        ^
+     97|     expect(result.tabs).toHaveLength(count - 1);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  packages/dashboard/src/workspace.test.ts > workspace — удаление > сосед после закрытия: 3 вкладки, удалена 1, активна 1
+AssertionError: expected undefined to be 'C' // Object.is equality
+
+- Expected:
+"C"
+
++ Received:
+undefined
+
+ ❯ packages/dashboard/src/workspace.test.ts:96:72
+     94|     state = setActive(state, state.tabs[active].id);
+     95|     const result = removeTab(state, state.tabs[removed].id);
+     96|     expect(result.tabs.find(tab => tab.id === result.activeId)?.title)…
+       |                                                                        ^
+     97|     expect(result.tabs).toHaveLength(count - 1);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  00:16:47
+   Duration  183ms (transform 25ms, setup 16ms, collect 17ms, tests 6ms, environment 0ms, prepare 31ms)

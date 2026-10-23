@@ -215,6 +215,13 @@ export class WorkspaceStore {
     });
   }
 
+  /** Удаление настроек закрытых экземпляров после всех прежних записей. */
+  deleteViewSettings(instanceIds: readonly string[]): Promise<void> {
+    return this.enqueue(async () => {
+      await this.settings.bulkDelete(instanceIds.map((id) => `view:${id}`));
+    });
+  }
+
   private enqueue(write: () => Promise<void>): Promise<void> {
     const operation = this.writes.then(async () => {
       await this.openOnce();

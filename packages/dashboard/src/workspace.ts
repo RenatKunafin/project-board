@@ -112,7 +112,7 @@ export function removeTab(
   const tabs = state.tabs.filter((tab) => tab.id !== tabId);
   const activeId =
     state.activeId === tabId
-      ? state.tabs[Math.min(index + 1, tabs.length - 1)].id
+      ? tabs[Math.min(index, tabs.length - 1)].id
       : state.activeId;
   return { tabs, activeId };
 }

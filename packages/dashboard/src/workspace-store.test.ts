@@ -50,6 +50,20 @@ const snapshot: WorkspaceSnapshot = {
 };
 
 describe('WorkspaceStore', () => {
+  it('удаление настроек закрытых окон следует за прежними записями и переживает flush', async () => {
+    const store = new WorkspaceStore(`${DB_NAME}-delete-views`);
+    const remaining = { tabs: [snapshot.tabs[1]], instances: [snapshot.instances[1]], activeTabId: 'tab-2' };
+    await Promise.all([
+      store.save(snapshot),
+      store.saveViewSetting('w-1', { hideDone: true }),
+      store.saveViewSetting('w-3', { zoom: 'days' }),
+      store.deleteViewSettings(['w-1', 'missing']),
+      store.flush(remaining, { 'w-3': { zoom: 'days' } }),
+    ]);
+    expect(await store.loadViewSettings()).toEqual({ 'w-3': { zoom: 'days' } });
+    expect(await store.load()).toEqual(remaining);
+  });
+
   it('финальный flush сохраняет последнюю раскладку и настройки после прежних записей', async () => {
     const store = new WorkspaceStore(`${DB_NAME}-flush-order`);
     const latest = { ...snapshot, activeTabId: 'tab-2' };
