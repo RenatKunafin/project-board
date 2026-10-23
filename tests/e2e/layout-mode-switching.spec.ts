@@ -24,7 +24,7 @@ test('режим принадлежит вкладке: смена не затр
   await page.goto('/');
   await page.getByRole('button', { name: 'Новая вкладка' }).click();
   // На новой вкладке нужно окно — иначе она показывает пустое состояние.
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })
@@ -93,7 +93,7 @@ test('тайлинг → каскад → изменение состава → 
   const cascadeMoved = await paneBox(page, label3);
   expect(cascadeMoved.x).toBeGreaterThan(cascadeBefore.x);
 
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })

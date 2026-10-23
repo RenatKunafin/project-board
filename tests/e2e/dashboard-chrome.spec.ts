@@ -39,7 +39,7 @@ test('топ-бар показывает название и индикатор 
 
 test('каталог виджетов показывает карточки с описаниями', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
 
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await expect(catalog).toBeVisible();

@@ -21,7 +21,7 @@ async function detect(page: Page, request: APIRequestContext) {
 }
 
 async function createWidget(page: Page, type: string, title: string) {
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
   await catalog.getByRole('button', { name: type, exact: true }).click();
   await catalog.getByLabel('Название нового документа').fill(title);

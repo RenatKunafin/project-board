@@ -90,7 +90,8 @@ export function collectDocumentMigrations(
 export interface WidgetTypeDefinition {
   readonly id: string;
   readonly title: string;
-  /** Текстовый символ иконки (emoji) до появления набора иконок темы. */
+  /** Ключ иконки темы: lucide:calendar-range, lucide:users, lucide:list-todo.
+   * Прежние текстовые символы поддерживаются; неизвестный lucide:* — нейтральная иконка. */
   readonly icon?: string;
   /** Краткое описание назначения типа — показывается каталогом (PBT-072). */
   readonly description?: string;

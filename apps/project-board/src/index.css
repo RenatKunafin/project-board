@@ -283,7 +283,22 @@ body {
   align-self: start;
 }
 
+.widget-type-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.widget-catalog__tile,
+.doc-picker__tile,
+.doc-catalog__tile {
+  color: var(--primary);
+}
+
 .widget-window__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 
@@ -970,6 +985,9 @@ body {
 }
 
 .doc-catalog__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: inherit;
   font-size: 12px;
   padding: 3px 10px;

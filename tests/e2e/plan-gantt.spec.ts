@@ -56,7 +56,7 @@ const smallPlanContent = {
 };
 
 async function createPlan(page: import('@playwright/test').Page, title: string): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -129,7 +129,7 @@ test('два экземпляра плана синхронно показыва
     { id: documentId, content: smallPlanContent },
   );
 
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })

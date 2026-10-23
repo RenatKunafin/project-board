@@ -1,3 +1,4 @@
+import { WidgetIcon } from './WidgetIcon';
 import { useState } from 'react';
 import type {
   ManagedDocument,
@@ -67,7 +68,7 @@ export function DocumentPickerPanel({
                 onClick={() => onOpen(document)}
               >
                 <span className="doc-picker__tile" aria-hidden="true">
-                  {type.icon ?? '🧩'}
+                  <WidgetIcon icon={type.icon} />
                 </span>
                 <span className="doc-picker__name">{document.title}</span>
               </button>

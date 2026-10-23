@@ -22,6 +22,7 @@ import {
   UnknownWidgetType,
   AppTopBar,
   WidgetWindow,
+  WidgetIcon,
   TiledLayout,
   CascadeLayout,
   defaultArea,
@@ -1345,7 +1346,7 @@ export default function App({
                       className="open-with__item"
                       onClick={() => openDocumentWithWidget(type, openWithDocument)}
                     >
-                      <span aria-hidden="true">{type.icon ?? '🧩'}</span>
+                      <span aria-hidden="true"><WidgetIcon icon={type.icon} /></span>
                       {type.title}
                     </button>
                   ))}
@@ -1381,7 +1382,7 @@ export default function App({
               type="button"
               ref={widgetsButtonRef}
               className="add-widget-button"
-              aria-label="Добавить виджет"
+              aria-label="Виджеты"
               aria-expanded={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}
               onClick={() =>
                 setHeaderPanel((current) =>
@@ -1391,8 +1392,7 @@ export default function App({
                 )
               }
             >
-              <LayoutGrid aria-hidden="true" />
-              + Виджет
+              Виджеты
             </button>
             <DropdownPanel
               open={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}

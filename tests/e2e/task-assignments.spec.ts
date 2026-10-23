@@ -24,7 +24,7 @@ const planContent = {
 };
 
 async function createPlan(page: Page, title: string): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -143,7 +143,7 @@ test('назначение видно во втором виджете и пос
   const first = page.getByRole('group', { name: 'План · Второй' });
 
   // Второй экземпляр документа.
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })

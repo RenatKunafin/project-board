@@ -52,7 +52,7 @@ test('закрытие одного из двух представлений с�
   await expect(pane2.getByText('Живёт во втором окне')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })

@@ -196,9 +196,9 @@ test('каталог: новый чек-лист создаётся из пус�
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   await expect(page.getByText('Пустой дашборд')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
-  await expect(catalog.getByText('☑️')).toBeVisible();
+  await expect(catalog.getByRole('button', { name: 'Чек-лист', exact: true }).locator('svg.lucide-list-todo')).toBeVisible();
   await catalog.getByRole('button', { name: /Чек-лист/ }).click();
 
   // Пикер документа открывается в той же dropdown-панели.
@@ -218,7 +218,7 @@ test('каталог: второе представление существую
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохранено')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /Чек-лист/ })
@@ -237,7 +237,7 @@ test('каталог: второе представление существую
 
 test('каталог: отмена не создаёт документов и экземпляров', async ({ page }) => {
   await page.goto('/');
-  const catalogButton = page.getByRole('button', { name: 'Добавить виджет', exact: true });
+  const catalogButton = page.getByRole('button', { name: 'Виджеты', exact: true });
   const catalogDialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
 
   await catalogButton.click();
