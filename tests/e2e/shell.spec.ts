@@ -198,7 +198,7 @@ test('каталог: новый чек-лист создаётся из пус�
 
   await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
-  await expect(catalog.getByText('☑️')).toBeVisible();
+  await expect(catalog.getByRole('button', { name: 'Чек-лист', exact: true }).locator('svg.lucide-list-todo')).toBeVisible();
   await catalog.getByRole('button', { name: /Чек-лист/ }).click();
 
   // Пикер документа открывается в той же dropdown-панели.

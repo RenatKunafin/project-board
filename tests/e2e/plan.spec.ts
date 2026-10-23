@@ -7,7 +7,7 @@ test('план создаётся через каталог, переживае�
   await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
 
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
-  await expect(catalog.getByText('📅')).toBeVisible();
+  await expect(catalog.getByRole('button', { name: 'План', exact: true }).locator('svg.lucide-calendar-range')).toBeVisible();
   await catalog.getByRole('button', { name: /План/ }).click();
 
   const choice = page.getByRole('dialog', { name: 'Каталог виджетов' });

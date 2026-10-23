@@ -1,3 +1,4 @@
+export { WidgetIcon } from './WidgetIcon';
 export { createWidgetRegistry } from './widget-registry';
 export type {
   WidgetRegistry,

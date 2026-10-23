@@ -22,6 +22,7 @@ import {
   UnknownWidgetType,
   AppTopBar,
   WidgetWindow,
+  WidgetIcon,
   TiledLayout,
   CascadeLayout,
   defaultArea,
@@ -1345,7 +1346,7 @@ export default function App({
                       className="open-with__item"
                       onClick={() => openDocumentWithWidget(type, openWithDocument)}
                     >
-                      <span aria-hidden="true">{type.icon ?? '🧩'}</span>
+                      <span aria-hidden="true"><WidgetIcon icon={type.icon} /></span>
                       {type.title}
                     </button>
                   ))}

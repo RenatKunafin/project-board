@@ -1,3 +1,4 @@
+import { WidgetIcon } from './WidgetIcon';
 import { useState } from 'react';
 import type { ManagedDocument } from '@project-board/widget-sdk';
 import {
@@ -105,7 +106,6 @@ export function DocumentCatalogPanel({
               key={filterKey(info.moduleId, info.documentType)}
               value={filterKey(info.moduleId, info.documentType)}
             >
-              {info.icon ? `${info.icon} ` : ''}
               {info.label}
             </option>
           ))}
@@ -156,7 +156,7 @@ export function DocumentCatalogPanel({
                   )
                 }
               >
-                {info.icon ? `${info.icon} ` : ''}
+                <WidgetIcon icon={info.icon} fallback="document" />
                 {info.label}
               </button>
             );
@@ -236,11 +236,14 @@ export function DocumentCatalogPanel({
                     onClick={() => onOpen(document)}
                   >
                     <span className="doc-catalog__tile" aria-hidden="true">
-                      {typeInfos.find(
-                        (info) =>
-                          info.moduleId === document.moduleId &&
-                          info.documentType === document.documentType,
-                      )?.icon ?? '📄'}
+                      <WidgetIcon
+                        fallback="document"
+                        icon={typeInfos.find(
+                          (info) =>
+                            info.moduleId === document.moduleId &&
+                            info.documentType === document.documentType,
+                        )?.icon}
+                      />
                     </span>
                     <span className="doc-catalog__body">
                       <span className="doc-catalog__title">{document.title}</span>

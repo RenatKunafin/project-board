@@ -10,7 +10,7 @@ export function createChecklistModule() {
       defineWidgetType({
         id: 'checklist',
         title: 'Чек-лист',
-        icon: '☑️',
+        icon: 'lucide:list-todo',
         description: 'Списки задач с отметкой выполнения',
         component: ChecklistWidget,
         startSettings: {},

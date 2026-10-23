@@ -43,7 +43,7 @@ export function createGanttModule() {
       defineWidgetType({
         id: 'plan',
         title: 'План',
-        icon: '📅',
+        icon: 'lucide:calendar-range',
         description: 'Диаграмма Ганта: задачи, сроки, зависимости',
         component: PlanGanttWidget,
         startSettings: {},
@@ -62,7 +62,7 @@ export function createGanttModule() {
         // другой компонент (ADR PBT-017 ADR-2, ADR-6.6 PBT-002).
         id: 'plan-resources',
         title: 'Ресурсы',
-        icon: '👥',
+        icon: 'lucide:users',
         description: 'Загрузка и отсутствия команды',
         component: ResourceTimelineWidget,
         startSettings: {},

@@ -1,3 +1,4 @@
+import { WidgetIcon } from './WidgetIcon';
 import { useId, useState } from 'react';
 import type { WidgetTypeDefinition } from '@project-board/widget-sdk';
 
@@ -52,7 +53,7 @@ export function WidgetCatalogPanel({
                   onClick={() => onPick(type)}
                 >
                   <span className="widget-catalog__tile" aria-hidden="true">
-                    {type.icon ?? '🧩'}
+                    <WidgetIcon icon={type.icon} />
                   </span>
                   <span className="widget-catalog__body">
                     <span className="widget-catalog__name">{type.title}</span>

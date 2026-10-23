@@ -1,3 +1,4 @@
+import { WidgetIcon } from './WidgetIcon';
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
   ChevronDown,
@@ -88,7 +89,7 @@ export function WidgetWindow({
     >
       <div className="widget-window__head">
         <span className="widget-window__icon" aria-hidden="true">
-          {icon ?? '🧩'}
+          <WidgetIcon icon={icon} />
         </span>
         {/* Ручка переноса — визуальный язык прототипа (PBT-070 D1);
             сам перенос управляется раскладкой, иконка индикативна. */}
