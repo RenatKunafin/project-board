@@ -40,11 +40,15 @@ function expectGrid(area: Area) {
 }
 
 async function beginDrag(page: Page) {
+  await pane(page).locator('.widget-window__head').scrollIntoViewIfNeeded();
   const head = await pane(page).locator('.widget-window__head').boundingBox();
-  if (!head) throw new Error('Нет заголовка');
-  await page.mouse.move(head.x + 40, head.y + 10);
+  const viewport = await page.locator('.cascade-viewport').boundingBox();
+  if (!head || !viewport) throw new Error('Нет заголовка или области');
+  const x = Math.max(head.x + 40, viewport.x + 40);
+  const y = Math.max(head.y + 10, viewport.y + 10);
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  return { x: head.x + 40, y: head.y + 10 };
+  return { x, y };
 }
 
 test('каскад: дискретный preview совпадает с записью; режимы, разворот и reload сохраняют геометрию', async ({ page }) => {
@@ -62,6 +66,7 @@ test('каскад: дискретный preview совпадает с запи�
   expect(await geometry(page)).toEqual(dragLive);
   await expect.poll(() => storedArea(page)).toEqual(dragLive);
 
+  await windowOf(page).locator('.cascade-resize-se').scrollIntoViewIfNeeded();
   const handle = await windowOf(page).locator('.cascade-resize-se').boundingBox();
   if (!handle) throw new Error('Нет уголка');
   await page.mouse.move(handle.x + 6, handle.y + 6);
@@ -87,18 +92,21 @@ test('каскад: дискретный preview совпадает с запи�
   await expect.poll(() => geometry(page)).toEqual(resizeLive);
 });
 
-test('каскад: крайние узлы во время drag/resize и перенос свёрнутого окна', async ({ page }) => {
+test('каскад: поле расширяется при drag/resize, свёрнутая высота сохраняется', async ({ page }) => {
   await start(page);
   const cursor = await beginDrag(page);
   await page.mouse.move(cursor.x + 1500, cursor.y + 1500, { steps: 8 });
   const live = await geometry(page);
   expectGrid(live);
+  const viewport = await page.locator('.cascade-viewport').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
+  expect(live.x + live.width).toBeGreaterThan(viewport.width);
   const canvas = await page.locator('.cascade-layout').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
   expect(live.x + live.width).toBeLessThanOrEqual(canvas.width);
   expect(live.y + live.height).toBeLessThanOrEqual(canvas.height);
   await page.mouse.up();
   expect(await geometry(page)).toEqual(live);
 
+  await windowOf(page).locator('.cascade-resize-se').scrollIntoViewIfNeeded();
   const handle = await windowOf(page).locator('.cascade-resize-se').boundingBox();
   if (!handle) throw new Error('Нет уголка');
   await page.mouse.move(handle.x + 6, handle.y + 6);
@@ -106,8 +114,9 @@ test('каскад: крайние узлы во время drag/resize и пе�
   await page.mouse.move(handle.x + 800, handle.y + 800, { steps: 6 });
   const resized = await geometry(page);
   expectGrid(resized);
-  expect(resized.x + resized.width).toBeLessThanOrEqual(canvas.width);
-  expect(resized.y + resized.height).toBeLessThanOrEqual(canvas.height);
+  const expandedCanvas = await page.locator('.cascade-layout').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
+  expect(resized.x + resized.width).toBeLessThanOrEqual(expandedCanvas.width);
+  expect(resized.y + resized.height).toBeLessThanOrEqual(expandedCanvas.height);
   await page.mouse.up();
   expect(await geometry(page)).toEqual(resized);
   await expect.poll(() => storedArea(page)).toEqual(resized);
@@ -117,7 +126,8 @@ test('каскад: крайние узлы во время drag/resize и пе�
   await page.mouse.move(collapsedCursor.x, collapsedCursor.y + 1500, { steps: 6 });
   const collapsed = await geometry(page);
   expect(collapsed.height).toBe(34);
-  expect(collapsed.y).toBe(Math.floor((canvas.height - 34) / 16) * 16);
+  expect(collapsed.y % 16).toBe(0);
+  expect(collapsed.y).toBeGreaterThan(viewport.height);
   await page.mouse.up();
   await expect.poll(async () => (await storedArea(page))?.height).toBe(resized.height);
   await pane(page).getByRole('button', { name: `Развернуть ${label}`, exact: true }).click();
@@ -162,4 +172,46 @@ test('каскад: старые несеточные координаты но�
   const updated = await geometry(page);
   expectGrid(updated);
   await expect.poll(() => storedArea(page)).toEqual(updated);
+});
+
+test('каскад: новые окна занимают свободные места, доступны через прокрутку и переживают reload', async ({ page }) => {
+  await start(page);
+  for (let index = 1; index <= 4; index += 1) {
+    await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
+    await dialog.getByRole('button', { name: 'Чек-лист', exact: true }).click();
+    await dialog.getByLabel('Название нового документа').fill(`Свободное место ${index}`);
+    await dialog.getByRole('button', { name: 'Создать', exact: true }).click();
+    const fresh = page.getByRole('group', { name: `Чек-лист · Свободное место ${index}`, exact: true });
+    await expect(fresh.locator('.widget-window__head')).toBeInViewport();
+  }
+  const areas = () => page.locator('.cascade-layout__window').evaluateAll(nodes => nodes.map(element => {
+    const matrix = new DOMMatrix(getComputedStyle(element).transform);
+    return { x: matrix.m41, y: matrix.m42, width: element.offsetWidth, height: element.offsetHeight };
+  }).sort((a, b) => a.y - b.y || a.x - b.x));
+  const placed = await areas();
+  for (let index = 3; index < placed.length; index += 1) {
+    const fresh = placed[index];
+    expectGrid(fresh);
+    for (const other of placed.slice(0, index)) {
+      expect(fresh.x + fresh.width <= other.x || other.x + other.width <= fresh.x ||
+        fresh.y + fresh.height <= other.y || other.y + other.height <= fresh.y).toBe(true);
+    }
+  }
+  const viewport = page.locator('.cascade-viewport');
+  expect(await viewport.evaluate(e => e.scrollHeight > e.clientHeight)).toBe(true);
+  const scroll = await viewport.evaluate(e => ({ left: e.scrollLeft, top: e.scrollTop }));
+  const last = page.getByRole('group', { name: 'Чек-лист · Свободное место 4', exact: true });
+  await last.getByRole('button', { name: 'Развернуть на весь дашборд Чек-лист · Свободное место 4', exact: true }).click();
+  const overlay = await page.getByTestId('widget-maximize-layer').boundingBox();
+  const view = await viewport.boundingBox();
+  expect(overlay!.height).toBeLessThanOrEqual(view!.height + 2);
+  await last.getByRole('button', { name: 'Вернуть прежний размер Чек-лист · Свободное место 4', exact: true }).click();
+  await expect.poll(() => viewport.evaluate(e => ({ left: e.scrollLeft, top: e.scrollTop }))).toEqual(scroll);
+  await page.waitForTimeout(500);
+  await page.setViewportSize({ width: 820, height: 600 });
+  await page.reload();
+  await expect.poll(areas).toEqual(placed);
+  await last.locator('.widget-window__head').scrollIntoViewIfNeeded();
+  await expect(last.locator('.widget-window__head')).toBeInViewport();
 });

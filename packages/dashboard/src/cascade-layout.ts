@@ -59,6 +59,41 @@ export function snapCascadeArea(
   };
 }
 
+/** Новое окно — в первом свободном месте; при нехватке ширины растём вниз. */
+export function freeCascadeArea(
+  constraints: WidgetSizeConstraints,
+  occupied: readonly CascadeArea[],
+  preferredWidth: number,
+): CascadeArea {
+  const size = snapCascadeArea(defaultCascadeArea(constraints, 0), null, constraints);
+  const gap = CASCADE_SNAP;
+  const up = (value: number) => Math.ceil(value / gap) * gap;
+  const xs = [...new Set([gap, ...occupied.map(area => up(area.x + area.width + gap))])].sort((a, b) => a - b);
+  const ys = [...new Set([gap, ...occupied.map(area => up(area.y + area.height + gap))])].sort((a, b) => a - b);
+  for (const y of ys) {
+    for (const x of xs) {
+      if (x + size.width > Math.max(preferredWidth - gap, size.width + gap)) continue;
+      if (occupied.every(area => x + size.width + gap <= area.x ||
+        area.x + area.width + gap <= x || y + size.height + gap <= area.y ||
+        area.y + area.height + gap <= y)) return { ...size, x, y };
+    }
+  }
+  // Позиция ниже всех окон всегда свободна, даже для узкого viewport.
+  return { ...size, x: gap, y: up(Math.max(0, ...occupied.map(area => area.y + area.height)) + gap) };
+}
+
+/** Размер рабочего поля по окнам; viewport задаёт минимум, не предел. */
+export function cascadeCanvasSize(
+  areas: readonly CascadeArea[],
+  viewport: { width: number; height: number },
+): { width: number; height: number } {
+  const up = (value: number) => Math.ceil(value / CASCADE_SNAP) * CASCADE_SNAP;
+  return {
+    width: Math.max(viewport.width, up(Math.max(0, ...areas.map(area => area.x + area.width)) + 64)),
+    height: Math.max(viewport.height, up(Math.max(0, ...areas.map(area => area.y + area.height)) + 64)),
+  };
+}
+
 const DEFAULT_AREA = { width: 600, height: 420 } as const;
 
 const CASCADE_STACK_STEP = 28;

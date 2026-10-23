@@ -97,10 +97,20 @@ body {
 
 /* Каскадный канвас: точечная сетка прототипа (canvas-grid, PBT-069 D6);
    в тайлинге не рисуется — раскладку структурирует сетка RGL. */
+.cascade-viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tab-surface--maximized .cascade-viewport {
+  overflow: hidden;
+}
+
 .cascade-layout {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: none;
   overflow: hidden;
   background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
   background-size: var(--cascade-snap) var(--cascade-snap);
@@ -1261,6 +1271,7 @@ body {
 /* Поверхность вкладки (PBT-027): скрытые вкладки остаются смонтированы.
    relative — якорь overlay-слоя разворота окна (PBT-071). */
 .tab-surface {
+  min-width: 0;
   position: relative;
   display: flex;
   flex-direction: column;

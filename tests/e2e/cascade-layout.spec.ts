@@ -116,6 +116,7 @@ test('каскад: resize за уголок соблюдает минимум �
     .locator('.cascade-layout__window')
     .filter({ has: pane })
     .locator('.cascade-resize-se');
+  await handle.scrollIntoViewIfNeeded();
   const handleBox = await handle.boundingBox();
   if (!handleBox) {
     throw new Error('Нет уголка resize');
@@ -176,7 +177,7 @@ test('каскад: скриншот перекрытых окон', async ({ pa
   });
 });
 
-test('каскад: resize за уголок не уводит окно за край канваса (PBT-076)', async ({
+test('каскад: resize расширяет канвас, окно доступно прокруткой (PBT-078)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -206,6 +207,7 @@ test('каскад: resize за уголок не уводит окно за к�
     .locator('.cascade-layout__window')
     .filter({ has: pane })
     .locator('.cascade-resize-se');
+  await handle.scrollIntoViewIfNeeded();
   const handleBox = await handle.boundingBox();
   if (!handleBox) {
     throw new Error('Нет уголка ресайза');
@@ -232,7 +234,7 @@ test('каскад: resize за уголок не уводит окно за к�
   ).toBeVisible();
 });
 
-test('каскад: сжатие канваса и восстановление ограничивают окно в области (PBT-076)', async ({
+test('каскад: сжатие экрана и восстановление сохраняют доступ к окну прокруткой (PBT-078)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 800 });

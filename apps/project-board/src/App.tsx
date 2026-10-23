@@ -25,6 +25,9 @@ import {
   WidgetIcon,
   TiledLayout,
   CascadeLayout,
+  freeCascadeArea,
+  cascadeAreaOf,
+  snapCascadeArea,
   defaultArea,
   TILE_GRID_COLUMNS,
   WidgetCatalogPanel,
@@ -409,11 +412,11 @@ export const TabSurface = memo(function TabSurface({
 
   useEffect(() => {
     const surface = surfaceRef.current;
-    // Прокручиваемый канвас — родительская секция вкладок (.instances,
-    // overflow-y: auto): при развороте контент сжимается до видимой
-    // области, скролл фиксируется в 0 и восстанавливается после возврата
-    // (паттерн previousScroll прототипа, PBT-071 D4).
-    const scroller = surface?.parentElement;
+    // Каскад прокручивается внутри своего viewport; тайлинг — в .instances.
+    // При развороте сбрасываем нужный scroller и восстанавливаем при возврате.
+    const scroller = mode === 'cascade'
+      ? surface?.querySelector<HTMLElement>('.cascade-viewport')
+      : surface?.parentElement;
     if (!surface || !scroller) {
       return;
     }
@@ -433,7 +436,7 @@ export const TabSurface = memo(function TabSurface({
         scroller.scrollTo(previous.left, previous.top);
       });
     }
-  }, [maximizedInstanceId]);
+  }, [maximizedInstanceId, mode]);
 
   const effectiveActiveInstanceId = visible
     ? (panes.some((pane) => pane.instanceId === activeInstanceId)
@@ -728,14 +731,31 @@ export default function App({
         },
       },
     }));
-    // В каскаде новое окно добавляется наверх стека; область посчитает адаптер.
-    setCascadeByTab((previous) => ({
-      ...previous,
-      [activeTab.id]: {
-        areas: previous[activeTab.id]?.areas ?? {},
-        order: [...(previous[activeTab.id]?.order ?? []), instanceId],
-      },
-    }));
+    // В каскаде новое окно занимает свободную область и поднимается наверх.
+    setActiveInstanceId(instanceId);
+    setCascadeByTab((previous) => {
+      const current = previous[activeTab.id] ?? { areas: {}, order: [] };
+      const nextAreas = { ...current.areas };
+      if (layoutMode === 'cascade') {
+        const occupied = activePanes.map((pane, index) => {
+          const lookup = widgetRegistry.get(pane.typeId);
+          const constraints = lookup && !('kind' in lookup) ? lookup.sizeConstraints : { minWidth: 3, minHeight: 3 };
+          const raw = cascadeAreaOf(pane.instanceId, constraints, index, current);
+          // Стартовые окна тоже должны сохранять место: после reload порядок
+          // записей IDB может отличаться от порядка добавления экземпляров.
+          nextAreas[pane.instanceId] = raw;
+          return snapCascadeArea(raw, null, constraints);
+        });
+        const viewportWidth = document.querySelector<HTMLElement>(
+          '.tab-surface:not([hidden]) .cascade-viewport',
+        )?.clientWidth ?? window.innerWidth;
+        nextAreas[instanceId] = freeCascadeArea(type.sizeConstraints, occupied, viewportWidth);
+      }
+      return {
+        ...previous,
+        [activeTab.id]: { areas: nextAreas, order: [...current.order, instanceId] },
+      };
+    });
   };
 
   const activatePane = (instanceId: string): void => {

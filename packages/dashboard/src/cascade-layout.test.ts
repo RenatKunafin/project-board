@@ -8,6 +8,8 @@ import {
   orderFrom,
   snapCascadeArea,
   cascadeSnapRange,
+  cascadeCanvasSize,
+  freeCascadeArea,
   type CascadeLayoutState,
 } from './cascade-layout';
 
@@ -239,5 +241,34 @@ describe('clampCascadeArea (PBT-076, design D3)', () => {
       { minWidth: 2, minHeight: 2, maxWidth: 3, maxHeight: 3 },
     );
     expect(clamped).toEqual({ x: 0, y: 0, width: 420, height: 288 });
+  });
+});
+
+describe('расширяемое поле каскада', () => {
+  it('новое окно помещается ниже занятого экрана и не перекрывает окна', () => {
+    const occupied = [{ x: 16, y: 16, width: 608, height: 416 }];
+    const next = freeCascadeArea(checklistConstraints, occupied, 1024);
+    expect(next).toEqual({ x: 16, y: 448, width: 608, height: 416 });
+    expect(cascadeCanvasSize([...occupied, next], { width: 1024, height: 600 })).toEqual({ width: 1024, height: 928 });
+  });
+
+  it('использует свободное место в строке при достаточной ширине', () => {
+    expect(freeCascadeArea(checklistConstraints,
+      [{ x: 16, y: 16, width: 608, height: 416 }], 1440)).toEqual({ x: 640, y: 16, width: 608, height: 416 });
+  });
+
+  it('канвас растёт по сохранённым окнам, а маленький экран не меняет геометрию', () => {
+    const area = { x: 1600, y: 1200, width: 608, height: 416 };
+    expect(cascadeCanvasSize([area], { width: 820, height: 500 })).toEqual({ width: 2272, height: 1680 });
+    expect(snapCascadeArea(area, null, checklistConstraints)).toEqual(area);
+  });
+
+  it('повторное добавление на узком экране не создаёт пересечений', () => {
+    const occupied: { x: number; y: number; width: number; height: number }[] = [];
+    for (let index = 0; index < 10; index += 1) {
+      const next = freeCascadeArea(checklistConstraints, occupied, 400);
+      for (const previous of occupied) expect(next.y).toBeGreaterThanOrEqual(previous.y + previous.height + 16);
+      occupied.push(next);
+    }
   });
 });

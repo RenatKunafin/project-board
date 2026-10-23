@@ -36,6 +36,8 @@ export {
   areaOf as cascadeAreaOf,
   cascadeSizeBounds,
   defaultCascadeArea,
+  freeCascadeArea,
+  snapCascadeArea,
   depthOf,
   orderFrom,
 } from './cascade-layout';
