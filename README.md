@@ -20,9 +20,12 @@ npm run typecheck  # tsc --noEmit по всем пакетам
 npm run lint       # ESLint: код + границы импортов (ADR PBT-002)
 npm test           # unit-тесты (Vitest)
 npm run test:browser  # UI-проверки (Playwright; локально: npx playwright install chromium)
+npm run bench:release  # итоговые замеры (активный Chrome, сначала build; красный критерий даёт exit 1)
 npm run test:planning  # сквозные цепочки: Chromium/Firefox/WebKit/установленный Chrome (сначала build)
 npm run test:pwa-updates  # две production-сборки: обновление, сохранение, миграции и офлайн
 ```
+
+Методика и результаты производительности: [отчёт PBT-058](.docs/research/PBT-058.md).
 
 Подготовка браузеров и ограничения сквозной проверки: [отчёт PBT-057](.docs/research/PBT-057.md).
 

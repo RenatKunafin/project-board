@@ -22,7 +22,8 @@
     "test": "vitest run --passWithNoTests",
     "test:browser": "playwright test",
     "test:pwa-updates": "node tests/pwa-updates/build.mjs && playwright test --config=playwright.pwa.config.ts",
-    "test:planning": "playwright test --config=playwright.planning.config.ts"
+    "test:planning": "playwright test --config=playwright.planning.config.ts",
+    "bench:release": "node tests/performance/run.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
