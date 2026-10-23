@@ -179,12 +179,12 @@ test('документ закрытой вкладки доступен для �
     .getByText('Документ жив', { exact: true })).toBeVisible();
 });
 
-test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
+test('единственная вкладка не показывает кнопку закрытия', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(
     page.getByRole('button', { name: /Закрыть Чек-листы/ }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await expect(page.getByRole('tab', { name: /Чек-листы/ })).toBeVisible();
 });
 

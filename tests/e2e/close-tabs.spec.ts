@@ -52,7 +52,7 @@ test('закрытие средней и последней вкладки, за
   await expect(tab(page, 'C')).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('button', { name: 'Закрыть C', exact: true }).click();
   await expect(tab(page, 'A')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('button', { name: 'Закрыть A', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Закрыть A', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await renameActive(page, 'D');
   await page.getByRole('button', { name: 'Закрыть D', exact: true }).focus();

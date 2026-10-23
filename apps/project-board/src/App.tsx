@@ -1,4 +1,4 @@
-import { FileText, Layers, LayoutGrid } from 'lucide-react';
+import { FileText, Layers, LayoutGrid, X } from 'lucide-react';
 import { PwaStatus } from './PwaStatus';
 import type {
   AutosavingDocumentService,
@@ -1290,19 +1290,20 @@ export default function App({
                 ) : (
                   <span className="tab__title">{tab.title}</span>
                 )}
-                <button
-                  type="button"
-                  className="tab__close"
-                  aria-label={`Закрыть ${tab.title}`}
-                  disabled={isLastTab}
-                  onKeyDown={(event) => event.stopPropagation()}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    closeTab(tab.id);
-                  }}
-                >
-                  ×
-                </button>
+                {!isLastTab && (
+                  <button
+                    type="button"
+                    className="tab__close"
+                    aria-label={`Закрыть ${tab.title}`}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                )}
               </div>
             );
           })}
