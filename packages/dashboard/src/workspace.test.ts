@@ -81,6 +81,22 @@ describe('workspace — порядок', () => {
 });
 
 describe('workspace — удаление', () => {
+  it.each([
+    { count: 2, removed: 0, active: 0, expected: 'B' },
+    { count: 3, removed: 0, active: 0, expected: 'B' },
+    { count: 3, removed: 1, active: 1, expected: 'C' },
+    { count: 3, removed: 2, active: 2, expected: 'B' },
+    { count: 3, removed: 0, active: 1, expected: 'B' },
+    { count: 3, removed: 2, active: 1, expected: 'B' },
+  ])('сосед после закрытия: $count вкладки, удалена $removed, активна $active', ({ count, removed, active, expected }) => {
+    let state = createWorkspaceState('A');
+    for (const title of ['B', 'C'].slice(0, count - 1)) state = addTab(state, title);
+    state = setActive(state, state.tabs[active].id);
+    const result = removeTab(state, state.tabs[removed].id);
+    expect(result.tabs.find(tab => tab.id === result.activeId)?.title).toBe(expected);
+    expect(result.tabs).toHaveLength(count - 1);
+  });
+
   it('удаляет активную: активной становится соседняя справа', () => {
     let state = createWorkspaceState('A');
     state = addTab(state, 'B'); // активна B

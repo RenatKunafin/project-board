@@ -696,7 +696,6 @@ body {
 
 /* Управление вкладкой проявляется по hover/focus (PBT-072 D2):
    прозрачность не блокирует клики и клавиатуру (aria сохранены). */
-.tab__move,
 .tab__close {
   border: none;
   background: transparent;
@@ -708,9 +707,7 @@ body {
   transition: opacity 120ms ease;
 }
 
-.tab:hover .tab__move,
 .tab:hover .tab__close,
-.tab:focus-within .tab__move,
 .tab:focus-within .tab__close {
   opacity: 1;
 }
@@ -719,16 +716,13 @@ body {
   color: var(--destructive);
 }
 
-.tab__move:disabled,
 .tab__close:disabled {
   cursor: default;
 }
 
 /* Недоступные действия проявляются вместе с остальными, но приглушённо;
    вне hover/focus вкладка показывает только название (PBT-072 D2). */
-.tab:hover .tab__move:disabled,
 .tab:hover .tab__close:disabled,
-.tab:focus-within .tab__move:disabled,
 .tab:focus-within .tab__close:disabled {
   opacity: 0.35;
 }

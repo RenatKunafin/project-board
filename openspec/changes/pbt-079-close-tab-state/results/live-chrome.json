@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-23T21:27:01.975Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "keyboardNavigation": true,
+  "keyboardClose": true,
+  "noArrows": true,
+  "deletedMaximizedCascadeTab": true,
+  "deletedMiddleAndLast": true,
+  "lastTabProtected": true,
+  "repeatedCreation": true,
+  "documentsPreserved": true,
+  "reload": true,
+  "subscriptions": 1,
+  "consoleErrors": [],
+  "before": {
+    "tabIds": [
+      "9f950974-6c2e-477c-9a93-6f08798d303d"
+    ],
+    "instanceIds": [
+      "w-1",
+      "w-2",
+      "w-3"
+    ]
+  },
+  "after": {
+    "tabTitles": [
+      "Рабочая"
+    ],
+    "instances": [
+      {
+        "id": "f8ba8e5b-3239-484c-b6be-084161e0e773",
+        "tabId": "457c9d8c-a7a3-44f7-990d-564fc84d854b",
+        "typeId": "checklist",
+        "documentId": "aebc7a06-e657-4641-b0ff-c1d01adb6030",
+        "label": "Чек-лист · Список 2",
+        "collapsed": 0,
+        "gridArea": {
+          "x": 0,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        },
+        "cascadeArea": {
+          "x": 16,
+          "y": 16,
+          "width": 608,
+          "height": 416
+        }
+      }
+    ],
+    "viewSettings": [
+      {
+        "key": "view:f8ba8e5b-3239-484c-b6be-084161e0e773",
+        "value": {
+          "hideDone": true
+        }
+      }
+    ]
+  }
+}

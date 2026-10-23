@@ -70,7 +70,7 @@ test('рабочее пространство восстанавливается
   await expect(page.locator('.tab-surface:not([hidden]) .cascade-layout')).toBeVisible();
 
   // Первая вкладка: режим каскада, сворачивание, содержимое сохранены.
-  // Клик по тексту вкладки: центр таба попадает на кнопки перемещения.
+  // Клик по названию активирует саму вкладку.
   await tablist.getByRole('tab', { name: /Рабочая/ }).getByText('Рабочая').click();
   await expect(page.locator('.tab-surface:not([hidden]) .cascade-layout')).toBeVisible();
   await expect(
