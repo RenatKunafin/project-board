@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, type ComponentType, ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type CSSProperties, ReactNode } from 'react';
 import { Rnd } from 'react-rnd';
 import type { WidgetSizeConstraints } from '@project-board/widget-sdk';
 import {
   CASCADE_COLLAPSED_HEIGHT,
+  CASCADE_SNAP,
+  cascadeSnapRange,
   areaOf,
   cascadeSizeBounds,
-  clampCascadeArea,
+  snapCascadeArea,
   depthOf,
   orderFrom,
   type CascadeArea,
@@ -27,6 +29,8 @@ interface RndProps {
   maxHeight?: number | string;
   dragHandleClassName?: string;
   bounds?: string;
+  dragGrid?: [number, number];
+  resizeGrid?: [number, number];
   disableDragging?: boolean;
   enableResizing?: Record<string, boolean>;
   resizeHandleClasses?: Record<string, string>;
@@ -112,12 +116,13 @@ export function CascadeLayout({
   }, []);
 
   /** Клампинг при фиксации жеста: в раскладку (и БД) — валидная геометрия. */
-  const clampFor = (
+  const snapFor = (
     constraints: WidgetSizeConstraints,
     raw: CascadeArea,
+    collapsed: boolean,
   ): CascadeArea => {
     const canvas = canvasSizeRef.current;
-    return canvas === null ? raw : clampCascadeArea(raw, canvas, constraints);
+    return snapCascadeArea(raw, canvas, constraints, collapsed);
   };
 
   const applyArea = (instanceId: string, area: CascadeArea): void => {
@@ -128,7 +133,7 @@ export function CascadeLayout({
   };
 
   return (
-    <div className="cascade-layout" ref={containerRef}>
+    <div className="cascade-layout" ref={containerRef} style={{ '--cascade-snap': `${CASCADE_SNAP}px`, '--cascade-dot-offset': `${-CASCADE_SNAP / 2}px` } as CSSProperties}>
       {items.map((item, index) => {
         const storedArea = areaOf(
           item.instanceId,
@@ -138,52 +143,64 @@ export function CascadeLayout({
         );
         // Отображение через клампинг: восстановленные и «убежавшие»
         // за край области показываются внутри канваса (запись в БД —
-        // только пользовательской операцией, см. clampFor).
-        const area =
-          canvasSize === null
-            ? storedArea
-            : clampCascadeArea(storedArea, canvasSize, item.constraints);
-        const bounds = cascadeSizeBounds(item.constraints);
+        // только пользовательской операцией, см. snapFor).
+        const area = snapCascadeArea(storedArea, canvasSize, item.constraints, item.collapsed);
+        const typeBounds = cascadeSizeBounds(item.constraints);
+        const widthRange = cascadeSnapRange(typeBounds.minWidth,
+          Math.min(Number(typeBounds.maxWidth ?? Infinity), (canvasSize?.width ?? Infinity) - area.x));
+        const heightRange = cascadeSnapRange(typeBounds.minHeight,
+          Math.min(Number(typeBounds.maxHeight ?? Infinity), (canvasSize?.height ?? Infinity) - area.y));
+        const visibleHeight = item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height;
+        // Границы drag тоже на узлах: штатный bounds иначе допускает
+        // несеточную позицию у края. Прозрачная плоскость не ловит клики
+        // и не создаёт stacking context — z-index окон остаётся общим.
+        const planeWidth = canvasSize === null ? '100%' : area.width + Math.max(0,
+          Math.floor((canvasSize.width - area.width) / CASCADE_SNAP) * CASCADE_SNAP);
+        const planeHeight = canvasSize === null ? '100%' : visibleHeight + Math.max(0,
+          Math.floor((canvasSize.height - visibleHeight) / CASCADE_SNAP) * CASCADE_SNAP);
         const depth = depthOf(order, item.instanceId);
         return (
-          <RndComponent
-            key={item.instanceId}
-            className="cascade-layout__window"
-            size={{ width: area.width, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height }}
-            position={{ x: area.x, y: area.y }}
-            minWidth={bounds.minWidth}
-            minHeight={bounds.minHeight}
-            maxWidth={bounds.maxWidth}
-            maxHeight={bounds.maxHeight}
-            dragHandleClassName="widget-window__head"
-            bounds="parent"
-            enableResizing={{ bottomRight: !item.collapsed, top: false, right: false, bottom: false, left: false, topRight: false, bottomLeft: false, topLeft: false }}
-            resizeHandleClasses={RESIZE_HANDLE_CLASSES}
-            style={{ zIndex: depth }}
-            onDragStop={(_event, data) => {
-              applyArea(
-                item.instanceId,
-                clampFor(item.constraints, {
-                  ...area,
-                  x: data.x,
-                  y: data.y,
-                }),
-              );
-            }}
-            onResizeStop={(_event, _direction, ref, _delta, position) => {
-              applyArea(
-                item.instanceId,
-                clampFor(item.constraints, {
-                  x: position.x,
-                  y: position.y,
-                  width: ref.offsetWidth,
-                  height: ref.offsetHeight,
-                }),
-              );
-            }}
-          >
-            {item.node}
-          </RndComponent>
+          <div key={item.instanceId} className="cascade-layout__bounds" style={{ width: planeWidth, height: planeHeight }}>
+            <RndComponent
+              className="cascade-layout__window"
+              size={{ width: area.width, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height }}
+              position={{ x: area.x, y: area.y }}
+              minWidth={widthRange.min}
+              minHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : heightRange.min}
+              maxWidth={Number.isFinite(widthRange.max) ? widthRange.max : undefined}
+              maxHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : Number.isFinite(heightRange.max) ? heightRange.max : undefined}
+              dragHandleClassName="widget-window__head"
+              bounds="parent"
+              dragGrid={[CASCADE_SNAP, CASCADE_SNAP]}
+              resizeGrid={[widthRange.step, heightRange.step]}
+              enableResizing={{ bottomRight: !item.collapsed, top: false, right: false, bottom: false, left: false, topRight: false, bottomLeft: false, topLeft: false }}
+              resizeHandleClasses={RESIZE_HANDLE_CLASSES}
+              style={{ zIndex: depth }}
+              onDragStop={(_event, data) => {
+                applyArea(
+                  item.instanceId,
+                  snapFor(item.constraints, {
+                    ...area,
+                    x: data.x,
+                    y: data.y,
+                  }, item.collapsed),
+                );
+              }}
+              onResizeStop={(_event, _direction, ref, _delta, position) => {
+                applyArea(
+                  item.instanceId,
+                  snapFor(item.constraints, {
+                    x: position.x,
+                    y: position.y,
+                    width: ref.offsetWidth,
+                    height: ref.offsetHeight,
+                  }, false),
+                );
+              }}
+            >
+              {item.node}
+            </RndComponent>
+          </div>
         );
       })}
     </div>

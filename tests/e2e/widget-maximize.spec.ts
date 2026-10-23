@@ -158,6 +158,9 @@ test('каскад: геометрия окна сохраняется посл�
   await page.getByRole('button', { name: 'Каскад' }).click();
 
   const pane1 = page.getByRole('group', { name: PANE_1 });
+  // После привязки стека к 16px кнопки заднего окна могут перекрываться.
+  // Сначала активируем его за видимый фрагмент заголовка, как пользователь.
+  await pane1.locator('.widget-window__head').click({ position: { x: 8, y: 8 } });
   const before = await pane1.boundingBox();
   expect(before).not.toBeNull();
 

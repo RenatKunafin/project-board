@@ -103,7 +103,19 @@ body {
   min-height: 0;
   overflow: hidden;
   background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
-  background-size: 16px 16px;
+  background-size: var(--cascade-snap) var(--cascade-snap);
+  background-position: var(--cascade-dot-offset) var(--cascade-dot-offset);
+}
+
+.cascade-layout__bounds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.cascade-layout__window {
+  pointer-events: auto;
 }
 
 .cascade-layout__window > .widget-window {

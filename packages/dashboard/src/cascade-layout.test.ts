@@ -6,10 +6,74 @@ import {
   defaultCascadeArea,
   depthOf,
   orderFrom,
+  snapCascadeArea,
+  cascadeSnapRange,
   type CascadeLayoutState,
 } from './cascade-layout';
 
 const checklistConstraints = { minWidth: 2, minHeight: 2 };
+
+describe('сетка каскада (PBT-078)', () => {
+  const canvas = { width: 1000, height: 700 };
+
+  it('нормализует старую геометрию, не изменяя исходную запись', () => {
+    const legacy = Object.freeze({ x: 24, y: 52, width: 600, height: 420 });
+    expect(snapCascadeArea(legacy, canvas, checklistConstraints)).toEqual({
+      x: 32, y: 48, width: 608, height: 416,
+    });
+    expect(legacy).toEqual({ x: 24, y: 52, width: 600, height: 420 });
+  });
+
+  it('выбирает крайние допустимые узлы, сохраняя окно внутри несеточного канваса', () => {
+    const area = snapCascadeArea({ x: 900, y: 650, width: 600, height: 420 }, canvas, checklistConstraints);
+    expect(area).toEqual({ x: 384, y: 272, width: 608, height: 416 });
+    expect(area.x + area.width).toBeLessThanOrEqual(canvas.width);
+    expect(area.y + area.height).toBeLessThanOrEqual(canvas.height);
+  });
+
+  it('не округляет минимум вниз или максимум вверх', () => {
+    expect(cascadeSnapRange(280, 420)).toEqual({ min: 288, max: 416, step: 16 });
+    expect(snapCascadeArea({ x: -20, y: -5, width: 10, height: 900 }, canvas,
+      { ...checklistConstraints, maxWidth: 3, maxHeight: 3 })).toEqual({
+      x: 0, y: 0, width: 288, height: 288,
+    });
+  });
+
+  it('в интервале без узлов приоритет имеют границы размера', () => {
+    expect(cascadeSnapRange(280, 283)).toEqual({ min: 280, max: 283, step: 1 });
+    expect(snapCascadeArea({ x: 50, y: 50, width: 600, height: 420 },
+      { width: 283, height: 199 }, checklistConstraints)).toEqual({
+      x: 0, y: 0, width: 283, height: 192,
+    });
+  });
+
+  it('при канвасе меньше минимума сохраняет минимум и позицию 0', () => {
+    expect(snapCascadeArea({ x: 50, y: 50, width: 600, height: 420 },
+      { width: 200, height: 150 }, checklistConstraints)).toEqual({
+      x: 0, y: 0, width: 280, height: 192,
+    });
+  });
+
+  it('свёрнутое окно движется до нижних узлов, не теряя развёрнутую высоту', () => {
+    expect(snapCascadeArea({ x: 0, y: 900, width: 600, height: 420 },
+      canvas, checklistConstraints, true)).toEqual({
+      x: 0, y: 656, width: 608, height: 420,
+    });
+  });
+
+  it('работает до первого измерения канваса без бесконечных размеров', () => {
+    expect(snapCascadeArea({ x: 24, y: 52, width: 600, height: 420 },
+      null, checklistConstraints)).toEqual({ x: 32, y: 48, width: 608, height: 416 });
+  });
+
+  it('повторная нормализация не сдвигает геометрию', () => {
+    for (const width of [200, 283, 511, 1000]) {
+      const bounds = { width, height: 699 };
+      const area = snapCascadeArea({ x: 943, y: 637, width: 612, height: 417 }, bounds, checklistConstraints);
+      expect(snapCascadeArea(area, bounds, checklistConstraints)).toEqual(area);
+    }
+  });
+});
 
 describe('defaultCascadeArea', () => {
   it('стартовая область 600×420 в позиции каскадного стека', () => {
