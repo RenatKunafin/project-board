@@ -9,6 +9,7 @@ test('топ-бар показывает название и индикатор 
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const topbar = page.locator('.app-topbar');
 
   await expect(topbar).toBeVisible();
@@ -39,6 +40,7 @@ test('топ-бар показывает название и индикатор 
 
 test('каталог виджетов показывает карточки с описаниями', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
 
   const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
@@ -58,6 +60,7 @@ test('каталог документов показывает счётчик о
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
   await page.getByRole('button', { name: 'Каталог документов' }).click();
   const catalog = page.getByRole('dialog', { name: 'Каталог документов' });
@@ -70,6 +73,7 @@ test('пустая вкладка показывает состояние с к�
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
 
   await expect(page.getByText('Пустой дашборд')).toBeVisible();

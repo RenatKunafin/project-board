@@ -25,6 +25,9 @@ import {
   WidgetIcon,
   TiledLayout,
   CascadeLayout,
+  freeCascadeArea,
+  cascadeAreaOf,
+  snapCascadeArea,
   defaultArea,
   TILE_GRID_COLUMNS,
   WidgetCatalogPanel,
@@ -409,11 +412,11 @@ export const TabSurface = memo(function TabSurface({
 
   useEffect(() => {
     const surface = surfaceRef.current;
-    // Прокручиваемый канвас — родительская секция вкладок (.instances,
-    // overflow-y: auto): при развороте контент сжимается до видимой
-    // области, скролл фиксируется в 0 и восстанавливается после возврата
-    // (паттерн previousScroll прототипа, PBT-071 D4).
-    const scroller = surface?.parentElement;
+    // Каскад прокручивается внутри своего viewport; тайлинг — в .instances.
+    // При развороте сбрасываем нужный scroller и восстанавливаем при возврате.
+    const scroller = mode === 'cascade'
+      ? surface?.querySelector<HTMLElement>('.cascade-viewport')
+      : surface?.parentElement;
     if (!surface || !scroller) {
       return;
     }
@@ -433,7 +436,7 @@ export const TabSurface = memo(function TabSurface({
         scroller.scrollTo(previous.left, previous.top);
       });
     }
-  }, [maximizedInstanceId]);
+  }, [maximizedInstanceId, mode]);
 
   const effectiveActiveInstanceId = visible
     ? (panes.some((pane) => pane.instanceId === activeInstanceId)
@@ -646,7 +649,7 @@ export default function App({
 
   // Режим размещения: сетка (PBT-021) или каскад (PBT-022). Переключатель
   // временен: продуктовое переключение с раздельными раскладками — PBT-023.
-  // Режим размещения — свойство вкладки (решения §4.1): умолчание — сетка.
+  // Режим размещения — свойство вкладки (решения §4.1): умолчание — каскад.
   // Персистентность режима и раскладок — PBT-024.
   const [modeByTab, setModeByTab] = useState<
     Record<string, 'grid' | 'cascade'>
@@ -676,8 +679,8 @@ export default function App({
   const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeId);
 
   const layoutMode: 'grid' | 'cascade' = activeTab
-    ? (modeByTab[activeTab.id] ?? 'grid')
-    : 'grid';
+    ? (modeByTab[activeTab.id] ?? 'cascade')
+    : 'cascade';
 
   const setLayoutMode = (mode: 'grid' | 'cascade'): void => {
     if (activeTab) {
@@ -728,14 +731,31 @@ export default function App({
         },
       },
     }));
-    // В каскаде новое окно добавляется наверх стека; область посчитает адаптер.
-    setCascadeByTab((previous) => ({
-      ...previous,
-      [activeTab.id]: {
-        areas: previous[activeTab.id]?.areas ?? {},
-        order: [...(previous[activeTab.id]?.order ?? []), instanceId],
-      },
-    }));
+    // В каскаде новое окно занимает свободную область и поднимается наверх.
+    setActiveInstanceId(instanceId);
+    setCascadeByTab((previous) => {
+      const current = previous[activeTab.id] ?? { areas: {}, order: [] };
+      const nextAreas = { ...current.areas };
+      if (layoutMode === 'cascade') {
+        const occupied = activePanes.map((pane, index) => {
+          const lookup = widgetRegistry.get(pane.typeId);
+          const constraints = lookup && !('kind' in lookup) ? lookup.sizeConstraints : { minWidth: 3, minHeight: 3 };
+          const raw = cascadeAreaOf(pane.instanceId, constraints, index, current);
+          // Стартовые окна тоже должны сохранять место: после reload порядок
+          // записей IDB может отличаться от порядка добавления экземпляров.
+          nextAreas[pane.instanceId] = raw;
+          return snapCascadeArea(raw, null, constraints);
+        });
+        const viewportWidth = document.querySelector<HTMLElement>(
+          '.tab-surface:not([hidden]) .cascade-viewport',
+        )?.clientWidth ?? window.innerWidth;
+        nextAreas[instanceId] = freeCascadeArea(type.sizeConstraints, occupied, viewportWidth);
+      }
+      return {
+        ...previous,
+        [activeTab.id]: { areas: nextAreas, order: [...current.order, instanceId] },
+      };
+    });
   };
 
   const activatePane = (instanceId: string): void => {
@@ -912,7 +932,7 @@ export default function App({
         id: tab.id,
         title: tab.title,
         position: index,
-        mode: modeByTab[tab.id] ?? 'grid',
+        mode: modeByTab[tab.id] ?? 'cascade',
         cascadeOrder: cascadeByTab[tab.id]?.order ?? [],
         active: tab.id === workspace.activeId ? 1 : 0,
       })),
@@ -1295,19 +1315,19 @@ export default function App({
           >
             <button
               type="button"
-              aria-pressed={layoutMode === 'grid'}
-              onClick={() => setLayoutMode('grid')}
-            >
-              <LayoutGrid aria-hidden="true" />
-              Сетка
-            </button>
-            <button
-              type="button"
               aria-pressed={layoutMode === 'cascade'}
               onClick={() => setLayoutMode('cascade')}
             >
               <Layers aria-hidden="true" />
               Каскад
+            </button>
+            <button
+              type="button"
+              aria-pressed={layoutMode === 'grid'}
+              onClick={() => setLayoutMode('grid')}
+            >
+              <LayoutGrid aria-hidden="true" />
+              Сетка
             </button>
           </div>
           <span className="header-anchor">
@@ -1430,7 +1450,7 @@ export default function App({
             key={tab.id}
             tabTitle={tab.title}
             visible={tab.id === workspace.activeId}
-            mode={modeByTab[tab.id] ?? 'grid'}
+            mode={modeByTab[tab.id] ?? 'cascade'}
             panes={panesByTab[tab.id] ?? []}
             areas={areasByTab[tab.id] ?? {}}
             cascade={

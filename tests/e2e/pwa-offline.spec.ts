@@ -46,6 +46,7 @@ async function persistedItem(page: Page, title: string, text: string, completed:
 
 test('манифест, иконки и все production-ресурсы доступны из precache', async ({ page, request }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await prepared(page);
   const manifestUrl = await page.locator('link[rel="manifest"]').getAttribute('href');
   const manifest = await (await request.get(manifestUrl!)).json();
@@ -83,11 +84,24 @@ test('манифест, иконки и все production-ресурсы дос�
 
 test('холодный запуск, изменение и новый список без сети переживают повторное открытие', async ({ context, page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await prepared(page);
   const original = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
   await original.getByPlaceholder('Новая задача…').fill('Подготовлено онлайн');
   await original.getByRole('button', { name: 'Добавить', exact: true }).click();
   await persistedItem(page, 'Список 1', 'Подготовлено онлайн', false);
+  // Документ и режим вкладки записываются разными очередями. Перед холодным
+  // запуском подтверждаем и структурный снимок, а не полагаемся на pagehide.
+  await expect.poll(() => page.evaluate(() => new Promise<boolean>((resolve, reject) => {
+    const open = indexedDB.open('project-board');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const read = db.transaction('tabs').objectStore('tabs').getAll();
+      read.onsuccess = () => { db.close(); resolve(read.result.some(tab => tab.active === 1 && tab.mode === 'grid')); };
+      read.onerror = () => { db.close(); reject(read.error); };
+    };
+  }))).toBe(true);
   await page.close();
   await context.setOffline(true);
 
@@ -122,6 +136,7 @@ test('холодный запуск, изменение и новый списо
 
 test('оба представления плана и шрифты загружаются офлайн', async ({ context, page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await prepared(page);
   await page.close();
   await context.setOffline(true);
@@ -156,6 +171,7 @@ test('оба представления плана и шрифты загруж�
 test('отказ регистрации не объявляет офлайн-готовность и не блокирует список', async ({ page, context }) => {
   await context.route('**/sw.js', (route) => route.abort());
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(ready(page)).toHaveText('Офлайн-режим недоступен');
   const list = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
   await list.getByPlaceholder('Новая задача…').fill('Доступно онлайн');
@@ -179,6 +195,7 @@ test('ошибка скачивания обязательного шрифта 
     return route.continue();
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(ready(page)).toHaveText('Офлайн-режим недоступен');
   expect(blocked).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name: 'Project Board', exact: true })).toBeVisible();

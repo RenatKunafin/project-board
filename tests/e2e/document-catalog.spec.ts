@@ -5,6 +5,7 @@ test.describe.serial('каталог документов', () => {
     page,
   }) => {
     await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
     // Создание «Покупки» на новой вкладке через каталог виджетов и пикер.
     const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
@@ -108,6 +109,7 @@ test.describe.serial('каталог документов', () => {
 
   test('фильтр по типу: пустой результат отличим от пустого каталога', async ({ page }) => {
     await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     await page.getByRole('button', { name: 'Каталог документов' }).click();
     const documents = page.getByRole('dialog', { name: 'Каталог документов' });
 
@@ -130,6 +132,7 @@ test.describe.serial('каталог документов', () => {
 
   test('отмена подтверждения удаления ничего не меняет', async ({ page }) => {
     await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
     await pane1.getByPlaceholder('Новая задача…').fill('Живой пункт');
     await pane1.getByRole('button', { name: 'Добавить' }).click();
