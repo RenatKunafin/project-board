@@ -709,7 +709,7 @@ body {
   color: var(--muted-foreground);
   cursor: pointer;
   opacity: 0;
-  transform: translateY(3px);
+  transform: translateY(2px);
 }
 
 .tab__close svg {
