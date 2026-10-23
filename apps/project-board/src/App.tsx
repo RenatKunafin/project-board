@@ -1382,7 +1382,7 @@ export default function App({
               type="button"
               ref={widgetsButtonRef}
               className="add-widget-button"
-              aria-label="Добавить виджет"
+              aria-label="Виджеты"
               aria-expanded={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}
               onClick={() =>
                 setHeaderPanel((current) =>
@@ -1392,8 +1392,7 @@ export default function App({
                 )
               }
             >
-              <LayoutGrid aria-hidden="true" />
-              + Виджет
+              Виджеты
             </button>
             <DropdownPanel
               open={headerPanel.kind === 'widgets' || headerPanel.kind === 'picker'}

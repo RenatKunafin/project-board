@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('иконка типа согласована между каталогом, пикером, рамкой и выбором представления', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   const widgets = page.getByRole('dialog', { name: 'Каталог виджетов' });
   // Все встроенные карточки используют декоративные SVG; доступные имена не меняются.
   await expect(widgets.locator('.widget-catalog__tile svg[aria-hidden="true"]')).toHaveCount(3);
@@ -16,7 +16,7 @@ test('иконка типа согласована между каталогом
   const plan = page.getByRole('group', { name: 'План · Иконки плана', exact: true });
   await expect(plan.locator('.widget-window__icon svg')).toHaveJSProperty('innerHTML', planGraphic);
 
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await widgets.getByRole('button', { name: 'Ресурсы', exact: true }).click();
   const existing = widgets.getByRole('button', { name: 'Иконки плана', exact: true });
   await expect(existing.locator('svg')).toHaveJSProperty('innerHTML', resourceGraphic);

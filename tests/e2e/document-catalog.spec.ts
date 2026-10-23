@@ -9,7 +9,7 @@ test.describe.serial('каталог документов', () => {
     // Создание «Покупки» на новой вкладке через каталог виджетов и пикер.
     const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
     await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
-    await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+    await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
     const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
     await catalog.getByRole('button', { name: /Чек-лист/ }).click();
     await catalog.getByLabel('Название нового документа').fill('Покупки');
@@ -22,7 +22,7 @@ test.describe.serial('каталог документов', () => {
     await expect(page.getByText('Сохранено')).toBeVisible();
 
     // Повторное открытие того же документа — второе представление.
-    await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+    await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
     await page
       .getByRole('dialog', { name: 'Каталог виджетов' })
       .getByRole('button', { name: /Чек-лист/ })

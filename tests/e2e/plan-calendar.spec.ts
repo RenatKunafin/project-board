@@ -17,7 +17,7 @@ const planContent = {
 };
 
 async function createPlan(page: Page, title: string): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })
@@ -68,7 +68,7 @@ test('праздник 14.10 → длительность 4; исключени�
   await expect(first.locator('.wx-row[data-id=":t-1"]')).toContainText('5');
 
   // Второй экземпляр до изменения.
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: /План/ })

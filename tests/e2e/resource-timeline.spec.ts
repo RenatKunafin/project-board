@@ -70,7 +70,7 @@ async function createResourcesView(
   page: Page,
   title: string,
 ): Promise<string> {
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'Ресурсы' })
@@ -205,7 +205,7 @@ test('оба вида одного документа: изменение в п�
   await page.waitForTimeout(1500);
 
   // Второй вид — проектный Гантт на том же документе (без дублирования).
-  await page.getByRole('button', { name: 'Добавить виджет', exact: true }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
     .getByRole('button', { name: 'План', exact: true })
