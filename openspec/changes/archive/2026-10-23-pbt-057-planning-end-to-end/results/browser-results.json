@@ -1,0 +1,112 @@
+{
+  "baseCommit": "30bcb07",
+  "date": "2026-10-23",
+  "environment": {
+    "os": "macOS 26.6.2 (25G83)",
+    "node": "22.12.0",
+    "npm": "11.2.0",
+    "playwright": "1.63.0"
+  },
+  "stats": {
+    "startTime": "2026-10-23T12:33:48.071Z",
+    "duration": 37935.502,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "results": [
+    {
+      "scenario": "рабочий импорт → планирование → календарь/конфликты → два вида → файловый обмен",
+      "project": "chromium",
+      "status": "passed",
+      "durationMs": 4476,
+      "retry": 0,
+      "browser": {
+        "project": "chromium",
+        "version": "153.0.8010.12"
+      }
+    },
+    {
+      "scenario": "native импорт → оба режима и представления → холодный офлайн-запуск → правка и повторное открытие",
+      "project": "chromium",
+      "status": "passed",
+      "durationMs": 2743,
+      "retry": 0,
+      "browser": {
+        "project": "chromium",
+        "version": "153.0.8010.12"
+      },
+      "offline-mode": "origin unavailable + browserContext.setOffline(true)"
+    },
+    {
+      "scenario": "рабочий импорт → планирование → календарь/конфликты → два вида → файловый обмен",
+      "project": "firefox",
+      "status": "passed",
+      "durationMs": 5850,
+      "retry": 0,
+      "browser": {
+        "project": "firefox",
+        "version": "155.0"
+      }
+    },
+    {
+      "scenario": "native импорт → оба режима и представления → холодный офлайн-запуск → правка и повторное открытие",
+      "project": "firefox",
+      "status": "passed",
+      "durationMs": 3058,
+      "retry": 0,
+      "browser": {
+        "project": "firefox",
+        "version": "155.0"
+      },
+      "offline-mode": "origin unavailable + browserContext.setOffline(true)"
+    },
+    {
+      "scenario": "рабочий импорт → планирование → календарь/конфликты → два вида → файловый обмен",
+      "project": "webkit",
+      "status": "passed",
+      "durationMs": 6294,
+      "retry": 0,
+      "browser": {
+        "project": "webkit",
+        "version": "26.6"
+      }
+    },
+    {
+      "scenario": "native импорт → оба режима и представления → холодный офлайн-запуск → правка и повторное открытие",
+      "project": "webkit",
+      "status": "passed",
+      "durationMs": 4741,
+      "retry": 0,
+      "browser": {
+        "project": "webkit",
+        "version": "26.6"
+      },
+      "offline-mode": "origin unavailable; browser offline flag not used (Playwright #42775)"
+    },
+    {
+      "scenario": "рабочий импорт → планирование → календарь/конфликты → два вида → файловый обмен",
+      "project": "chrome",
+      "status": "passed",
+      "durationMs": 4959,
+      "retry": 0,
+      "browser": {
+        "project": "chrome",
+        "version": "155.0.8059.86"
+      }
+    },
+    {
+      "scenario": "native импорт → оба режима и представления → холодный офлайн-запуск → правка и повторное открытие",
+      "project": "chrome",
+      "status": "passed",
+      "durationMs": 3080,
+      "retry": 0,
+      "browser": {
+        "project": "chrome",
+        "version": "155.0.8059.86"
+      },
+      "offline-mode": "origin unavailable + browserContext.setOffline(true)"
+    }
+  ]
+}
