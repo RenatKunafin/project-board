@@ -649,7 +649,7 @@ export default function App({
 
   // Режим размещения: сетка (PBT-021) или каскад (PBT-022). Переключатель
   // временен: продуктовое переключение с раздельными раскладками — PBT-023.
-  // Режим размещения — свойство вкладки (решения §4.1): умолчание — сетка.
+  // Режим размещения — свойство вкладки (решения §4.1): умолчание — каскад.
   // Персистентность режима и раскладок — PBT-024.
   const [modeByTab, setModeByTab] = useState<
     Record<string, 'grid' | 'cascade'>
@@ -679,8 +679,8 @@ export default function App({
   const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeId);
 
   const layoutMode: 'grid' | 'cascade' = activeTab
-    ? (modeByTab[activeTab.id] ?? 'grid')
-    : 'grid';
+    ? (modeByTab[activeTab.id] ?? 'cascade')
+    : 'cascade';
 
   const setLayoutMode = (mode: 'grid' | 'cascade'): void => {
     if (activeTab) {
@@ -932,7 +932,7 @@ export default function App({
         id: tab.id,
         title: tab.title,
         position: index,
-        mode: modeByTab[tab.id] ?? 'grid',
+        mode: modeByTab[tab.id] ?? 'cascade',
         cascadeOrder: cascadeByTab[tab.id]?.order ?? [],
         active: tab.id === workspace.activeId ? 1 : 0,
       })),
@@ -1315,19 +1315,19 @@ export default function App({
           >
             <button
               type="button"
-              aria-pressed={layoutMode === 'grid'}
-              onClick={() => setLayoutMode('grid')}
-            >
-              <LayoutGrid aria-hidden="true" />
-              Сетка
-            </button>
-            <button
-              type="button"
               aria-pressed={layoutMode === 'cascade'}
               onClick={() => setLayoutMode('cascade')}
             >
               <Layers aria-hidden="true" />
               Каскад
+            </button>
+            <button
+              type="button"
+              aria-pressed={layoutMode === 'grid'}
+              onClick={() => setLayoutMode('grid')}
+            >
+              <LayoutGrid aria-hidden="true" />
+              Сетка
             </button>
           </div>
           <span className="header-anchor">
@@ -1450,7 +1450,7 @@ export default function App({
             key={tab.id}
             tabTitle={tab.title}
             visible={tab.id === workspace.activeId}
-            mode={modeByTab[tab.id] ?? 'grid'}
+            mode={modeByTab[tab.id] ?? 'cascade'}
             panes={panesByTab[tab.id] ?? []}
             areas={areasByTab[tab.id] ?? {}}
             cascade={

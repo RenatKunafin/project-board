@@ -4,6 +4,7 @@ test('сворачивание прячет содержимое, развора
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
 
   await pane1.getByPlaceholder('Новая задача…').fill('Черновик сохраняется');
@@ -35,6 +36,7 @@ test('закрытие одного из двух представлений с�
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   const pane2 = page.getByRole('group', { name: 'Экземпляр 2 · Список 1' });
 
@@ -71,6 +73,7 @@ test('закрытие одного из двух представлений с�
 
 test('клик по рамке переключает активное окно', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   const pane2 = page.getByRole('group', { name: 'Экземпляр 2 · Список 1' });
 
@@ -85,6 +88,7 @@ test('клик по рамке переключает активное окно'
 
 test('кнопки окна доступны с клавиатуры', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
 
   await pane1

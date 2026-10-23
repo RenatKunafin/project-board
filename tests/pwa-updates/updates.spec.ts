@@ -43,6 +43,7 @@ test.beforeEach(async ({ request }) => publish(request, 'A'));
 
 test('A → B сохраняет свежую правку, workspace/settings, мигрирует документ и запускается офлайн', async ({ page, context, request }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   const fixture = await createWidget(page, 'Контроль обновления', 'Документ версии 1');
   await expect(fixture.getByText('Сборка A')).toBeVisible();
@@ -96,6 +97,7 @@ test('A → B сохраняет свежую правку, workspace/settings, 
 test('первая активация, обнаружение, Позже и отмена не перезагружают страницу', async ({ page, request }) => {
   await page.addInitScript(() => sessionStorage.setItem('loads', String(Number(sessionStorage.getItem('loads') ?? 0) + 1)));
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('loads'))).toBe('1');
   await list(page).getByPlaceholder('Новая задача…').fill('Черновик формы');
@@ -112,6 +114,7 @@ test('первая активация, обнаружение, Позже и о�
 for (const table of ['documents', 'tabs', 'settings']) {
   test(`сбой ${table} блокирует обновление; повтор сохраняет сессию`, async ({ page, request }) => {
     await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     await ready(page);
     await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
     await detect(page, request);
@@ -140,6 +143,7 @@ for (const table of ['documents', 'tabs', 'settings']) {
 
 test('другое окно блокирует активацию, его закрытие позволяет повторить', async ({ page, context, request }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
   const other = await context.newPage();
@@ -158,6 +162,7 @@ test('другое окно блокирует активацию, его зак
 
 test('таймаут in-flight записи не вызывает поздний reload; после её завершения можно повторить', async ({ page, request }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
   await detect(page, request);
@@ -196,6 +201,7 @@ test('таймаут in-flight записи не вызывает поздний
 test('первый переход с настоящего PBT-028 происходит после закрытия всех окон', async ({ page, context, request }) => {
   await publish(request, 'baseline');
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await list(page).getByPlaceholder('Новая задача…').fill('Сохранено в PBT-028');
   await list(page).getByRole('button', { name: 'Добавить', exact: true }).click();

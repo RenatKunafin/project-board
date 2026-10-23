@@ -107,7 +107,7 @@ export class WorkspaceStore {
           id: row.id,
           title: row.title,
           position: row.position,
-          mode: row.mode === 'cascade' ? 'cascade' : 'grid',
+          mode: row.mode === 'grid' ? 'grid' : 'cascade',
           cascadeOrder: Array.isArray(row.cascadeOrder)
             ? row.cascadeOrder.filter((id) => typeof id === 'string')
             : [],
@@ -148,7 +148,7 @@ export class WorkspaceStore {
       id: tab.id,
       title: tab.title,
       position: tab.position ?? index,
-      mode: tab.mode === 'cascade' ? 'cascade' : 'grid',
+      mode: tab.mode === 'grid' ? 'grid' : 'cascade',
       cascadeOrder: [...tab.cascadeOrder],
       active: tab.active,
     }));

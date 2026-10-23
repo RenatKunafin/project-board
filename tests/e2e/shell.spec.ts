@@ -2,12 +2,14 @@ import { expect, test } from '@playwright/test';
 
 test('оболочка приложения открывается', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(page).toHaveTitle('Project Board');
   await expect(page.getByRole('heading', { name: 'Project Board' })).toBeVisible();
 });
 
 test('вкладка «Чек-листы» активна по умолчанию и содержит срез', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -20,6 +22,7 @@ test('вкладка «Чек-листы» активна по умолчани�
 
 test('операция синхронизирует экземпляры 1-2 и не задевает список 2', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
   const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
   const pane3 = page.getByLabel('Экземпляр 3 · Список 2');
@@ -38,6 +41,7 @@ test('операция синхронизирует экземпляры 1-2 и 
 
 test('локальная настройка экземпляра изолирована', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
   const pane2 = page.getByLabel('Экземпляр 2 · Список 1');
 
@@ -61,6 +65,7 @@ test('локальная настройка экземпляра изолиро�
 
 test('закрытие и перезагрузка сохраняют документ', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
 
   await pane1.getByPlaceholder('Новая задача…').fill('Переживает закрытие');
@@ -84,6 +89,7 @@ test('закрытие и перезагрузка сохраняют докум
 
 test('новая вкладка активна и пуста; переключение сохраняет наборы', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -104,6 +110,7 @@ test('новая вкладка активна и пуста; переключе
 
 test('вкладка переименовывается по двойному клику', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -120,6 +127,7 @@ test('вкладка переименовывается по двойному к
 
 test('порядок вкладок меняется кнопками перемещения', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -136,6 +144,7 @@ test('порядок вкладок меняется кнопками перем
 
 test('удаление активной вкладки делает активной соседнюю, документ жив', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -167,6 +176,7 @@ test('удаление активной вкладки делает активн
 
 test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(
     page.getByRole('button', { name: /Закрыть Чек-листы/ }),
   ).toBeDisabled();
@@ -175,6 +185,7 @@ test('последняя вкладка не удаляется (кнопка di
 
 test('клавиатура: стрелка вправо активирует соседнюю вкладку', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
     name: 'Вкладки рабочего пространства',
   });
@@ -192,6 +203,7 @@ test('клавиатура: стрелка вправо активирует с�
 
 test('каталог: новый чек-лист создаётся из пустой вкладки', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   await expect(page.getByText('Пустой дашборд')).toBeVisible();
@@ -213,6 +225,7 @@ test('каталог: новый чек-лист создаётся из пус�
 
 test('каталог: второе представление существующего документа', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
   await pane1.getByPlaceholder('Новая задача…').fill('Общий пункт');
   await pane1.getByRole('button', { name: 'Добавить' }).click();
@@ -237,6 +250,7 @@ test('каталог: второе представление существую
 
 test('каталог: отмена не создаёт документов и экземпляров', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const catalogButton = page.getByRole('button', { name: 'Виджеты', exact: true });
   const catalogDialog = page.getByRole('dialog', { name: 'Каталог виджетов' });
 
@@ -264,6 +278,7 @@ test('производный прогресс: счётчик и полоса и
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane = page.getByLabel('Экземпляр 1 · Список 1');
   const progress = pane.locator('[data-checklist-progress]');
   const bar = pane.locator('[data-checklist-progress-bar]');
@@ -291,6 +306,7 @@ test('производный прогресс: счётчик и полоса и
 
 test('скрытие выполненных переживает reload (PBT-075)', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane = page.getByLabel('Экземпляр 1 · Список 1');
   const toggle = pane.getByRole('button', { name: 'Скрыть выполненные' });
 

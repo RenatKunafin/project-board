@@ -80,6 +80,7 @@ test('проектный Гантт показывает контрольный 
   // и праздник 14.10.2026 не попадает в видимую зону подсветки.
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Контрольный');
 
   await page.evaluate(
@@ -121,6 +122,7 @@ test('два экземпляра плана синхронно показыва
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Общий');
 
   await page.evaluate(
@@ -150,6 +152,7 @@ test('два экземпляра плана синхронно показыва
 
 test('пустой план отображается без ошибки', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await createPlan(page, 'Пустой');
   const pane = page.getByRole('group', { name: 'План · Пустой' });
   await expect(pane.locator('.plan-gantt__chart')).toBeVisible();
@@ -161,6 +164,7 @@ test('drag полосы переносит задачу с сохранение�
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Драг');
   await page.evaluate(
     ({ id, content }) => window.__projectBoard?.writeDocumentContent(id, content),
@@ -222,6 +226,7 @@ test('resize правого края через праздник сохраня�
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Резайз');
   await page.evaluate(
     ({ id, content }) => window.__projectBoard?.writeDocumentContent(id, content),
@@ -262,6 +267,7 @@ test('сжатие левее начала отклоняется ядром и 
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Отмена');
   await page.evaluate(
     ({ id, content }) => window.__projectBoard?.writeDocumentContent(id, content),
@@ -308,6 +314,7 @@ test('сжатие левее начала отклоняется ядром и 
 test('drag сводной полосы не меняет документ (PBT-039)', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Сводная');
   await page.evaluate(
     ({ id, content }) => window.__projectBoard?.writeDocumentContent(id, content),
@@ -344,6 +351,7 @@ test('drag однодневной задачи сохраняет длитель
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createPlan(page, 'Однодневная');
   await page.evaluate(
     ({ id, content }) => window.__projectBoard?.writeDocumentContent(id, content),

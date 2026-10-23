@@ -17,6 +17,7 @@ test('разворот занимает вкладку и скрывает со�
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: PANE_1 });
   const pane2 = page.getByRole('group', { name: PANE_2 });
   const layer = page.getByTestId('widget-maximize-layer');
@@ -80,6 +81,7 @@ test('сворачивание развёрнутого окна возвращ�
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: PANE_1 });
   const layer = page.getByTestId('widget-maximize-layer');
 
@@ -103,6 +105,7 @@ test('разворот свёрнутого окна показывает сод
   page,
 }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: PANE_1 });
   const layer = page.getByTestId('widget-maximize-layer');
 
@@ -134,6 +137,7 @@ test('разворот свёрнутого окна показывает сод
 
 test('перезапуск восстанавливает окно в обычном виде', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: PANE_1 });
   const layer = page.getByTestId('widget-maximize-layer');
 
@@ -155,6 +159,7 @@ test('перезапуск восстанавливает окно в обычн
 
 test('каскад: геометрия окна сохраняется после возврата', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await page.getByRole('button', { name: 'Каскад' }).click();
 
   const pane1 = page.getByRole('group', { name: PANE_1 });

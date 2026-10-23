@@ -9,6 +9,7 @@ test('рабочее пространство восстанавливается
     }
   });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
   // Настройка: названия вкладок, содержимое, сворачивание, режим каскада.
   const tablist = page.getByRole('tablist', {
@@ -29,7 +30,7 @@ test('рабочее пространство восстанавливается
     .click();
 
   await switchMode(page, 'Каскад');
-  await expect(page.locator('.cascade-layout')).toBeVisible();
+  await expect(page.locator('.tab-surface:not([hidden]) .cascade-layout')).toBeVisible();
 
   // Вторая вкладка с окном плана, активной становится она.
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
@@ -64,14 +65,14 @@ test('рабочее пространство восстанавливается
     'true',
   );
 
-  // Окно плана восстановлено; активная вкладка — в режиме сетки (по умолчанию).
+  // Новая вкладка плана восстановлена в каскаде — новом режиме по умолчанию.
   await expect(page.getByRole('group', { name: 'План · ОКАД' })).toBeVisible();
-  await expect(page.locator('.tiled-grid')).toBeVisible();
+  await expect(page.locator('.tab-surface:not([hidden]) .cascade-layout')).toBeVisible();
 
   // Первая вкладка: режим каскада, сворачивание, содержимое сохранены.
   // Клик по тексту вкладки: центр таба попадает на кнопки перемещения.
   await tablist.getByRole('tab', { name: /Рабочая/ }).getByText('Рабочая').click();
-  await expect(page.locator('.cascade-layout')).toBeVisible();
+  await expect(page.locator('.tab-surface:not([hidden]) .cascade-layout')).toBeVisible();
   await expect(
     page
       .getByRole('group', { name: 'Экземпляр 1 · Список 1' })

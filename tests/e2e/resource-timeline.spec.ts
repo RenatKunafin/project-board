@@ -92,6 +92,7 @@ test('дорожки, укладка, отпуск у своего ресурс�
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createResourcesView(page, 'Контрольный план');
   await page.evaluate(
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
@@ -163,6 +164,7 @@ test('нерабочие дни по календарю плана: выходн
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createResourcesView(page, 'Контрольный план');
   await page.evaluate(
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
@@ -195,6 +197,7 @@ test('оба вида одного документа: изменение в п�
 }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createResourcesView(page, 'Контрольный план');
   await page.evaluate(
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
@@ -259,6 +262,7 @@ test('легенда и диапазон видимой области; футе
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const documentId = await createResourcesView(page, 'Легенда плана');
   await page.evaluate(
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
