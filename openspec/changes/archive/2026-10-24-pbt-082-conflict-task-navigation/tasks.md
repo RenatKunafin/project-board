@@ -15,4 +15,4 @@
 - [x] 3.1 Выполнить lint/typecheck/unit/build/browser/OpenSpec, живой Chrome с консолью и вернуть dev-сервер.
 - [x] 3.2 Сверить DoD, открыть [PR#65](https://github.com/RenatKunafin/project-board/pull/65) в develop, обновить реестр (In review).
 - [x] 3.3 После одобрения PR архивировать change с sync specs заключительным коммитом перед merge.
-- [ ] 3.4 После merge обновить статусы и стадию.
+- [x] 3.4 После merge обновить статусы и стадию. PR#65 смержен 2026-10-24 (`2751433`), CI архивного коммита `b04da0a` pass; PBT-082 — Done.
