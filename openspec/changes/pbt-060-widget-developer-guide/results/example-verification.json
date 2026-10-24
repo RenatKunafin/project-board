@@ -1,9 +1,9 @@
 {
-  "commit": "0965e7640f8a8a11b2eaff5376f3e572162d75ce",
+  "commit": "d235bf5c7452d82e7e5f298e86774eb1b7c158af",
   "cleanCheckout": true,
   "checks": [
     {
-      "command": "git worktree",
+      "command": "git worktree add --detach <temporary-checkout> d235bf5c7452d82e7e5f298e86774eb1b7c158af",
       "passed": true
     },
     {
@@ -52,6 +52,6 @@
     "packages/counter-widget/src/model.ts",
     "packages/counter-widget/tsconfig.json"
   ],
-  "unitTests": 513,
+  "unitTests": 500,
   "browserTests": 2
 }
