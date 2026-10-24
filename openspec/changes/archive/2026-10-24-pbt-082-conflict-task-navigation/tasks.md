@@ -14,5 +14,5 @@
 
 - [x] 3.1 Выполнить lint/typecheck/unit/build/browser/OpenSpec, живой Chrome с консолью и вернуть dev-сервер.
 - [x] 3.2 Сверить DoD, открыть [PR#65](https://github.com/RenatKunafin/project-board/pull/65) в develop, обновить реестр (In review).
-- [ ] 3.3 После одобрения PR архивировать change с sync specs заключительным коммитом перед merge.
+- [x] 3.3 После одобрения PR архивировать change с sync specs заключительным коммитом перед merge.
 - [ ] 3.4 После merge обновить статусы и стадию.
