@@ -1,0 +1,57 @@
+{
+  "commit": "0965e7640f8a8a11b2eaff5376f3e572162d75ce",
+  "cleanCheckout": true,
+  "checks": [
+    {
+      "command": "git worktree",
+      "passed": true
+    },
+    {
+      "command": "npm install --package-lock-only --ignore-scripts",
+      "passed": true
+    },
+    {
+      "command": "npm ci --no-audit --no-fund",
+      "passed": true
+    },
+    {
+      "command": "git add -N packages/counter-widget",
+      "passed": true
+    },
+    {
+      "command": "npm run lint",
+      "passed": true
+    },
+    {
+      "command": "npm run typecheck",
+      "passed": true
+    },
+    {
+      "command": "npm test",
+      "passed": true
+    },
+    {
+      "command": "npm run build",
+      "passed": true
+    },
+    {
+      "command": "node node_modules/@playwright/test/cli.js test --config=tests/widget-example/playwright.config.ts",
+      "passed": true
+    }
+  ],
+  "status": "passed",
+  "touched": [
+    "apps/project-board/package.json",
+    "apps/project-board/src/widgets.ts",
+    "package-lock.json",
+    "packages/counter-widget/package.json",
+    "packages/counter-widget/src/CounterWidget.tsx",
+    "packages/counter-widget/src/counter.css",
+    "packages/counter-widget/src/index.ts",
+    "packages/counter-widget/src/model.test.ts",
+    "packages/counter-widget/src/model.ts",
+    "packages/counter-widget/tsconfig.json"
+  ],
+  "unitTests": 513,
+  "browserTests": 2
+}
