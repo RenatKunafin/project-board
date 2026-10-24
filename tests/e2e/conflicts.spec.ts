@@ -197,7 +197,7 @@ test('переход к задаче внутри свёрнутой групп�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(`PAGEERROR: ${error.message}`));
   page.on('console', (message) => {
-    errors.push(`CONSOLE-${message.type()}: ${message.text().slice(0, 120)}`);
+    if (message.type() === 'error') errors.push(message.text());
   });
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/');
@@ -219,22 +219,14 @@ test('переход к задаче внутри свёрнутой групп�
   await chart.locator('.wx-row[data-id=":g-1"] .wx-toggle-icon').first().click();
   await expect(chart.locator('.wx-row[data-id=":t-c"]')).toHaveCount(0);
 
-  // Открываем список проблем, жмём «Показать» у конфликта «Инфраструктуры».
+  // У пары «Разработка»/«Инфраструктура» цель — первая задача t-c
+  // внутри свёрнутой группы; t-d и до перехода была видима.
   await pane.locator('[data-issues]').click();
   const dialog = pane.getByRole('dialog', { name: 'Проблемы плана' });
   const infraRow = dialog.locator('li', { hasText: 'Инфраструктура' });
   await infraRow.locator('[data-issue-show]').click();
 
-  if (
-    !(await chart.locator('.wx-row[data-id=":t-d"]').isVisible())
-  ) {
-    const rowIds = await chart.locator('.wx-row[data-id]').evaluateAll(
-      (rows) => rows.map((r) => (r as HTMLElement).dataset.id),
-    );
-    const relevant = errors.filter(
-      (line) => line.includes('pbt046') || line.includes('error'),
-    );
-    console.log('SHOW-DEBUG', JSON.stringify({ rowIds, relevant }, null, 1));
-  }
-  await expect(chart.locator('.wx-row[data-id=":t-d"]')).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  await expect(chart.locator('.wx-row[data-id=":t-c"]')).toBeVisible();
+  expect(errors).toEqual([]);
 });

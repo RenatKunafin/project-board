@@ -103,19 +103,24 @@ export default function PlanIssuesDialog({
                 key={`${issue.kind}-${index}`}
                 className={`catalog__row issues__row issues__row--${issue.kind}`}
               >
-                <span className="catalog__title">
-                  <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
-                  {issue.message}
-                </span>
-                {issue.taskId !== undefined && (
+                {issue.taskId !== undefined ? (
                   <button
                     type="button"
-                    className="task-editor__button"
+                    className="issues__action"
                     data-issue-show={index}
                     onClick={() => onShowTask(issue.taskId as string)}
                   >
-                    Показать
+                    <span className="catalog__title">
+                      <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
+                      {issue.message}
+                    </span>
+                    <span className="issues__show">Показать</span>
                   </button>
+                ) : (
+                  <span className="catalog__title">
+                    <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
+                    {issue.message}
+                  </span>
                 )}
               </li>
             ))}

@@ -450,3 +450,18 @@
   padding-left: 18px;
   font-size: 12px;
 }
+
+/* SVAR задаёт top через --wx-body-offset для виртуальных строк.
+   Базовый position из react-grid/style.css не входит в style.css Гантта.
+   Без него top игнорируется и выбранная строка остаётся за viewport. */
+.plan-gantt .wx-table .wx-body {
+  position: relative;
+}
+
+/* Строки с отрицательным offset проходят под неподвижной шапкой. */
+.plan-gantt .wx-table .wx-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wx-table-header-background);
+}

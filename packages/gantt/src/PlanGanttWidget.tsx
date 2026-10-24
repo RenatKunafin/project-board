@@ -244,6 +244,10 @@ export default function PlanGanttWidget({
   const [catalogOpen, setCatalogOpen] = useState(false);
   // Список проблем плана (PBT-046).
   const [issuesOpen, setIssuesOpen] = useState(false);
+  const [taskNavigation, setTaskNavigation] = useState<{
+    documentId: string;
+    taskId: string;
+  } | null>(null);
 
   // Сворачивание групп — состояние экземпляра (B4): множество свёрнутых
   // id переживает remount чарта по ревизии, в документ не попадает.
@@ -616,54 +620,28 @@ export default function PlanGanttWidget({
     [commitPlan],
   );
 
-  // Переход к задаче из списка проблем (PBT-046): раскрыть цепочку
-  // свёрнутых групп-предков, прокрутить шкалу к дате, выделить строку.
-  // Фильтры сбрасываются: задача может быть скрыта фильтром (PBT-049).
-  const showTask = useCallback(
-    (taskId: string) => {
-    const planNow = planRef.current;
-    const api = apiRef.current;
-    if (planNow === undefined || api === null) {
-      return;
-    }
-    const task = planNow.tasks.find((entry) => entry.id === taskId);
-    if (task === undefined) {
-      return;
-    }
-    const groupById = new Map(
-      planNow.groups.map((group) => [group.id, group] as const),
-    );
-    const toOpen: string[] = [];
+  // PBT-082: сначала закрыть список и обновить дерево/фильтры.
+  // Выделение и прокрутка выполняются после заливки новых props в SVAR.
+  const showTask = useCallback((taskId: string) => {
+    const current = planRef.current;
+    const id = documentIdRef.current;
+    const task = current?.tasks.find(entry => entry.id === taskId);
+    if (!current || !id || !task) return;
+    const groups = new Map(current.groups.map(group => [group.id, group]));
+    const expanded = new Set(collapsedRef.current);
     let cursor = task.groupId;
     while (cursor !== undefined) {
-      const group = groupById.get(cursor);
-      if (group === undefined) {
-        break;
-      }
-      toOpen.push(group.id);
-      cursor = group.parentId;
+      expanded.delete(cursor);
+      cursor = groups.get(cursor)?.parentId;
     }
-    if (toOpen.length > 0) {
-      // Стор раскрывает группы немедленно (exec); collapsedGroups
-      // синхронизируется для пересборки представления при следующей заливке.
-      for (const id of toOpen) {
-        api.exec('open-task', { id, mode: true });
-      }
-      setCollapsedGroups((previous) => {
-        const next = new Set(previous);
-        for (const id of toOpen) {
-          next.delete(id);
-        }
-        persistCollapsed(next);
-        return next;
-      });
+    if (expanded.size !== collapsedRef.current.size) {
+      setCollapsedGroups(expanded);
+      persistCollapsed(expanded);
     }
     applyFilters('', '');
-    api.exec('scroll-chart', { date: ganttDate(task.start) });
-    api.exec('select-task', { id: taskId });
-    },
-    [applyFilters, persistCollapsed],
-  );
+    setIssuesOpen(false);
+    setTaskNavigation({ documentId: id, taskId });
+  }, [applyFilters, persistCollapsed]);
 
   // Read-only сводных (B2): строки задач двигаются, сводные полосы
   // определяются дочерними задачами. Специфика обёртки SVAR
@@ -1092,6 +1070,7 @@ export default function PlanGanttWidget({
   const svarSourceRef = useRef<{
     plan: PlanContent;
     collapsed: ReadonlySet<string>;
+    filter: PlanViewFilter;
   } | null>(null);
   const ownWrite =
     // Скрытый чарт размонтирован: для его следующего монтирования нужны
@@ -1116,13 +1095,16 @@ export default function PlanGanttWidget({
   const filterActive = planFilterActive(viewFilter);
   const source = useMemo(
     () =>
-      svarSourceRef.current !== null && ownWrite
+      svarSourceRef.current !== null && ownWrite &&
+      svarSourceRef.current.collapsed === collapsedGroups &&
+      svarSourceRef.current.filter === viewFilter
         ? svarSourceRef.current
         : filteredPlan !== undefined
-          ? { plan: filteredPlan, collapsed: collapsedGroups }
+          ? { plan: filteredPlan, collapsed: collapsedGroups, filter: viewFilter }
           : null,
+    // Своя запись удерживает props только до явной смены фильтров/групп.
     // svarSourceRef намеренно вне deps: это «данные, уже залитые в стор».
-    [ownWrite, filteredPlan, collapsedGroups],
+    [ownWrite, filteredPlan, collapsedGroups, viewFilter],
   );
   useEffect(() => {
     svarSourceRef.current = source;
@@ -1426,6 +1408,37 @@ export default function PlanGanttWidget({
   // Смена зума пересобирает представление (cellWidth/scales); позиция
   // взгляда восстанавливается конверсией через дни (design D6.5).
   const chartKey = `${chartRemountKey}|${ganttZoom}`;
+
+  useEffect(() => {
+    if (taskNavigation === null) return;
+    if (taskNavigation.documentId !== documentId || visible === false) {
+      setTaskNavigation(null);
+      return;
+    }
+    // Явная навигация пользователя заменяет прежнюю позицию resize/zoom.
+    clearScrollRetries();
+    pendingRestoreRef.current = null;
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        const api = apiRef.current;
+        const task = planRef.current?.tasks.find(entry => entry.id === taskNavigation.taskId);
+        if (api && task && documentIdRef.current === taskNavigation.documentId) {
+          api.exec('select-task', { id: task.id, show: 'xy', focus: 'chart' });
+          // Геометрия SVAR уже учитывает зум и начало шкалы. Начало
+          // длинной полосы должно быть видно, даже если её центр вне экрана.
+          const rendered = api.getTask(task.id);
+          if (rendered && Number.isFinite(rendered.$x)) {
+            const left = Math.max(0, rendered.$x - 24);
+            lastScrollLeftRef.current = left;
+            applyChartScrollLeft(widgetInstanceId, left);
+          }
+        }
+        setTaskNavigation(null);
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [taskNavigation, documentId, visible, source, chartKey,
+    clearScrollRetries, applyChartScrollLeft, widgetInstanceId]);
 
   // Колонки: окончание показывается включительно (inclusiveEnd),
   // «Раб. дни» — своя длительность из ядра вместо календарной SVAR.
