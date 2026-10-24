@@ -1,0 +1,56 @@
+[WebServer] (node:5328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+  ✓  1 .context/diagnostics/pbt-080/tests/performance/profile.bench.ts:19:1 › CPU-profile — отдельная диагностика добавления, не бюджетный замер (8.9s)
+A add run 0
+(node:5330) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+submit prepared
+rendered 269
+A add run 1
+submit prepared
+rendered 266.19999998807907
+A add run 2
+submit prepared
+rendered 268.19999998807907
+A add run 3
+submit prepared
+rendered 263.5999999642372
+A add run 4
+submit prepared
+rendered 263.5
+A add run 5
+submit prepared
+rendered 262.19999998807907
+  ✓  2 .context/diagnostics/pbt-080/tests/performance/release.bench.ts:40:1 › A — общий план 500 в 6 проектных и 4 ресурсных видах (41.5s)
+  ✓  3 .context/diagnostics/pbt-080/tests/performance/release.bench.ts:117:1 › B — 10 независимых планов на 10 вкладках; жизненный цикл (26.6s)
+A interactions: scroll
+A interactions: zoom
+A interactions: edit
+A interactions: groups
+A interactions: gestures
+A gesture drag 0
+A gesture drag 1
+A gesture drag 2
+A gesture drag 3
+A gesture drag 4
+A gesture drag 5
+A gesture resize 0
+A gesture resize 1
+A gesture resize 2
+A gesture resize 3
+A gesture resize 4
+A gesture resize 5
+  ✓  4 .context/diagnostics/pbt-080/tests/performance/release.bench.ts:145:1 › A-interactions — прокрутка, редактор, жесты и жизненный цикл плана500 (2.8m)
+
+  4 passed (4.1m)
+PASS A.mountMs: median=685.6, p95=768.5, budget=1000
+PASS A.addTaskMs: median=263.6, p95=268.2, budget=400
+PASS A.idbTransactionMs: median=168.9, p95=183.8, budget=700
+PASS A.switchTenPanelsMs: median=374.6, p95=461.7, budget=500
+PASS A.switchByDirectionMs.Нагрузка A: median=390.0, p95=461.7, budget=500
+PASS A.switchByDirectionMs.Нагрузка B: median=93.0, p95=114.8, budget=500
+PASS B.switchOnePanelMs: median=23.5, p95=23.9, budget=500
+PASS A-interactions.interactions.scroll: median=120.0, p95=120.0, budget=30

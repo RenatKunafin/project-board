@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-24T12:46:00.437Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "composition": "6 project + 4 resource; shared plan500; grid",
+  "addedRevisionDelta": 1,
+  "allViewsUpdated": true,
+  "assignedTaskInAllFourResourceViews": true,
+  "calendarHolidayAndException": true,
+  "holiday": "2032-01-09",
+  "filtersRestored": true,
+  "zoomRestored": true,
+  "hiddenViewsRestored": true,
+  "reload": true,
+  "subscriptions": 10,
+  "taskCount": 501,
+  "consoleErrors": []
+}

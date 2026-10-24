@@ -1,4 +1,4 @@
-import { FileText, Layers, LayoutGrid } from 'lucide-react';
+import { FileText, Layers, LayoutGrid, X } from 'lucide-react';
 import { PwaStatus } from './PwaStatus';
 import type {
   AutosavingDocumentService,
@@ -13,7 +13,6 @@ import {
   DropdownPanel,
   EmptyWorkspace,
   filterDocuments,
-  moveTab,
   removeTab,
   renameTab,
   setActive,
@@ -109,9 +108,14 @@ const SAVE_STATE_LABELS: Record<string, string> = {
 type WorkspaceAction =
   | { type: 'add' }
   | { type: 'rename'; tabId: string; title: string }
-  | { type: 'move'; tabId: string; direction: -1 | 1 }
   | { type: 'remove'; tabId: string }
   | { type: 'activate'; tabId: string };
+
+function withoutKey<T>(entries: Record<string, T>, key: string): Record<string, T> {
+  const next = { ...entries };
+  delete next[key];
+  return next;
+}
 
 function workspaceReducer(
   state: WorkspaceState,
@@ -122,8 +126,6 @@ function workspaceReducer(
       return addTab(state);
     case 'rename':
       return renameTab(state, action.tabId, action.title);
-    case 'move':
-      return moveTab(state, action.tabId, action.direction);
     case 'remove':
       return removeTab(state, action.tabId);
     case 'activate':
@@ -566,6 +568,9 @@ export default function App({
   const viewStatesRef = useRef<Record<string, Record<string, unknown>>>(
     initialViewStates ?? {},
   );
+  // Ref отражает только существующие окна, включая скрытые вкладки.
+  // Запоздалый callback закрытого окна не должен вернуть его настройки.
+  const liveInstanceIdsRef = useRef<Set<string>>(new Set());
   const viewStateOf = useCallback(
     (instanceId: string): Record<string, unknown> =>
       viewStatesRef.current[instanceId] ?? {},
@@ -573,6 +578,7 @@ export default function App({
   );
   const updateViewState = useCallback(
     (instanceId: string, patch: Record<string, unknown>) => {
+      if (!liveInstanceIdsRef.current.has(instanceId)) return;
       viewStatesRef.current = {
         ...viewStatesRef.current,
         [instanceId]: { ...viewStatesRef.current[instanceId], ...patch },
@@ -689,6 +695,9 @@ export default function App({
   };
   const activePanes = activeTab ? (panesByTab[activeTab.id] ?? []) : [];
   const isLastTab = workspace.tabs.length === 1;
+  liveInstanceIdsRef.current = new Set(workspace.tabs.flatMap((tab) =>
+    (panesByTab[tab.id] ?? []).map((pane) => pane.instanceId),
+  ));
 
   const catalogTypes = widgetRegistry.list();
 
@@ -916,6 +925,29 @@ export default function App({
     );
   };
 
+  const closeTab = (tabId: string): void => {
+    if (workspace.tabs.length <= 1 || !workspace.tabs.some((tab) => tab.id === tabId)) return;
+    const instanceIds = new Set((panesByTab[tabId] ?? []).map((pane) => pane.instanceId));
+    const views = { ...viewStatesRef.current };
+    for (const id of instanceIds) {
+      liveInstanceIdsRef.current.delete(id);
+      collapsedHeights.current.delete(id);
+      delete views[id];
+    }
+    viewStatesRef.current = views;
+    void workspaceStore.deleteViewSettings([...instanceIds])
+      .catch((error) => console.error('view settings delete failed', error));
+    // Все изменения обработчика объединяются React в один рендер и снапшот.
+    dispatch({ type: 'remove', tabId });
+    setPanesByTab((previous) => withoutKey(previous, tabId));
+    setAreasByTab((previous) => withoutKey(previous, tabId));
+    setCascadeByTab((previous) => withoutKey(previous, tabId));
+    setModeByTab((previous) => withoutKey(previous, tabId));
+    setMaximizedByTab((previous) => withoutKey(previous, tabId));
+    setActiveInstanceId((current) => current !== null && instanceIds.has(current) ? null : current);
+    setRenamingTabId((current) => current === tabId ? null : current);
+  };
+
   // Обработчики поверхности вкладок: стабильный ref с актуальными
   // реализациями — TabSurface не перерендеривается от их пересоздания.
   const paneHandlersRef = useRef<PaneHandlers>(null as unknown as PaneHandlers);
@@ -936,8 +968,8 @@ export default function App({
         cascadeOrder: cascadeByTab[tab.id]?.order ?? [],
         active: tab.id === workspace.activeId ? 1 : 0,
       })),
-      instances: Object.entries(panesByTab).flatMap(([tabId, panes]) =>
-        panes.map((pane) => ({
+      instances: workspace.tabs.flatMap(({ id: tabId }) =>
+        (panesByTab[tabId] ?? []).map((pane) => ({
           id: pane.instanceId,
           tabId,
           typeId: pane.typeId,
@@ -1258,42 +1290,20 @@ export default function App({
                 ) : (
                   <span className="tab__title">{tab.title}</span>
                 )}
-                <button
-                  type="button"
-                  className="tab__move"
-                  aria-label={`Переместить ${tab.title} влево`}
-                  disabled={workspace.tabs[0].id === tab.id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    dispatch({ type: 'move', tabId: tab.id, direction: -1 });
-                  }}
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  className="tab__move"
-                  aria-label={`Переместить ${tab.title} вправо`}
-                  disabled={workspace.tabs[workspace.tabs.length - 1].id === tab.id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    dispatch({ type: 'move', tabId: tab.id, direction: 1 });
-                  }}
-                >
-                  →
-                </button>
-                <button
-                  type="button"
-                  className="tab__close"
-                  aria-label={`Закрыть ${tab.title}`}
-                  disabled={isLastTab}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    dispatch({ type: 'remove', tabId: tab.id });
-                  }}
-                >
-                  ×
-                </button>
+                {!isLastTab && (
+                  <button
+                    type="button"
+                    className="tab__close"
+                    aria-label={`Закрыть ${tab.title}`}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                )}
               </div>
             );
           })}

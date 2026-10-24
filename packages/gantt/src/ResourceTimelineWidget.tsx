@@ -12,7 +12,7 @@ import {
   type PlanContent,
   type PlanIssue,
 } from './plan-document';
-import { nonWorkingDayKind } from './svar-adapter';
+import { calendarView } from './calendar-view';
 import { resourceConflicts } from './plan-conflicts';
 import { moveTask, setTaskDates } from './plan-commands';
 import { addCalendarDays, calendarDaySpan } from './working-calendar';
@@ -228,16 +228,6 @@ export default function ResourceTimelineWidget({
     onClose: closeEditor,
   });
 
-  // Производные представления данных (D2/D4 PBT-047): пересчёт при
-  // рендере, записей не создаёт. Своя запись жеста не пересобирает
-  // дорожки (D5 PBT-048): прокрутка сохраняется, данные идут через props.
-  const localRevisionRef = useRef<number | null>(null);
-  const remountKeyRef = useRef<string>('init');
-  const ownWrite =
-    document !== undefined &&
-    localRevisionRef.current !== null &&
-    document.revision === localRevisionRef.current;
-
   // ─── Жесты drag/resize (PBT-048, ADR-5: «факт → правила → применение») ──
   // Бета эмитит только onItemDrag (каждый кадр, после клика-выделения).
   // Перенос использует time события (проверено: точное время указателя).
@@ -411,13 +401,11 @@ export default function ResourceTimelineWidget({
           return; // правила вернули даты документа — холостая ревизия исключена
         }
         try {
-          const saved = documentService.update(
+          documentService.update(
             documentId,
             latest.revision,
             result.plan,
           );
-          // Своя запись не пересобирает дорожки (прокрутка сохраняется).
-          localRevisionRef.current = saved.revision;
           gestureExpectedRef.current.set(pending.taskId, {
             start: next.start,
             end: next.end,
@@ -462,8 +450,8 @@ export default function ResourceTimelineWidget({
   );
 
   // Производные представления данных (D2/D4): пересчёт при рендере,
-  // записей не создаёт. Ремоунт по ревизии (D7) обновляет дорожки при
-  // внешних изменениях; собственная запись жеста — без ремоунта.
+  // записей не создаёт. Все ревизии обновляют items/groups через props
+  // существующего Timeline, сохраняя его канву и прокрутку.
   // Фильтры (PBT-049): производные от полного плана — конфликты/метки
   // считаются по нему же, фильтр только скрывает. Фильтр ресурса —
   // одна дорожка; текст — скрывает элементы и опустевшие дорожки.
@@ -605,10 +593,16 @@ export default function ResourceTimelineWidget({
     },
     [range, applyVisible],
   );
-  const effectiveVisible = visibleRange ?? { start: range.start, end: range.end };
+  const visibleStart = visibleRange?.start ?? range.start;
+  const visibleEnd = visibleRange?.end ?? range.end;
+  const effectiveVisible = useMemo(
+    () => ({ start: visibleStart, end: visibleEnd }),
+    [visibleStart, visibleEnd],
+  );
+  const calendar = plan ? calendarView(plan.calendar) : undefined;
 
   const dayLayer = useMemo(() => {
-    if (!scrollHost || hostWidth === 0 || plan === undefined) {
+    if (!scrollHost || hostWidth === 0 || calendar === undefined) {
       return null;
     }
     const visibleSpan = effectiveVisible.end - effectiveVisible.start;
@@ -632,7 +626,7 @@ export default function ResourceTimelineWidget({
       const taskId = bar?.getAttribute('data-rt-task') ?? null;
       const task =
         taskId !== null
-          ? plan.tasks.find((entry) => entry.id === taskId)
+          ? planRef.current?.tasks.find((entry) => entry.id === taskId)
           : undefined;
       const barLeft =
         bar !== null && task !== undefined
@@ -660,7 +654,7 @@ export default function ResourceTimelineWidget({
       dayMs += DAY_MS
     ) {
       const iso = timelineDayIso(dayMs);
-      const kind = nonWorkingDayKind(plan, iso);
+      const kind = calendar.dayKind(iso);
       if (kind !== undefined) {
         columns.push({
           key: dayMs,
@@ -693,8 +687,9 @@ export default function ResourceTimelineWidget({
       </div>,
       canvas,
     );
-    // Ревизия — после ремоунта чарта портал переносится в новый DOM.
-  }, [scrollHost, hostWidth, canvasTimeStart, effectiveVisible, plan, document?.revision]);
+    // Задачи не меняют календарный слой. Новая канва, её геометрия или
+    // новое определение календаря явно инвалидируют портал.
+  }, [scrollHost, hostWidth, canvasTimeStart, effectiveVisible, calendar]);
 
   if (!documentId || !documentService) {
     return (
@@ -814,13 +809,10 @@ export default function ResourceTimelineWidget({
       ) : (
         <div className="resource-timeline__chart" data-rt-chart>
           {dayLayer}
-          {/* Ключ по ревизии: внешние изменения (второй вид, формы)
-              пересобирают дорожки; собственная запись жеста подавляет
-              ремоунт — прокрутка сохраняется (design D5 PBT-048). */}
+          {/* Новый документ создаёт новую канву; обновления документа
+              проходят через items/groups без ремоунта (PBT-080). */}
           <Timeline<TimelineItem, TimelineGroup>
-            key={
-              ownWrite ? remountKeyRef.current : String(document.revision)
-            }
+            key={document.id}
             groups={groups}
             items={items}
             keys={TIMELINE_KEYS}

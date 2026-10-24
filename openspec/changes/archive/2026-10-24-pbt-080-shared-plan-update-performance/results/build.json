@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "d673454f63a985e59b89b4a3c5acec7e4b21f5ad",
+  "benchmarkToolingCommit": "a2fc9b252871eeae6fa93e9e8f549ab91e1bd4d1",
+  "buildCommand": "npm run build -w apps/project-board -- --sourcemap",
+  "bundle": "index-Fy0Cy29R.js",
+  "bundleSha256": "fd3586e9d7c55ccb778a9d221f43e77cf121a83c61f6d8527df118f304344db6",
+  "applicationSourceChanged": false,
+  "diagnosticToolingDirectory": ".context/diagnostics/pbt-080"
+}

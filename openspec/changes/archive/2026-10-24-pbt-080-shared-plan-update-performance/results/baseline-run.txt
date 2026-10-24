@@ -1,0 +1,29 @@
+[WebServer] (node:83222) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+A add run 0
+(node:83224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+submit prepared
+rendered 954.5
+A add run 1
+submit prepared
+rendered 962.3000000119209
+A add run 2
+submit prepared
+rendered 958.0999999642372
+A add run 3
+submit prepared
+rendered 956
+A add run 4
+submit prepared
+rendered 960.5
+A add run 5
+submit prepared
+rendered 965.1999999880791
+  ✓  1 .context/diagnostics/pbt-080/tests/performance/release.bench.ts:40:1 › A — общий план 500 в 6 проектных и 4 ресурсных видах (1.1m)
+
+  1 passed (1.2m)
+Диагностический выборочный прогон: общий итог бюджетов не вычисляется.

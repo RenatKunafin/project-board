@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { storedWorkspace } from './workspace-helper';
 
 test('оболочка приложения открывается', async ({ page }) => {
   await page.goto('/');
@@ -125,24 +126,23 @@ test('вкладка переименовывается по двойному к
   );
 });
 
-test('порядок вкладок меняется кнопками перемещения', async ({ page }) => {
+test('вкладки без стрелок сохраняют порядок создания после reload', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
-  const tablist = page.getByRole('tablist', {
-    name: 'Вкладки рабочего пространства',
-  });
-
+  const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
-  await tablist
-    .getByRole('button', { name: 'Переместить Новая вкладка влево' })
-    .click();
-
+  await tablist.getByRole('tab').first().hover();
+  await expect(tablist.getByRole('button', { name: /Переместить.*(влево|вправо)/ })).toHaveCount(0);
+  await expect(tablist.locator('.tab__move')).toHaveCount(0);
+  await expect.poll(async () => (await storedWorkspace(page)).tabs
+    .sort((a, b) => a.position - b.position).map(tab => tab.title)).toEqual(['Чек-листы', 'Новая вкладка']);
+  await page.reload();
   const tabs = tablist.getByRole('tab');
-  await expect(tabs.nth(0)).toContainText('Новая вкладка');
-  await expect(tabs.nth(1)).toContainText('Чек-листы');
+  await expect(tabs.nth(0)).toContainText('Чек-листы');
+  await expect(tabs.nth(1)).toContainText('Новая вкладка');
+  await expect(tablist.getByRole('button', { name: /Переместить.*(влево|вправо)/ })).toHaveCount(0);
 });
 
-test('удаление активной вкладки делает активной соседнюю, документ жив', async ({ page }) => {
+test('документ закрытой вкладки доступен для повторного открытия', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const tablist = page.getByRole('tablist', {
@@ -160,26 +160,31 @@ test('удаление активной вкладки делает активн
 
   await tablist
     .getByRole('button', { name: 'Закрыть Чек-листы' })
-    .click({ force: true });
+    .click();
   await expect(tablist.getByRole('tab', { name: /Чек-листы/ })).toHaveCount(0);
   await expect(tablist.getByRole('tab', { selected: true })).toContainText(
     'Новая вкладка',
   );
 
-  // Документ пережил удаление вкладки: перезагрузка восстанавливает его.
-  // Он открыт в двух экземплярах — текст ищем в конкретной панели.
+  // Ждём отложенный снапшот: иначе reload проверяет прежнее состояние БД.
+  await expect.poll(async () => (await storedWorkspace(page)).tabs.map(tab => tab.title)).toEqual(['Новая вкладка']);
+  // Закрытая вкладка и её окна не восстанавливаются, сам документ доступен.
   await page.reload();
-  await expect(
-    page.getByLabel('Экземпляр 1 · Список 1').getByText('Документ жив'),
-  ).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.widget-window')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
+  const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await catalog.getByRole('button', { name: 'Чек-лист', exact: true }).click();
+  await catalog.getByRole('button', { name: 'Список 1', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Чек-лист · Список 1', exact: true })
+    .getByText('Документ жив', { exact: true })).toBeVisible();
 });
 
-test('последняя вкладка не удаляется (кнопка disabled)', async ({ page }) => {
+test('единственная вкладка не показывает кнопку закрытия', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(
     page.getByRole('button', { name: /Закрыть Чек-листы/ }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await expect(page.getByRole('tab', { name: /Чек-листы/ })).toBeVisible();
 });
 

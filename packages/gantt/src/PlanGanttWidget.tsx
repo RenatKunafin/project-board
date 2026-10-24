@@ -216,6 +216,8 @@ export default function PlanGanttWidget({
   // writeDocumentContent): id документа → SVAR api.
   const documentIdRef = useRef(documentId);
   documentIdRef.current = documentId;
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
   // Своя запись жеста не пересобирает чарт: стор синхронизирован точечным
   // update-task, remount по этой ревизии подавляется (плавность, D7).
   // Внешние записи (второй экземпляр, формы) remount'ят как прежде.
@@ -961,81 +963,124 @@ export default function PlanGanttWidget({
   );
 
   useEffect(() => {
-    // Стор применяет жест с нестабильной задержкой и анимацией подлёта.
-    // Сверки 250/700 мс немедленно корректируют полосу правилами ядра
-    // (update-task, без записи); запись документа — по последней сверке
-    // (1500 мс): одна ревизия на жест, промежуточная доанимация стора
-    // подхватывается следующей сверкой.
-    const scheduleGestureSync = () => {
-      // Новый жест: база сравнения — текущие даты документа (expected
-      // заполняется правилами по мере сверок).
+    // Серия сверок принадлежит только полосе, на которой начат жест.
+    // Глобальный mouseup нужен для отпускания снаружи, но сам по себе
+    // не даёт соседним (в том числе скрытым) сторам права записи.
+    type Gesture = {
+      taskId: string;
+      api: IApi;
+      revision: number;
+      released: boolean;
+    };
+    let gesture: Gesture | null = null;
+    let finalizePending: (() => void) | null = null;
+    const timers = new Set<number>();
+    const cancel = () => {
+      gesture = null;
+      finalizePending = null;
+      for (const timer of timers) window.clearTimeout(timer);
+      timers.clear();
       gestureExpectedRef.current.clear();
-      const readOnce = () => {
-        const api = apiRef.current;
-        const planNow = planRef.current;
-        if (api === null || planNow === undefined) {
-          return null;
-        }
-        for (const task of planNow.tasks) {
-          let stored: { start?: unknown; end?: unknown };
-          try {
-            stored = api.getTask(task.id) as typeof stored;
-          } catch {
-            continue;
-          }
-          // Задача скрыта фильтром представления (PBT-049) — в сторе её нет.
-          if (
-            stored === undefined ||
-            !(stored.start instanceof Date) ||
-            !(stored.end instanceof Date)
-          ) {
-            continue;
-          }
-          const storeStart = ganttDayIso(stored.start);
-          const endDate = new Date(stored.end);
-          endDate.setDate(endDate.getDate() - 1);
-          const storeEndInc = ganttDayIso(endDate);
-          if (storeStart !== task.start || storeEndInc !== task.end) {
-            return { taskId: task.id, storeStart, storeEndInc };
-          }
-        }
-        return null;
+    };
+    const begin = (event: MouseEvent | TouchEvent) => {
+      if ('button' in event && event.button !== 0) return;
+      if ('touches' in event && event.touches.length !== 1) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const bar = target.closest<HTMLElement>('.wx-bar[data-id]');
+      if (
+        bar?.closest<HTMLElement>('.plan-gantt')?.dataset.widgetInstance !==
+        widgetInstanceId
+      ) return;
+      const rawId = bar?.dataset.id;
+      const taskId = rawId?.startsWith(':') ? rawId.slice(1) : rawId;
+      if (
+        visibleRef.current === false || !taskId || !documentId || !documentService ||
+        !planRef.current?.tasks.some((task) => task.id === taskId) ||
+        apiRef.current === null
+      ) return;
+      // Следующий жест не должен терять уже завершённый ввод. Фиксируем
+      // предыдущий факт, затем отменяем его таймеры и открываем новую серию.
+      finalizePending?.();
+      cancel();
+      const latest = documentService.get(documentId);
+      if (latest === undefined) return;
+      gesture = {
+        taskId,
+        api: apiRef.current,
+        revision: latest.revision,
+        released: false,
       };
+    };
+    const finish = () => {
+      const owner = gesture;
+      if (owner === null || owner.released) return;
+      owner.released = true;
       const correct = (persist: boolean) => {
-        const observed = readOnce();
-        if (observed !== null) {
-          applyGestureRules(
-            observed.taskId,
-            observed.storeStart,
-            observed.storeEndInc,
-            persist,
-          );
+        // Новая серия, пересозданный чарт или внешняя запись делают
+        // отложенное наблюдение устаревшим. Своя запись выполняется
+        // только последней сверкой, после неё серия завершается.
+        if (gesture !== owner) return;
+        if (
+          apiRef.current !== owner.api ||
+          !documentId ||
+          documentService?.get(documentId)?.revision !== owner.revision
+        ) {
+          cancel();
+          return;
         }
-        if (persist && gestureExpectedRef.current.size > 0) {
-          // Финальная фиксация: правила уже применены к стору промежуточными
-          // сверками (или этой сверкой) — записать ожидание, если документ
-          // ещё отличается (persistGesture идемпотентен, двойной записи нет).
-          const [taskId] = gestureExpectedRef.current.keys();
-          persistGesture(taskId);
+        const task = planRef.current?.tasks.find((task) => task.id === owner.taskId);
+        let stored: { start?: unknown; end?: unknown } | undefined;
+        try {
+          stored = owner.api.getTask(owner.taskId) as typeof stored;
+        } catch {
+          cancel();
+          return;
+        }
+        if (
+          task === undefined || !(stored?.start instanceof Date) ||
+          !(stored.end instanceof Date)
+        ) {
+          cancel();
+          return;
+        }
+        const storeStart = ganttDayIso(stored.start);
+        const endDate = new Date(stored.end);
+        endDate.setDate(endDate.getDate() - 1);
+        const storeEndInc = ganttDayIso(endDate);
+        if (storeStart !== task.start || storeEndInc !== task.end) {
+          applyGestureRules(owner.taskId, storeStart, storeEndInc, persist);
+        }
+        if (persist) {
+          persistGesture(owner.taskId);
+          cancel();
         }
       };
-      window.setTimeout(() => correct(false), 250);
-      window.setTimeout(() => correct(false), 700);
-      window.setTimeout(() => correct(true), 1500);
+      finalizePending = () => correct(true);
+      // SVAR доанимирует стор: промежуточные сверки исправляют полосу,
+      // а последняя записывает одну логическую операцию (ADR-5).
+      for (const delay of [250, 700, 1500]) {
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          correct(delay === 1500);
+        }, delay);
+        timers.add(timer);
+      }
     };
-    // Capture-фаза на документе без фильтра по чарту: SVAR останавливает
-    // всплытие mouseup внутри чарта, а отпускание кнопки ВНЕ чарта тоже
-    // обязано применять факт — иначе полоса застывает в брошенном
-    // положении до следующего remount (дефект отладки 2026-10-14).
-    // Свертка идемпотентна: без расхождения это только чтения.
-    const captureHandler = () => scheduleGestureSync();
-    window.document.addEventListener('mouseup', captureHandler, true);
-    window.document.addEventListener('touchend', captureHandler, true);
+    window.document.addEventListener('mousedown', begin, true);
+    window.document.addEventListener('touchstart', begin, true);
+    window.document.addEventListener('mouseup', finish, true);
+    window.document.addEventListener('touchend', finish, true);
+    window.document.addEventListener('touchcancel', cancel, true);
     return () => {
-      window.document.removeEventListener('mouseup', captureHandler, true);
-      window.document.removeEventListener('touchend', captureHandler, true);
+      cancel();
+      window.document.removeEventListener('mousedown', begin, true);
+      window.document.removeEventListener('touchstart', begin, true);
+      window.document.removeEventListener('mouseup', finish, true);
+      window.document.removeEventListener('touchend', finish, true);
+      window.document.removeEventListener('touchcancel', cancel, true);
     };
-  }, [applyGestureRules, persistGesture]);
+  }, [applyGestureRules, persistGesture, documentId, documentService, widgetInstanceId]);
 
   // ─── Стабилизация props SVAR (мерцание чарта, уточнение 2026-10-14) ─────
   // Обёртка SVAR при каждом изменении ссылок props перезаливает стор целиком
@@ -1049,6 +1094,9 @@ export default function PlanGanttWidget({
     collapsed: ReadonlySet<string>;
   } | null>(null);
   const ownWrite =
+    // Скрытый чарт размонтирован: для его следующего монтирования нужны
+    // свежие props даже после собственной отложенной записи жеста.
+    visible !== false &&
     document !== undefined &&
     localRevisionRef.current !== null &&
     document.revision === localRevisionRef.current;

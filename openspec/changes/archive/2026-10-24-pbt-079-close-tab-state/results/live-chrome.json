@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-23T21:36:08.571Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "keyboardNavigation": true,
+  "keyboardClose": true,
+  "noArrows": true,
+  "prototypeCloseButton": {
+    "icon": true,
+    "width": 14,
+    "height": 14,
+    "buttonWidth": 14,
+    "buttonHeight": 14,
+    "gap": "8px",
+    "padding": "0px",
+    "color": "oklch(0.66 0.2 22)",
+    "tabPadding": "16px"
+  },
+  "deletedMaximizedCascadeTab": true,
+  "deletedMiddleAndLast": true,
+  "lastTabProtected": true,
+  "repeatedCreation": true,
+  "documentsPreserved": true,
+  "reload": true,
+  "subscriptions": 1,
+  "consoleErrors": [],
+  "before": {
+    "tabIds": [
+      "6d59fbb1-b5f5-48d8-a885-7335816e0ade"
+    ],
+    "instanceIds": [
+      "w-1",
+      "w-2",
+      "w-3"
+    ]
+  },
+  "after": {
+    "tabTitles": [
+      "Рабочая"
+    ],
+    "instances": [
+      {
+        "id": "e79388d9-537b-4a8d-a813-49b4b32fc5e7",
+        "tabId": "405fe1ea-beab-4dc4-9b50-da81d4df04b7",
+        "typeId": "checklist",
+        "documentId": "da3e5380-299f-4ace-9c45-5348eaa83fdb",
+        "label": "Чек-лист · Список 2",
+        "collapsed": 0,
+        "gridArea": {
+          "x": 0,
+          "y": 0,
+          "w": 6,
+          "h": 4
+        },
+        "cascadeArea": {
+          "x": 16,
+          "y": 16,
+          "width": 608,
+          "height": 416
+        }
+      }
+    ],
+    "viewSettings": [
+      {
+        "key": "view:e79388d9-537b-4a8d-a813-49b4b32fc5e7",
+        "value": {
+          "hideDone": true
+        }
+      }
+    ]
+  }
+}
