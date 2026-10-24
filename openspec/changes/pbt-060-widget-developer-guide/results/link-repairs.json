@@ -5,5 +5,92 @@
       "screenshots/ldemo-02-measure.png"
     ]
   ],
-  "note": "Рабочие ссылки перенесены; отсутствовавшие уже в базовом коммите снимки отмечены текстом, без вымышленных файлов."
+  "note": "Рабочие ссылки перенесены; отсутствовавшие уже в базовом коммите снимки отмечены текстом, без вымышленных файлов.",
+  "repairedHistoricalLinks": [
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-007-document-state/design.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-007-document-state/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-08-pbt-012-gantt-fixtures/design.md",
+      "before": "../../docs/adr/PBT-003.md",
+      "after": "../../../../docs/adr/PBT-003.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-08-pbt-012-gantt-fixtures/proposal.md",
+      "before": "../../docs/adr/PBT-003.md",
+      "after": "../../../../docs/adr/PBT-003.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-08-pbt-011-platform-vertical-slice/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-004-project-scaffold/design.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-004-project-scaffold/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-08-pbt-013-working-day-arithmetic/design.md",
+      "before": "../../docs/adr/PBT-003.md",
+      "after": "../../../../docs/adr/PBT-003.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-08-pbt-013-working-day-arithmetic/proposal.md",
+      "before": "../../docs/adr/PBT-003.md",
+      "after": "../../../../docs/adr/PBT-003.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-005-quality-checks/design.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-008-checklist-widget/design.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-008-checklist-widget/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-009-indexeddb-documents/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-006-widget-registry/design.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-07-pbt-006-widget-registry/proposal.md",
+      "before": "../../docs/adr/PBT-002.md",
+      "after": "../../../../docs/adr/PBT-002.md"
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/results/baseline-2026-10-23/report.md",
+      "before": "../../openspec/changes/pbt-058-release-performance/results/",
+      "after": ".."
+    },
+    {
+      "file": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/results/baseline-2026-10-23/report.md",
+      "before": "../../openspec/changes/pbt-058-release-performance/results/mcp-manual.json",
+      "after": "../mcp-manual.json"
+    }
+  ]
 }

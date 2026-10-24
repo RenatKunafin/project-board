@@ -28,9 +28,9 @@ const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclud
   .split('\0').filter(Boolean).filter(path => existsSync(join(root, path)) && statSync(join(root, path)).isFile());
 let links = 0;
 for (const path of files) {
-  // Архив сохраняет исторические команды/пути; текущие инструкции должны
-  // быть самодостаточны в чистом checkout без локальной .context.
-  if (!path.endsWith('.md') || path.startsWith('openspec/changes/archive/')) continue;
+  // Исторические команды остаются текстом; ссылки должны разрешаться
+  // и в архиве, без обязательной локальной .context.
+  if (!path.endsWith('.md')) continue;
   const text = read(path).replace(/^```[^\n]*\n[\s\S]*?^```\s*$/gm, '');
   for (const match of text.matchAll(/!?\[[^\]\n]*\]\(([^)\n]+)\)/g)) {
     const raw = match[1].trim().replace(/^<|>$/g, '').split(/\s+['"]/)[0];

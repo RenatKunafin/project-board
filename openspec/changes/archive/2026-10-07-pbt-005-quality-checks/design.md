@@ -1,6 +1,6 @@
 ## Context
 
-Каркас PBT-004 готов: npm workspaces, 4 пакета, команды dev/build/preview/typecheck. Проверки границ ADR-3 выполнялись вручную grep'ом. Решения стека — [ADR PBT-002](../../docs/adr/PBT-002.md); CI-окружение — GitHub (remote `origin` на GitHub, базовая ветка `develop`). Node 22, npm 11.
+Каркас PBT-004 готов: npm workspaces, 4 пакета, команды dev/build/preview/typecheck. Проверки границ ADR-3 выполнялись вручную grep'ом. Решения стека — [ADR PBT-002](../../../../docs/adr/PBT-002.md); CI-окружение — GitHub (remote `origin` на GitHub, базовая ветка `develop`). Node 22, npm 11.
 
 ## Goals / Non-Goals
 
