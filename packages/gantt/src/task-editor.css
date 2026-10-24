@@ -267,3 +267,32 @@
 .plan-gantt .issues__kind {
   font-weight: 600;
 }
+
+.plan-gantt .issues__action {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-gantt .issues__action:hover {
+  background: var(--surface-raised);
+}
+
+.plan-gantt .issues__action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.plan-gantt .issues__show {
+  color: var(--primary);
+  flex-shrink: 0;
+}
