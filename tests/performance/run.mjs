@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 const runId = new Date().toISOString();
 process.env.PBT_BENCH_RUN_ID = runId;
 const args = process.argv.slice(2);
-const directory = 'openspec/changes/pbt-058-release-performance/results';
+const directory = 'test-results/release-performance';
 await mkdir(directory, { recursive: true });
 const environment = {
   runId, commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),

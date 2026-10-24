@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-const directory = 'openspec/changes/pbt-058-release-performance/results';
+const directory = 'test-results/release-performance';
 const names = ['A', 'B', 'A-interactions'];
 let failed = false;
 const environment = JSON.parse(await readFile(`${directory}/environment.json`, 'utf8'));

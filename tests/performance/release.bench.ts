@@ -7,7 +7,7 @@ import { frames, instrument, measure, summary } from './instrument';
 import { setupA, setupB, renameTab, newPlan, settledWorkspace } from './setup';
 import { storedPlan } from '../planning/helpers';
 
-const change = 'openspec/changes/pbt-058-release-performance/results';
+const change = 'test-results/release-performance';
 const readyA = `document.querySelectorAll('.plan-gantt .wx-grid').length === 6 && document.querySelectorAll('.resource-timeline [data-rt-chart]').length === 4 && [...document.querySelectorAll('.plan-gantt')].every(p=>p.querySelector('.wx-row')) && [...document.querySelectorAll('.resource-timeline')].every(p=>p.querySelector('[data-rt-task]'))`;
 
 async function output(name: string, value: unknown) {
