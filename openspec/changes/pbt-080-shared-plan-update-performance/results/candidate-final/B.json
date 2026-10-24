@@ -1,0 +1,242 @@
+{
+  "runId": "2026-10-24T11:10:56.375Z",
+  "date": "2026-10-24T11:11:55.571Z",
+  "browser": "155.0.8059.86",
+  "calibration": {
+    "visibility": "visible",
+    "focused": true,
+    "intervals": [
+      8.199999999999818,
+      8.300000000000182,
+      8.400000000000546,
+      8.299999999999272,
+      8.300000000000182,
+      8.5,
+      8.199999999999818,
+      7.800000000000182,
+      8.900000000000546,
+      8.299999999999272,
+      8.400000000000546,
+      8.300000000000182,
+      8.299999999999272,
+      8.300000000000182,
+      8.300000000000182,
+      8.5,
+      8.199999999999818,
+      8.400000000000546,
+      8.299999999999272,
+      8.400000000000546,
+      8.300000000000182,
+      8.299999999999272,
+      8.400000000000546,
+      8.300000000000182,
+      8.299999999999272,
+      7.400000000000546,
+      9.399999999999636,
+      8.199999999999818,
+      8.100000000000364,
+      8.600000000000364,
+      8.299999999999272,
+      8.300000000000182,
+      7.5,
+      9.400000000000546,
+      8.199999999999818,
+      8.300000000000182,
+      8.399999999999636,
+      8.100000000000364,
+      8.5,
+      8.299999999999272,
+      8.200000000000728,
+      8.5,
+      8.299999999999272,
+      8.400000000000546,
+      8.099999999999454,
+      7.700000000000728,
+      9,
+      7.599999999999454,
+      9.300000000000182,
+      8.199999999999818,
+      8.400000000000546,
+      8.299999999999272,
+      8.400000000000546,
+      8.300000000000182,
+      8.299999999999272,
+      8.400000000000546,
+      8.300000000000182,
+      8.299999999999272,
+      7.5,
+      9.300000000000182
+    ],
+    "avgFps": 119.99999999999999
+  },
+  "composition": "10 independent plans ×50; 10 tabs, one project per tab",
+  "fixtures": [
+    {
+      "title": "Benchmark B 1",
+      "seed": 42,
+      "sha256": "cd85812d511fb13f94a9b1b29a0d4e43a1a871c41e4bd36224625378e80579dc"
+    },
+    {
+      "title": "Benchmark B 2",
+      "seed": 43,
+      "sha256": "e7f71826ff28a172af2349fe282f76dd67468016907146610ef17990d2bf229c"
+    },
+    {
+      "title": "Benchmark B 3",
+      "seed": 44,
+      "sha256": "73c012ade5c1dde85ca398b4dc2bbdf20ce25e91f314c9d74e14610224077297"
+    },
+    {
+      "title": "Benchmark B 4",
+      "seed": 45,
+      "sha256": "bd929ee8333426db7549e4e9c19314211541fac7cdf186513d30b56c283d2567"
+    },
+    {
+      "title": "Benchmark B 5",
+      "seed": 46,
+      "sha256": "f7ce95a19f7d17a5a80408ad40e02c7314c331cf86db095b4ecf4512c6351b1b"
+    },
+    {
+      "title": "Benchmark B 6",
+      "seed": 47,
+      "sha256": "f0b91d7aeb4e54c70a3f65afbe3bae0d68e87e65990537418867000df22088c2"
+    },
+    {
+      "title": "Benchmark B 7",
+      "seed": 48,
+      "sha256": "373cf23ca5fae70ced537b17e74c016a4f119728adfdeec2797bd873e8ac23b1"
+    },
+    {
+      "title": "Benchmark B 8",
+      "seed": 49,
+      "sha256": "4436e0f7849ccdee9d407fe8b567efe86b07b1061f40a8128868af47575a54e4"
+    },
+    {
+      "title": "Benchmark B 9",
+      "seed": 50,
+      "sha256": "3068cb89d2d9d0aae2e3874be97cf917330e6656de363e0d0856899b3bf068e4"
+    },
+    {
+      "title": "Benchmark B 10",
+      "seed": 51,
+      "sha256": "6cf1bea21172a2beeceae711a348a7f74d54fbc28b0966ca4e7fa3f827619528"
+    }
+  ],
+  "switchOnePanelMs": {
+    "runs": [
+      23.5,
+      23.5,
+      23.600000023841858,
+      23.399999976158142,
+      23,
+      23.69999998807907,
+      23.399999976158142,
+      23.899999976158142,
+      23.5,
+      23.600000023841858
+    ],
+    "median": 23.5,
+    "p95": 23.899999976158142,
+    "budget": 500,
+    "passes": true
+  },
+  "lifecycle": {
+    "taskCount": 50,
+    "samples": [
+      {
+        "cycle": 0,
+        "heap": {
+          "usedSize": 12261440,
+          "totalSize": 13500416,
+          "embedderHeapUsedSize": 5533896,
+          "backingStorageSize": 1083241
+        },
+        "dom": {
+          "documents": 3,
+          "nodes": 6840,
+          "jsEventListeners": 761
+        },
+        "subscriptions": 10
+      },
+      {
+        "cycle": 5,
+        "heap": {
+          "usedSize": 12454616,
+          "totalSize": 13500416,
+          "embedderHeapUsedSize": 5555608,
+          "backingStorageSize": 1083421
+        },
+        "dom": {
+          "documents": 3,
+          "nodes": 6840,
+          "jsEventListeners": 761
+        },
+        "subscriptions": 10
+      },
+      {
+        "cycle": 10,
+        "heap": {
+          "usedSize": 12648548,
+          "totalSize": 13500416,
+          "embedderHeapUsedSize": 5546064,
+          "backingStorageSize": 1083642
+        },
+        "dom": {
+          "documents": 3,
+          "nodes": 6840,
+          "jsEventListeners": 761
+        },
+        "subscriptions": 10
+      },
+      {
+        "cycle": 15,
+        "heap": {
+          "usedSize": 13014056,
+          "totalSize": 13762560,
+          "embedderHeapUsedSize": 5551624,
+          "backingStorageSize": 1083822
+        },
+        "dom": {
+          "documents": 3,
+          "nodes": 6840,
+          "jsEventListeners": 761
+        },
+        "subscriptions": 10
+      },
+      {
+        "cycle": 20,
+        "heap": {
+          "usedSize": 13235880,
+          "totalSize": 14286848,
+          "embedderHeapUsedSize": 5575888,
+          "backingStorageSize": 1084002
+        },
+        "dom": {
+          "documents": 3,
+          "nodes": 6840,
+          "jsEventListeners": 761
+        },
+        "subscriptions": 10
+      }
+    ],
+    "deletedDocumentAbsent": true,
+    "afterDelete": {
+      "heap": {
+        "usedSize": 13480528,
+        "totalSize": 14548992,
+        "embedderHeapUsedSize": 5861240,
+        "backingStorageSize": 1084737
+      },
+      "dom": {
+        "documents": 3,
+        "nodes": 7396,
+        "jsEventListeners": 798
+      },
+      "subscriptions": 10
+    }
+  },
+  "recovery": {
+    "windows": 10,
+    "subscriptions": 10
+  }
+}
