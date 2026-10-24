@@ -1,5 +1,6 @@
 import type { PlanContent, PlanGroup } from './plan-document';
-import { addCalendarDays, createWorkingCalendar } from './working-calendar';
+import { addCalendarDays } from './working-calendar';
+import { calendarView, type NonWorkingDayKind } from './calendar-view';
 
 /**
  * Локальный контракт данных SVAR (минимальный, без протекания типов
@@ -113,7 +114,7 @@ export function planToGanttLinks(plan: PlanContent): GanttLink[] {
   }));
 }
 
-export type NonWorkingDayKind = 'weekend' | 'holiday';
+export type { NonWorkingDayKind } from './calendar-view';
 
 /**
  * Вид нерабочего дня календаря плана: праздник различим среди выходных;
@@ -123,9 +124,5 @@ export function nonWorkingDayKind(
   plan: PlanContent,
   isoDate: string,
 ): NonWorkingDayKind | undefined {
-  const calendar = createWorkingCalendar(plan.calendar);
-  if (calendar.isWorkingDay(isoDate)) {
-    return undefined;
-  }
-  return plan.calendar.holidays.includes(isoDate) ? 'holiday' : 'weekend';
+  return calendarView(plan.calendar).dayKind(isoDate);
 }

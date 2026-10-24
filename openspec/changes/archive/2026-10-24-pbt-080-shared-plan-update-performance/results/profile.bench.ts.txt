@@ -1,0 +1,55 @@
+import { writeFile, mkdir } from 'node:fs/promises';
+import { test, expect, type Page } from '@playwright/test';
+import { benchmarkData } from './data';
+import { instrument, measure, frames } from './instrument';
+import { setupA } from './setup';
+
+const output = '.context/diagnostics/pbt-080/results/profile';
+const readyA = `document.querySelectorAll('.plan-gantt .wx-grid').length === 6 && document.querySelectorAll('.resource-timeline [data-rt-chart]').length === 4 && [...document.querySelectorAll('.plan-gantt')].every(p=>p.querySelector('.wx-row')) && [...document.querySelectorAll('.resource-timeline')].every(p=>p.querySelector('[data-rt-task]'))`;
+async function prepare(page: Page) {
+  await page.getByRole('group', { name: 'План · Benchmark A 500', exact: true }).first().locator('[data-add-task]').click();
+  const dialog = page.getByRole('dialog', { name: 'Новая задача' });
+  await dialog.locator('[data-task-field="title"]').fill('Benchmark added');
+  await dialog.locator('[data-task-field="start"]').fill('2026-10-19');
+  await dialog.locator('[data-task-field="duration"]').fill('5');
+  return dialog.locator('[data-task-save]');
+}
+const predicate = `${readyA} && [...document.querySelectorAll('[data-task-count]')].every(e=>e.textContent==='Задач: 501') && !document.querySelector('[data-task-save]')`;
+
+test('CPU-profile — отдельная диагностика добавления, не бюджетный замер', async ({ page, context, browser }) => {
+  await mkdir(output, { recursive: true });
+  await instrument(page);
+  page.on('dialog', dialog => dialog.accept());
+  const id = await setupA(page, await benchmarkData());
+  await page.bringToFront();
+  const calibration = await frames(page);
+  expect(calibration.focused).toBe(true);
+  expect(calibration.visibility).toBe('visible');
+  expect(calibration.avgFps).toBeGreaterThan(45);
+  // Отдельный разогрев и восстановление исходных 500 через UI.
+  await measure(page, await prepare(page), predicate);
+  const pane = page.getByRole('group', { name: 'План · Benchmark A 500', exact: true }).first();
+  await pane.locator('[data-gantt-filter-query]').fill('Benchmark added');
+  await pane.locator('.wx-row').filter({ hasText: 'Benchmark added' }).first().dblclick();
+  await page.locator('[data-task-delete]').click();
+  await expect(pane.locator('[data-task-count]')).toHaveText('Задач: 500');
+  await pane.locator('[data-gantt-filter-query]').fill('');
+  const submit = await prepare(page);
+  const cdp = await context.newCDPSession(page);
+  const events: unknown[] = [];
+  cdp.on('Tracing.dataCollected', message => events.push(...message.value));
+  await cdp.send('Profiler.enable');
+  await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
+  await cdp.send('Tracing.start', { categories: 'devtools.timeline,v8,blink.user_timing', options: 'record-until-full' });
+  await submit.evaluate(element => element.addEventListener('click', () => performance.mark('PBT080-submit'), { once: true, capture: true }));
+  await cdp.send('Profiler.start');
+  const sample = await measure(page, submit, predicate);
+  const cpu = await cdp.send('Profiler.stop');
+  const complete = new Promise(resolve => cdp.once('Tracing.tracingComplete', resolve));
+  await cdp.send('Tracing.end');
+  await complete;
+  await writeFile(`${output}/add-task.cpuprofile`, JSON.stringify(cpu.profile));
+  await writeFile(`${output}/add-task.trace.json`, JSON.stringify({ traceEvents: events }));
+  await writeFile(`${output}/metadata.json`, JSON.stringify({ date: new Date().toISOString(), browser: browser.version(), id, calibration, sample, profileIsBudgetSample: false, composition: '6 project + 4 resource; shared500; grid' }, null, 2)+'\n');
+  await cdp.detach();
+});
