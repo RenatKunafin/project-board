@@ -1,0 +1,16 @@
+{
+  "productionBaseCommit": "f7a0430",
+  "toolingMergeCommit": "5a2bbe3f115bef83104d5d48b4cebf3efe6a3680",
+  "bundle": "index-bFkSr3WE.js",
+  "bundleSha256": "49f0cbbe228c57b10be2148a5e35d28a3ec6e5ae53f6f1ab2ee672de7cb63139",
+  "sha256": {
+    "packages/gantt/src/calendar-view.ts": "cf04194c26f1ecfb5703f9004a6e91fe6fa175529e05ca887b2320a8178c7758",
+    "packages/gantt/src/ResourceTimelineWidget.tsx": "f8fa3259e85fb8e01968f5a6c562b730de73ec6bcc472c6678883d31ac3c1eff",
+    "packages/gantt/src/PlanGanttWidget.tsx": "5c00f77ffdf154af7d8b3d031bf08ddf40b869813e40f023dd10f96ee0089652",
+    "tests/performance/release.bench.ts": "5cda2fdbf0fb52ad56255a97abad9ae020702c774ff423e359b4b78f1ed01f42",
+    "tests/performance/interactions.ts": "8d39166d8f43f64101fb4d0c7a91756126787f70eafc04cc19556820106bb9da",
+    "tests/performance/scroll.ts": "51018e29f260bbb07ee814b5ace3cb53e530bee5bd6e8bf98ed2575affa62541",
+    "tests/performance/lifecycle.ts": "99683b780777200c9336ba417045dc3ffebe5fcb2e317523acb7563479e563a1"
+  },
+  "note": "Только артефакты/документация менялись во время/после прогона; продуктовый код и benchmark не менялись."
+}
