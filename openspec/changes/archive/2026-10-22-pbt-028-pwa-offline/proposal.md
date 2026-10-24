@@ -27,7 +27,7 @@
 ## Impact
 
 - `apps/project-board`: конфигурация сборки, манифест/иконки, регистрация Service Worker, статус в топ-баре.
-- `tests/e2e`: сценарии PWA на production-сборке; `.docs/` и README — инструкция.
+- `tests/e2e`: сценарии PWA на production-сборке; `docs/` и README — инструкция.
 - Новая зависимость сборки `vite-plugin-pwa` с точным пином; SDK и доменные пакеты не расширяются.
 
 ## Non-Goals

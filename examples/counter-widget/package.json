@@ -1,0 +1,9 @@
+{
+  "name": "@project-board/counter-widget",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@project-board/widget-sdk": "*" },
+  "peerDependencies": { "react": "^18.3.1" }
+}

@@ -5,7 +5,7 @@
 
 ## 2. Эталон и генератор
 
-- [x] 2.1 Скопировать `.docs/examples/diagramm.gantt` → `tests/fixtures/gantt/diagramm.reference.gantt`; реализовать `reference-gantt.ts` (конвертер в тестовый формат, fixtures-only); unit-тест: конвертация даёт 47 задач, 9 ресурсов; проверить: `npm test`
+- [x] 2.1 Скопировать `docs/examples/diagramm.gantt` → `tests/fixtures/gantt/diagramm.reference.gantt`; реализовать `reference-gantt.ts` (конвертер в тестовый формат, fixtures-only); unit-тест: конвертация даёт 47 задач, 9 ресурсов; проверить: `npm test`
 - [x] 2.2 Реализовать `generate-plan.ts` (mulberry32, seed 42, 500 задач: группы, FS, ресурсы, назначения) и golden `plan-500.json`; unit-тест детерминированности: две генерации идентичны и равны golden; проверить: `npm test`
 
 ## 3. Сценарии измерений и завершение

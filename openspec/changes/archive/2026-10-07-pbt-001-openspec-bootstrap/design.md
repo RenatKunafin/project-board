@@ -1,12 +1,12 @@
 ## Context
 
-Состояние на момент задачи зафиксировано в карточке PBT-001 и `.docs/openspec-workflow.md`. Фактически уже существует: Node.js v22.12.0 (nvm), OpenSpec CLI 1.11.0 (глобальная установка через npm), инициализированный `openspec/` со схемой `spec-driven`, пустые `specs/` и `changes/archive/`, интеграция OpenCode в `.opencode/` (команды `opsx-*`, skills, плагин `@opencode-ai/plugin` 1.18.34). `openspec/config.yaml` остаётся шаблонным; change `pbt-001-openspec-bootstrap` ещё не создан. Git-репозитория в каталоге нет — владелец решил отложить Git/remote и выполнить артефакты и настройку локально.
+Состояние на момент задачи зафиксировано в карточке PBT-001 и `docs/openspec-workflow.md`. Фактически уже существует: Node.js v22.12.0 (nvm), OpenSpec CLI 1.11.0 (глобальная установка через npm), инициализированный `openspec/` со схемой `spec-driven`, пустые `specs/` и `changes/archive/`, интеграция OpenCode в `.opencode/` (команды `opsx-*`, skills, плагин `@opencode-ai/plugin` 1.18.34). `openspec/config.yaml` остаётся шаблонным; change `pbt-001-openspec-bootstrap` ещё не создан. Git-репозитория в каталоге нет — владелец решил отложить Git/remote и выполнить артефакты и настройку локально.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Воспроизводимая настройка OpenSpec на чистом окружении: зафиксированные версии, шаги установки и проверки в `.docs/openspec-setup.md`.
+- Воспроизводимая настройка OpenSpec на чистом окружении: зафиксированные версии, шаги установки и проверки в `docs/openspec-setup.md`.
 - Рабочий конфиг `openspec/config.yaml`: контекст проекта и правила артефактов, доступные AI при создании артефактов.
 - Проверенная поддержка tooling-изменений без spec deltas (`skip_specs: true`) на этом же change.
 - Подтверждённые реальные имена команд OpenCode и результат `openspec validate --strict`.
@@ -20,9 +20,9 @@
 
 ## Decisions
 
-- **Закрепление версии CLI — документацией, не lockfile.** Версии Node v22.12.0 и OpenSpec 1.11.0 записываются в `.docs/openspec-setup.md`. Альтернатива — devDependency и `package.json`; она станет осмысленной в PBT-004 при создании каркаса пакетов, сейчас проекта npm ещё нет. Проверка версии: `openspec --version`.
+- **Закрепление версии CLI — документацией, не lockfile.** Версии Node v22.12.0 и OpenSpec 1.11.0 записываются в `docs/openspec-setup.md`. Альтернатива — devDependency и `package.json`; она станет осмысленной в PBT-004 при создании каркаса пакетов, сейчас проекта npm ещё нет. Проверка версии: `openspec --version`.
 - **Язык артефактов — русский, служебные заголовки OpenSpec — английские.** Содержимое proposal/design/tasks и тексты требований пишутся по-русски; служебная разметка (ADDED/Requirement/Scenario, SHALL, GIVEN/WHEN/THEN) и заголовки секций шаблонов остаются английскими, как согласовано в AGENTS.md. Правило переносится в `rules` `openspec/config.yaml`.
-- **Контекст конфига — ссылки, а не копии.** `openspec/config.yaml` ссылается на `.docs/project-decisions.md`, `.docs/tasks/README.md`, `.docs/openspec-workflow.md` и требует сохранять различие статусов «согласовано/предложено». Дублирование содержания решений в конфиге исключаем: единый источник истины уже существует, копии расходятся.
+- **Контекст конфига — ссылки, а не копии.** `openspec/config.yaml` ссылается на `docs/project-decisions.md`, `docs/tasks/README.md`, `docs/openspec-workflow.md` и требует сохранять различие статусов «согласовано/предложено». Дублирование содержания решений в конфиге исключаем: единый источник истины уже существует, копии расходятся.
 - **`skip_specs: true` — для tooling-задач.** Change объявляет флаг в `.openspec.yaml`, так как не меняет поведение продукта. Граница из workflow: продуктовые функции не могут маскироваться этим флагом; проверка поддержки — часть DoD.
 - **Bootstrap-change оформляется по общим правилам.** Self-bootstrap не даёт себе исключений: proposal → design → tasks по схеме `spec-driven`, как и любой следующий change.
 - **Архивация без Git.** По процессу change архивируется в ветке задачи, но Git отложен владельцем. Фиксируется отступление: `/opsx-archive` выполняется локально в рабочем каталоге; при подключении remote архив попадёт в первый PR целиком.

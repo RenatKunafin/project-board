@@ -5,7 +5,7 @@
 
 ## PBT-ID и change
 
-- **Задача:** [PBT-XXX](.context/tasks/PBT-XXX.md)
+- **Задача:** `PBT-XXX`
 - **Change:** `pbt-xxx-slug`
 
 ## Scope
@@ -31,4 +31,4 @@ paste output
 
 ## Визуальное подтверждение UI
 
-<!-- Скриншот/короткая запись сценария; для задач без UI — N/A. -->
+<!-- Приложение PR или локальный артефакт test-results/; изображения не добавлять в OpenSpec. Для задач без UI — N/A. -->

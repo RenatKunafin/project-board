@@ -1,0 +1,715 @@
+{
+  "baseCommit": "73f48c9363469b2508b7feaf5c69c10cac2373d2",
+  "removedFiles": [
+    {
+      "path": "openspec/changes/archive/2026-10-07-pbt-006-widget-registry/screenshots/shell.png",
+      "bytes": 38614,
+      "sha256": "8743c8d020d2e584c160c0820ce4503c7f96fdbed7771b781b8e83cb2dac3066"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-07-pbt-008-checklist-widget/screenshots/checklist.png",
+      "bytes": 39678,
+      "sha256": "ab4f470c1d2c6825e922fd44d03da2a348de178bf0195ffd0269f4a5a992baa1"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-07-pbt-009-indexeddb-documents/screenshots/storage-selftest.png",
+      "bytes": 38329,
+      "sha256": "62da7c6e71a664a6c8d29da2a4157522f76d116132ab638bd7e6927842477f7b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-08-pbt-010-document-autosave/screenshots/conflict.png",
+      "bytes": 40433,
+      "sha256": "59c4b571c64442bed8654c9cde1f55b2f48a8de2d9d74f7a1843ffdc4f3ecf1f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-08-pbt-011-platform-vertical-slice/screenshots/hide-done-isolated.png",
+      "bytes": 58116,
+      "sha256": "04eefa7810c9c10ac77371eb423a79c2893f720d800f59c141d5ee78be7429c1"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-08-pbt-011-platform-vertical-slice/screenshots/vertical-slice.png",
+      "bytes": 59251,
+      "sha256": "a40db7150e2d0a507573c25c91402be3edf0f8003263abe177a315222c342270"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/after-drag.png",
+      "bytes": 103720,
+      "sha256": "f621741508a54811e8dac2da4c242566ead18f1b6cbc0b0a82ab56ffc36c8b03"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/editor.png",
+      "bytes": 187348,
+      "sha256": "4f1ca7589b2fa14d46d32e8fafbce04252462337a0fda926dbc4076ce3d4cbaf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/first-render.png",
+      "bytes": 68767,
+      "sha256": "b6cbbcc4d1aff7e433a4a1a8fb68f77e52201a13603515797d24c89e7f177e53"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/full-height-weekends.png",
+      "bytes": 87372,
+      "sha256": "268474acbc2ddf9b43d0c7c3ca44e4703b82b12afaa3f37963dbc2e132fd5edf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/inclusive-fixed.png",
+      "bytes": 68842,
+      "sha256": "4df81b1efea9a415603643b3f32422afc30857d6c5303d4956ccdcdbb6bad29b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/sync-fixed.png",
+      "bytes": 100919,
+      "sha256": "096ee22f1c22120e789e01434865f8ee08f27fc3ac1af2087466e6af26ba72f5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-014-project-gantt-spike/screenshots/weekends-highlight.png",
+      "bytes": 76022,
+      "sha256": "0cf63bfec6d413d16a20dd8402c6bd4b004dbffe7baa9d030ab364ea11a5d030"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/extended-datasets.png",
+      "bytes": 74839,
+      "sha256": "e7f1f3a5d0ee4b2b7bd3dde3fe4c95a7566a7f9d336cee12cd0f2ffabc861cad"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/extended-drag.png",
+      "bytes": 81656,
+      "sha256": "0975c97bbd5d8f227ada4849ec23d3fde951fb8f4f58e8d4c38a3b316d488935"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/first-render.png",
+      "bytes": 72678,
+      "sha256": "5a8bd9f00cbeb97218aa8fff7cc2616254b93e3229248bd2ec1f633619dd2012"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/gestures.png",
+      "bytes": 66506,
+      "sha256": "1c7198c64d54153d7796b5e3b74d5d57faf9b2f969fbe29f47f3d54a435601e4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/resize.png",
+      "bytes": 66455,
+      "sha256": "a8f89f4bc9d2bef0d1dff3f8a9ac09a0890883e3f257cf241bd61fc56b120db4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-015-resource-timeline-spike/screenshots/styled.png",
+      "bytes": 178549,
+      "sha256": "4b5ca6da43184b05403227ef5d9b1d4d7692cc88b66250ce0e5d11deb1f3e547"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-09-pbt-018-workspace-tabs/screenshots/workspace-tabs.png",
+      "bytes": 22468,
+      "sha256": "e5a04f7798eeba45c605e2e4b96b2c95fd2bf2dea9d2257f55b0e5b1b22a2cb3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-10-pbt-016-prototype-performance/screenshots/ldemo-01-scenarioA.png",
+      "bytes": 279737,
+      "sha256": "684598ee79e53b86a7310dccfb2d59059afc2cb4bbb37967c04f6edb14ffa494"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-10-pbt-016-prototype-performance/screenshots/ldemo-03-final.png",
+      "bytes": 255018,
+      "sha256": "5729b8eb4b1d573bf2b1fbb2fb04cbc7e4d6edc1411679fe450ef69da2a24037"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-10-pbt-016-prototype-performance/screenshots/ldemo-04-scenarioB.png",
+      "bytes": 267151,
+      "sha256": "d9d797bb4d7d949b562b019ee702e063f135b704ea9f39a17f7be4e20fb1d21f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-10-pbt-021-tiled-layout/screenshots/tiled-layout.png",
+      "bytes": 40927,
+      "sha256": "855e2afbce379a9e344af447cb58525b4eda40a93d147774f2be61828875a165"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-12-pbt-022-cascade-layout/screenshots/cascade-layout.png",
+      "bytes": 35817,
+      "sha256": "32d829813dd64b500a41e7c595d41fe98ff42fbb13fe21420b8f4471d8da2810"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-13-pbt-025-document-catalog/screenshots/document-catalog.png",
+      "bytes": 66810,
+      "sha256": "213df034d96c936afc7cf0d007fceec2814c440a6224f028a4eb3852663be158"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-14-pbt-037-project-gantt-view/screenshots/project-gantt.png",
+      "bytes": 88049,
+      "sha256": "f61464f0720a3b10cf7dc59c52d89542ede45e3254b37a4f1abdc2c91b8da9f5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-040-group-editor/screenshots/group-editor.png",
+      "bytes": 35751,
+      "sha256": "328ea70ac96374e46b0792decf01e9e745927f4e438a4efff22227001c19c809"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-047-resource-timeline-view/screenshots/rtl-01-tracks.png",
+      "bytes": 42095,
+      "sha256": "5fa2df34548924bdab2cd86f7abbae1d12b48d15939f96e0a121c6388f251b35"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-047-resource-timeline-view/screenshots/rtl-02-both-views.png",
+      "bytes": 95426,
+      "sha256": "c355c2cae8a49d8973fd839eba0b20d9a519de06ef394463e75915d41b8e2576"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-047-resource-timeline-view/screenshots/rtl-03-task-borders.png",
+      "bytes": 83663,
+      "sha256": "1009d6a5a06637d18019cebb9407c06988242745b818320705214de2d746ef96"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-047-resource-timeline-view/screenshots/rtl-04-nonworking-days.png",
+      "bytes": 27452,
+      "sha256": "6a53ea50a6a62272892c2f524e4051abc3f0a9203c77a447e5044da0defe15f9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-048-resource-timeline-editing/screenshots/rt-edit-01-form.png",
+      "bytes": 88169,
+      "sha256": "71fc2a87431a3e5613b7eb7b2320167258517ff98284f349a664957d83635d38"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-049-gantt-view-state/screenshots/vs-01-filters-zoom.png",
+      "bytes": 195800,
+      "sha256": "524f9a909f439bf9fb4ed15f4ee70e1f87cd98b519a7e3d27e3de0333e1d4901"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-051-native-plan-transfer-ui/screenshots/pbt-051-import-error.png",
+      "bytes": 90061,
+      "sha256": "a26f2857a7957dfbc428bf951e05b3e66f1c5b7574c481b5946a1b7a35bc245a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-051-native-plan-transfer-ui/screenshots/pbt-051-import-result.png",
+      "bytes": 89258,
+      "sha256": "5a6a0d8a0b663b27a333358d41c79ed905fff0e683320f804086322d6f8c2e38"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-052-onlinegantt-parser/screenshots/onlinegantt-reference-opened.png",
+      "bytes": 112471,
+      "sha256": "b981be61f02ec69373e3824d34d22403d54622c951633426f8891ed8065840b2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-053-onlinegantt-import-ui/screenshots/imported-plan.png",
+      "bytes": 92510,
+      "sha256": "9f82b976df33d5c411abe9502cb2bfa55d7c709bca1c4a0e18adf55d50ebc23d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-053-onlinegantt-import-ui/screenshots/preview-dialog.png",
+      "bytes": 103631,
+      "sha256": "6d0b137739a6b9f82996bd2008f74096210cbcf12d8566f3be69fbdbe405aec4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-053-onlinegantt-import-ui/screenshots/scale-solid-after-scroll.png",
+      "bytes": 47325,
+      "sha256": "239fb5ca0fc2439beec8d80b42de9ac30a9b7667781df74c9a3a2d67c1cd7af9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-054-imported-absence-mapping/screenshots/convert-dialog.png",
+      "bytes": 77607,
+      "sha256": "6c2b6f48150ae4f7a348a6d7254a2b165ec925a939f8ad52d681e922a3f8edaa"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-055-plantuml-generator/screenshots/reference-render.png",
+      "bytes": 204727,
+      "sha256": "365805287063bdaa2c79c75964f857dd556715f5967c3230a5f05a5c2bd17607"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-056-plantuml-export-ui/screenshots/preview-dialog.png",
+      "bytes": 47428,
+      "sha256": "8be20dc8452e7edc3d265960b5022c58a5849c10f0a6e7059d28bdd1a01d1e69"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-16-pbt-068-compact-gantt-density/screenshots/compact-density.png",
+      "bytes": 89726,
+      "sha256": "968751d80d1b94707aac9e781475639195b942e2c27541971603d0071c4bdb5b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-19-pbt-069-design-tokens-dark-theme/screenshots/after-1024x778.png",
+      "bytes": 48107,
+      "sha256": "b45366f62f950cda7c14c4537ff6b6d25a20b0b2189a1b3ae1474464b4e0227e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-19-pbt-069-design-tokens-dark-theme/screenshots/after-cascade-grid.png",
+      "bytes": 54443,
+      "sha256": "cdd1fae27882276142025e8f6422d95bac8f046fb961c3488c7623e2018fa813"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-19-pbt-069-design-tokens-dark-theme/screenshots/after-tiled-dark.png",
+      "bytes": 86424,
+      "sha256": "ab732ddcc01ea86fbfd3dd7fe3ef08e81c90a32fc0df2b70143785f755fdc0eb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-19-pbt-069-design-tokens-dark-theme/screenshots/after-wide.png",
+      "bytes": 57646,
+      "sha256": "861096d2f546317e8a0a1080854aa82d3d6835eaa92b7c00148f13182799a6d6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-19-pbt-069-design-tokens-dark-theme/screenshots/before-light-gantt.png",
+      "bytes": 89726,
+      "sha256": "968751d80d1b94707aac9e781475639195b942e2c27541971603d0071c4bdb5b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-070-widget-frame-restyling/screenshots/after-1024x778.png",
+      "bytes": 85218,
+      "sha256": "8a36449478700bc32f1a1edeeff41084a671412ebc66bece385950d2decbcb09"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-070-widget-frame-restyling/screenshots/after-window-cascade.png",
+      "bytes": 61340,
+      "sha256": "ce96fb3acb2f8d1b383fa53dd765f54d42440ac2093c5ccdae1e9135659d2d2e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-070-widget-frame-restyling/screenshots/after-window-collapsed.png",
+      "bytes": 99489,
+      "sha256": "d96ceedd409a7728c83de3cd6fc69f9b4091739617f1242aa8ffa825c99408f7"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-070-widget-frame-restyling/screenshots/after-window-tiled.png",
+      "bytes": 114043,
+      "sha256": "ed61b81d24cc4b433834f867902016d6aeef0920df33db66c3270da5cfb55549"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-070-widget-frame-restyling/screenshots/before-window.png",
+      "bytes": 57646,
+      "sha256": "861096d2f546317e8a0a1080854aa82d3d6835eaa92b7c00148f13182799a6d6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-071-widget-maximize/screenshots/after-maximized-1024x778.png",
+      "bytes": 36799,
+      "sha256": "34239f770b239a711d1fae98963c286ee26c4788af97b957a6585af643737f04"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-071-widget-maximize/screenshots/after-maximized.png",
+      "bytes": 49429,
+      "sha256": "915699d305f91ffd6d1c6bf3f13d454f4ef4eafcc7f4b22bf10d0620d09240f6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-071-widget-maximize/screenshots/before-normal.png",
+      "bytes": 146278,
+      "sha256": "e5adb690d175136aa609e54fa963cc86f6501901b003f28f380094b06fa2e489"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/after-1024x778.png",
+      "bytes": 44242,
+      "sha256": "990bb62cb657ef7bb7cd568b174db9673fe2f89e4dd4b31b04f79f173ebff9d5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/after-catalog-cards.png",
+      "bytes": 64985,
+      "sha256": "c7f5a96fa1cb71bcf88970c92836616f5f0dc7d539cf3c0093b09947e48e56c8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/after-documents-panel.png",
+      "bytes": 68430,
+      "sha256": "b7aec18ddab763851409c644ab702afbd0314697f6afd47e3e8b8dc8d30c4a7c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/after-empty-state.png",
+      "bytes": 27841,
+      "sha256": "dfaa76d5098df372b8eb82ffb8b000ed49445a849cd5dce1c99536d6dff42840"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/after-overview.png",
+      "bytes": 44577,
+      "sha256": "636ecc8b388529c6959e84907bccf23597ed657489d02d2a7a5daa1a2790a55c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/before-1024x778.png",
+      "bytes": 47054,
+      "sha256": "78b70409cbd8aa90e4a0476046cb73a3ab844da5ab5eff104fc8039619858649"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/before-catalog-cards.png",
+      "bytes": 58069,
+      "sha256": "88778012f3a5a3a47b3dae8f845509a486c49ae297e6cf55e95a6fa83e8fc1a8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/before-documents-panel.png",
+      "bytes": 68239,
+      "sha256": "538b1b1465bd58cd20df363682c740ace573baea4e0d1d504122de0ee72f9153"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/before-empty-state.png",
+      "bytes": 28225,
+      "sha256": "9337bbedc825aeab7543deb6af1a3dac803106be8d87fa2a6281deaaaac2407c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-20-pbt-072-dashboard-chrome-restyling/screenshots/before-overview.png",
+      "bytes": 46048,
+      "sha256": "d9e0d6d9fa353dd438c782e506885250933e55af0345ba8bd29e44fe6e19a80f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-1024x778.png",
+      "bytes": 23904,
+      "sha256": "5cc68a2d24092bd1405160518eb5c5e37bf25d0d27d5453f62be8aeed5554359"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-overview.png",
+      "bytes": 48280,
+      "sha256": "f7288c364d1e1ff1054ff7f5912fe71b52ea4ab227d8dcd8eaa82e883589eb45"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-table-minwidth-1024.png",
+      "bytes": 33159,
+      "sha256": "c89115bffc5af945e87ea407debb85cd8db8cc1df14315ec938cbbdb399ff153"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-table-minwidth.png",
+      "bytes": 152789,
+      "sha256": "d1f71655eb4d0f5f86a746328281acb14f7b8849b5559f3bf0ec827eeefca839"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-task-dialog.png",
+      "bytes": 72803,
+      "sha256": "9bfe27e403f5e3a3a9abc6bd0f42ce144a55337e97531ff1c1d157debb9a6ab3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/after-zoom-days.png",
+      "bytes": 92227,
+      "sha256": "a4906495e408e7255fec3c7f63342b4a4aa81191f1d20cf5301949953b28c397"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/before-1024x778.png",
+      "bytes": 51792,
+      "sha256": "9d09178fed990f1574656a88318eb915b6a3d5cd63b0e7956e330ffde21ace83"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/before-overview.png",
+      "bytes": 61079,
+      "sha256": "88dac7331403f87ffcd408b75d150dddf7840c82d4b213af4a1d0c96f6ab83fe"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-073-gantt-dark-theme/screenshots/before-task-dialog.png",
+      "bytes": 70968,
+      "sha256": "998c833eae3e1f8092596c0f975953fd7f4e253653e685ee40d9f24541b7698d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-074-resource-timeline-dark-theme/screenshots/after-1024x778.png",
+      "bytes": 63373,
+      "sha256": "c9c86b1f4ac947f4a7c34324dffad292733f4d9c6e4a2118db96658c7712eb61"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-074-resource-timeline-dark-theme/screenshots/after-overview.png",
+      "bytes": 65375,
+      "sha256": "72f7519ebb8e7d52e6a772d05eba357b85d8de947f72e48f5ce54ccfedba6817"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-074-resource-timeline-dark-theme/screenshots/before-1024x778.png",
+      "bytes": 38783,
+      "sha256": "91fd412c557095382801043ac9268f0b3b0147dfbf9f18da8e58cb38701d4c49"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-074-resource-timeline-dark-theme/screenshots/before-overview.png",
+      "bytes": 41524,
+      "sha256": "34686b7864cf5801a1253b8ddefc0852c6e8ce91616d47411b794517926101b5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-075-checklist-restyle/screenshots/after-checklist-1024x778.png",
+      "bytes": 38681,
+      "sha256": "888d845066ae79d630ddb32fe697b64afbee22e4deebf46a1ce86ca1b2e990ea"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-075-checklist-restyle/screenshots/after-checklist-hidden.png",
+      "bytes": 34899,
+      "sha256": "0de4cffdcc67c1f1a01b739c790529926469cc1a0f5cb3f6bac3dccb6c3707d3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-075-checklist-restyle/screenshots/after-checklist.png",
+      "bytes": 39839,
+      "sha256": "d4c423f5f5e9be0968cfd2e18935635b48a4db8f3204f37009dd3ea0419d6be2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-075-checklist-restyle/screenshots/before-checklist-1024x778.png",
+      "bytes": 37287,
+      "sha256": "3e382de92411f8f5904f1cf28f40d96b55ea4874d35fa573ca4707fdf561ea5c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-21-pbt-075-checklist-restyle/screenshots/before-checklist.png",
+      "bytes": 42182,
+      "sha256": "165a9eeafe46f3eb3ac34e731d6329d41905df87a438962ba277a95b048ce3fc"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-028-pwa-offline/screenshots/pwa-installed-chrome.png",
+      "bytes": 43788,
+      "sha256": "b8cdfc85a122d1a6401c01c5db065b4c3fa63e05f5250ca7d51401a5485ce1cb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-028-pwa-offline/screenshots/pwa-mcp-offline.png",
+      "bytes": 59783,
+      "sha256": "27461459ce8fad6f73881383770441b3f32a34cd875a8077dbb1ad6d3f9f1066"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-028-pwa-offline/screenshots/pwa-offline.png",
+      "bytes": 49007,
+      "sha256": "23d930c4113f9d93af11f9819b6ba6491f2cff8b793731833e5e0ceaf0c3306f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/after-cascade-1024.png",
+      "bytes": 46881,
+      "sha256": "9fb67b2e2e585bfa018a75e34130ee4de72fdcadf145ab2e6b21acc3fd12754b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/after-days-zoom-1920.png",
+      "bytes": 77052,
+      "sha256": "96d113703f266f34625aaecf7197e1a370aafe55cb317a2d5b6aebc692ac9c94"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/after-toolbar-week-zoom.png",
+      "bytes": 67539,
+      "sha256": "90403c762b9a2f20d24d2cdb3594dcd373ae6b39843adc2130ab0987dcd3b282"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/after-week-zoom-1024.png",
+      "bytes": 59948,
+      "sha256": "fb82d2ee869524a5152be0fd04c39edf8999f2f1baf220de60ea795d2ede842b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/after-week-zoom-1920.png",
+      "bytes": 80180,
+      "sha256": "9fb38700ec4d3785eb7333a18dd2c668227855c49fbc683c60466643c6853f72"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/before-toolbar.png",
+      "bytes": 87116,
+      "sha256": "7a46618625658095db5f6c2a99596154996e9ea4f02581347d4a06b8ae46be95"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-22-pbt-076-gantt-display-polish/screenshots/dev-week-scale-100px.png",
+      "bytes": 66946,
+      "sha256": "96a3629c8b627821823f10ff5e3839bdcb4a3a4c995af7240e1166e39698b95f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-029-pwa-updates/screenshots/other-window-blocked.png",
+      "bytes": 164366,
+      "sha256": "2e6c483b35b6b3766f1f3c561e72db835d5a9fd46789e7d7d7512ea1ceb1758f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-029-pwa-updates/screenshots/update-available.png",
+      "bytes": 117644,
+      "sha256": "f3e0a47c4c77e06460ace880517218401a66d4cce509c20ef0dd9e0467baeb45"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-029-pwa-updates/screenshots/update-confirm.png",
+      "bytes": 153052,
+      "sha256": "06bc1a8c731ade15960a4c7f3bc4e7b41f55935b92f8ec4329355084eb2626f2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-029-pwa-updates/screenshots/updated.png",
+      "bytes": 108230,
+      "sha256": "a6ffdc8c8bc629254fee9471b54ef05a2f1ba72de002cf481dd2bde23931092d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-057-planning-end-to-end/screenshots/calendar-manual.png",
+      "bytes": 111672,
+      "sha256": "560121edc3e5f59241ae7938ef10ae5766a61b4be3dfccc02db882b1b75a7cd4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-057-planning-end-to-end/screenshots/offline-manual.png",
+      "bytes": 61865,
+      "sha256": "7a51d24cec3b6bf6461fc177dfa773c275756e3dd84195bfc67d76509649d0ed"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/after-1024.png",
+      "bytes": 66991,
+      "sha256": "914a0d033a60540d0344f5f93b1cadad09e7160c2472e486538f009f64e90613"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/after-wide.png",
+      "bytes": 79379,
+      "sha256": "1b87b61f83f09ed7a1b78d02af4cc79f3b11f6e0f7193e7f58005f388fc3fb89"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/before-1024.png",
+      "bytes": 69144,
+      "sha256": "002857a1adf5a214a296b7ab1adff0f4243fd19b80c792a19feb7cc5c147adec"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/before-wide.png",
+      "bytes": 81706,
+      "sha256": "c0dffc3134dfeeeb9aa85022e06a3e5e7ac95eb395e111ee32b3f938d247f2e8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/documents-after-1024.png",
+      "bytes": 84310,
+      "sha256": "42b4aa5d05aa947e54763fa6d437d7e99ccfc91ce0d8e8f9f57b029df75c8bdd"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-077-widget-icons/screenshots/widgets-button-1024.png",
+      "bytes": 62013,
+      "sha256": "77756540a42dfca5dd652e64123b2106af6d738639e01c178e1f76cb1aa96b6a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/after-1024.png",
+      "bytes": 38187,
+      "sha256": "4d64cbf59e4cabf9cbfb0fdb8eeadf34730d48dc480d85dc3e2fd786c3d93b24"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/after-wide.png",
+      "bytes": 40840,
+      "sha256": "e5897283966eeeca864373e0e267c27f3da631d4103ddbc125be4efe575a95ce"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/before-1024.png",
+      "bytes": 39998,
+      "sha256": "5c271d4d83d10defe9b5837f21bd867299ba0dff7f5ce7389097a1c3c2707ca5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/before-wide.png",
+      "bytes": 42833,
+      "sha256": "450b711bde1e18530234c6c05829fcd335b83e868c203e80bc25776c6f8b2412"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/default-cascade-1024.png",
+      "bytes": 38236,
+      "sha256": "2e69364cd7dd1e47e209451497aaf3e21028e3bd9b0fa77452353e5840d57e62"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-078-cascade-grid-snap/screenshots/scroll-new-windows-1024.png",
+      "bytes": 36400,
+      "sha256": "232afcfe7f329947d52b8ec340fefb5bfbdf4922933b6bdb740b587d2dddb5e7"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-23-pbt-081-shared-plan-gesture-persistence/results/live-plan500.png",
+      "bytes": 80296,
+      "sha256": "a8a9c2e94197ad654d7a267c2ebb8ce51c740f2f3a697110ca926038b6dcbad6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/screenshots/gesture-failure.png",
+      "bytes": 161711,
+      "sha256": "26f1c8324d2565d391bb7b19c532f5b57d7e2281d870b99ef55d9dfb968d0b0c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/screenshots/live-final.png",
+      "bytes": 82991,
+      "sha256": "19eddb23d9d28f14f82acd2a0d68f04fc6b77598ca77d2ed1be953403d7627e8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/screenshots/manual-shared-plan-console.png",
+      "bytes": 69184,
+      "sha256": "fecf3917d955286a8e96f05e47d9d9025366049609266fa50d7149880c44be27"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-058-release-performance/screenshots/manual-shared-plan.png",
+      "bytes": 75506,
+      "sha256": "485c8cefc2f698c3c34d9f09910a62b4e12a833792fabd6819015be178aec28d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-079-close-tab-state/results/tab-close-offset.png",
+      "bytes": 3182,
+      "sha256": "45a0bc46fb84bf4fcb90c03f353932c80bfdec124328006dd1aac1ef25766ceb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-079-close-tab-state/results/tabs-after-close.png",
+      "bytes": 38754,
+      "sha256": "5d4a8c804a87519a5f07950c37b6ae58041b9aab14515621097366846c968687"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-079-close-tab-state/results/tabs-reloaded.png",
+      "bytes": 37733,
+      "sha256": "bf7b29404fec5c85392e0a9cb4805272a816f5192854bc5e0a26f80c654a61fe"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-080-shared-plan-update-performance/screenshots/resource-updated.png",
+      "bytes": 30099,
+      "sha256": "c2205007f470eda6384beb97ba89e63129ef6cd16c505fe88caee6b0ab255961"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-082-conflict-task-navigation/screenshots/conflicts.png",
+      "bytes": 175412,
+      "sha256": "407c941b513787efb701d12d5848993671fea1d496486d728c4cf3a2e1cce205"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-082-conflict-task-navigation/screenshots/task-days.png",
+      "bytes": 155976,
+      "sha256": "a7bbbb181b23d8a7d386b24a09195bdde444decfe770ac2c82324f459a8a6bb3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-10-24-pbt-082-conflict-task-navigation/screenshots/task-weeks.png",
+      "bytes": 157188,
+      "sha256": "b26dc6b9af00da477ccd40df733f2cbe18f01d47ac929f1c6012ad5a01f69285"
+    },
+    {
+      "path": "apps/load-demo/bench/run-bench.mjs",
+      "bytes": 3857,
+      "sha256": "c87e672c072ab5f3e6e1119b5252b0a66da1b8b164045b6376234fd63592bc9b"
+    },
+    {
+      "path": "apps/load-demo/index.html",
+      "bytes": 346,
+      "sha256": "ea645271237f61ee608ddcadcd967d58e2ad15c36331cbb46d3a7a188ec90dc8"
+    },
+    {
+      "path": "apps/load-demo/package.json",
+      "bytes": 589,
+      "sha256": "751dbe663ab81d11926ab85845b96d8a2268e4e22af896ae64b025bb884b05b4"
+    },
+    {
+      "path": "apps/load-demo/src/App.tsx",
+      "bytes": 7940,
+      "sha256": "e72cf332564ab4d8bde2e42a8ff1d4032bafaae2222002998375a6d22ac6c285"
+    },
+    {
+      "path": "apps/load-demo/src/app.css",
+      "bytes": 2238,
+      "sha256": "df41d7396a312966ff8441097fb668546a82211484396dcc50a7b22ee8cea8dc"
+    },
+    {
+      "path": "apps/load-demo/src/gantt/adapter.ts",
+      "bytes": 1407,
+      "sha256": "25d18e12079fb8060e769c38cdd88a2cafbceba31f6a7a24bbe5249b24d9844c"
+    },
+    {
+      "path": "apps/load-demo/src/idb.ts",
+      "bytes": 1069,
+      "sha256": "21e5be21dc159504d8a6a1862ef11982751d2b596b3332bb2306bdd162b59a7c"
+    },
+    {
+      "path": "apps/load-demo/src/main.tsx",
+      "bytes": 277,
+      "sha256": "989911eb79591e9d5d80d9d90a4ebdd84da4aaed4422470ed4ea49660c6c9453"
+    },
+    {
+      "path": "apps/load-demo/src/metrics.ts",
+      "bytes": 1906,
+      "sha256": "82af71752fdcfa381def76a152b523e26e8ad807319a4da25c4727dfde4579fd"
+    },
+    {
+      "path": "apps/load-demo/src/plan-core.ts",
+      "bytes": 10324,
+      "sha256": "3c5adea7262a1d008c9680070f73f60abf876e99c9fbd1bddf16d38d49b0ba12"
+    },
+    {
+      "path": "apps/load-demo/src/rct-types.ts",
+      "bytes": 716,
+      "sha256": "4e01067412d335c66bd886899b0e55244c239a455ce7bee318594c8ec12bd5ec"
+    },
+    {
+      "path": "apps/load-demo/src/resource/ResourcePanel.tsx",
+      "bytes": 6639,
+      "sha256": "d996f1994c457064144d8232cc11d449846caaaab1a6073b55fdefbd73a74fe9"
+    },
+    {
+      "path": "apps/load-demo/src/svar/GanttPanel.tsx",
+      "bytes": 4931,
+      "sha256": "076dc41bb81feaf55a8490add1fe0b938fdc4ee20928585ea4d5f0580c524884"
+    },
+    {
+      "path": "apps/load-demo/tsconfig.json",
+      "bytes": 151,
+      "sha256": "0ffa2e5e2952bbab8b555d0687f10666557a120a99c5a9361c3331bcd0ae6919"
+    },
+    {
+      "path": "apps/load-demo/types/vite-env.d.ts",
+      "bytes": 38,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "apps/load-demo/vite.config.ts",
+      "bytes": 180,
+      "sha256": "1e588bc78cc933387861c3249dc47eef292e5c0fd722e8428fb29df47c4e4c1a"
+    },
+    {
+      "path": "__shot.cjs",
+      "bytes": 442,
+      "sha256": "ff10ac6ea1ef2fd4ee76e1b9a19cd04e7f3dd4005bf5a5c1caf2065037442cf1"
+    }
+  ]
+}

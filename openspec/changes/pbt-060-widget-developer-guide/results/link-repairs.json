@@ -1,0 +1,9 @@
+{
+  "missingHistoricalScreenshots": [
+    [
+      "docs/research/PBT-016.md",
+      "screenshots/ldemo-02-measure.png"
+    ]
+  ],
+  "note": "Рабочие ссылки перенесены; отсутствовавшие уже в базовом коммите снимки отмечены текстом, без вымышленных файлов."
+}

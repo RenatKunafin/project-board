@@ -6,6 +6,7 @@ export default defineConfig({
       'packages/**/*.test.{ts,tsx}',
       'apps/**/*.test.{ts,tsx}',
       'tests/**/*.test.{ts,tsx}',
+      'examples/**/*.test.{ts,tsx}',
     ],
     setupFiles: ['tests/vitest-setup.ts'],
   },
