@@ -21,6 +21,12 @@ async function setup(page: Page) {
   await open(page, true);
   const firstId = (await page.locator('.counter-widget').getAttribute('data-counter-instance'))!;
   const id = (await page.locator('.counter-widget').getAttribute('data-document-id'))!;
+  // Статус документов не включает очередь раскладки: ждём запись окна отдельно.
+  await expect.poll(async () => {
+    const workspace = await storedWorkspace(page);
+    return workspace.widgetInstances.length === 1 && workspace.widgetInstances[0]?.id === firstId &&
+      workspace.widgetInstances[0]?.documentId === id && workspace.tabs[0]?.mode === 'grid';
+  }).toBe(true);
   return { firstId, id };
 }
 
@@ -30,7 +36,11 @@ test('пример: общий документ, настройки двух о�
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   const { firstId, id } = await setup(page);
   await open(page);
-  const secondId = (await page.locator('.counter-widget').last().getAttribute('data-counter-instance'))!;
+  // Порядок DOM не задаёт порядок создания окон.
+  const other = page.locator(`.counter-widget:not([data-counter-instance="${firstId}"])`);
+  await expect(other).toHaveCount(1);
+  const secondId = (await other.getAttribute('data-counter-instance'))!;
+  expect(secondId).not.toBe(firstId);
   const first = page.locator(`.counter-widget[data-counter-instance="${firstId}"]`);
   const second = page.locator(`.counter-widget[data-counter-instance="${secondId}"]`);
   await expect(first.getByLabel('Значение счётчика')).toHaveText('0');
