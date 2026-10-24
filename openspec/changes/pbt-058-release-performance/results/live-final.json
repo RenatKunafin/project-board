@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-24T13:12:35.346Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+  "composition": "6 project + 4 resource views, shared plan500; one project maximized",
+  "results": [
+    {
+      "kind": "drag",
+      "before": {
+        "revision": 1,
+        "start": "2037-03-05",
+        "end": "2037-03-18"
+      },
+      "after": {
+        "revision": 2,
+        "start": "2037-03-09",
+        "end": "2037-03-20"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    },
+    {
+      "kind": "left",
+      "before": {
+        "revision": 2,
+        "start": "2037-03-09",
+        "end": "2037-03-20"
+      },
+      "after": {
+        "revision": 3,
+        "start": "2037-03-11",
+        "end": "2037-03-20"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    },
+    {
+      "kind": "drag",
+      "before": {
+        "revision": 3,
+        "start": "2037-03-11",
+        "end": "2037-03-20"
+      },
+      "after": {
+        "revision": 4,
+        "start": "2037-03-13",
+        "end": "2037-03-24"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    },
+    {
+      "kind": "left",
+      "before": {
+        "revision": 4,
+        "start": "2037-03-13",
+        "end": "2037-03-24"
+      },
+      "after": {
+        "revision": 5,
+        "start": "2037-03-15",
+        "end": "2037-03-24"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    },
+    {
+      "kind": "drag",
+      "before": {
+        "revision": 5,
+        "start": "2037-03-15",
+        "end": "2037-03-24"
+      },
+      "after": {
+        "revision": 6,
+        "start": "2037-03-17",
+        "end": "2037-03-25"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    },
+    {
+      "kind": "left",
+      "before": {
+        "revision": 6,
+        "start": "2037-03-17",
+        "end": "2037-03-25"
+      },
+      "after": {
+        "revision": 7,
+        "start": "2037-03-19",
+        "end": "2037-03-25"
+      },
+      "stable": true,
+      "hit": ":t-500"
+    }
+  ],
+  "wheel": {
+    "before": 0,
+    "after": 400
+  },
+  "zoomCycle": true,
+  "reload": true,
+  "consoleErrors": []
+}
