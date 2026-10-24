@@ -43,7 +43,8 @@ try {
   report.touched = touched;
   command('npm', ['run', 'lint']);
   command('npm', ['run', 'typecheck']);
-  command('npm', ['test']);
+  // Проверяем подключённую копию; исходный образец не запускаем второй раз.
+  command('npm', ['test', '--', '--exclude', 'examples/**']);
   command('npm', ['run', 'build']);
   command(process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '--config=tests/widget-example/playwright.config.ts']);
   report.status = 'passed';
