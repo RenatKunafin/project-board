@@ -1,36 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, writeFileSync } from 'node:fs';
 import {
-  convertReferenceGantt,
-  parsePredecessor,
-  referenceDate,
-} from './reference-gantt.js';
-import {
   generatePlan,
   mulberry32,
+  type FixturePlan,
 } from './generate-plan.js';
 
 const SMALL_PLAN_PATH = 'tests/fixtures/gantt/small-plan.json';
-const REFERENCE_PATH = 'tests/fixtures/gantt/diagramm.reference.gantt';
 const GOLDEN_PATH = 'tests/fixtures/gantt/plan-500.json';
 
 describe('малый контрольный набор', () => {
-  const smallPlan = JSON.parse(readFileSync(SMALL_PLAN_PATH, 'utf8')) as {
-    tasks: Array<{ id: string; start: string; end: string; groupId: string }>;
-    groups: Array<{ id: string }>;
-    dependencies: Array<{ fromTaskId: string; toTaskId: string; lagDays: number }>;
-    unavailability: Array<{ id: string; resourceId: string; start: string }>;
-    resources: Array<{ id: string }>;
-  };
+  const smallPlan = JSON.parse(readFileSync(SMALL_PLAN_PATH, 'utf8')) as FixturePlan;
 
   it('структура согласована: ссылки id существуют', () => {
     const taskIds = new Set(smallPlan.tasks.map((task) => task.id));
     const groupIds = new Set(smallPlan.groups.map((group) => group.id));
     const resourceIds = new Set(smallPlan.resources.map((resource) => resource.id));
 
+    expect(taskIds.size).toBe(smallPlan.tasks.length);
+    expect(groupIds.size).toBe(smallPlan.groups.length);
+    expect(resourceIds.size).toBe(smallPlan.resources.length);
     for (const task of smallPlan.tasks) {
-      expect(groupIds.has(task.groupId)).toBe(true);
-      for (const assigneeId of []) {
+      expect(groupIds.has(task.groupId!)).toBe(true);
+      for (const assigneeId of task.assigneeIds) {
         expect(resourceIds.has(assigneeId)).toBe(true);
       }
     }
@@ -71,31 +63,6 @@ describe('малый контрольный набор', () => {
   });
 });
 
-describe('эталон рабочего примера', () => {
-  const reference = readFileSync(REFERENCE_PATH, 'utf8');
-
-  it('конвертация даёт 47 записей и 9 ресурсов', () => {
-    const plan = convertReferenceGantt(reference);
-    expect(plan.tasks).toHaveLength(47);
-    expect(plan.resources).toHaveLength(9);
-    expect(plan.meta.calendar.holidays).toContain('2026-11-04');
-  });
-
-  it('parsePredecessor разбирает "7FS" и "7FS+14 days"', () => {
-    expect(parsePredecessor('15FS')).toEqual({ taskId: 't-15', lagDays: 0 });
-    expect(parsePredecessor('7FS+14 days')).toEqual({
-      taskId: 't-7',
-      lagDays: 14,
-    });
-    expect(parsePredecessor('7SS')).toBeNull();
-  });
-
-  it('UTC-метки конвертируются в даты Europe/Moscow', () => {
-    // 2026-08-31T05:00:00Z = 08:00 MSK -> дата 2026-08-31.
-    expect(referenceDate('2026-08-31T05:00:00.000Z')).toBe('2026-08-31');
-  });
-});
-
 describe('генератор 500 задач', () => {
   it('mulberry32 детерминирован', () => {
     const first = mulberry32(42);
@@ -126,9 +93,11 @@ describe('генератор 500 задач', () => {
     const groupIds = new Set(plan.groups.map((group) => group.id));
     const resourceIds = new Set(plan.resources.map((resource) => resource.id));
 
+    expect(taskIds.size).toBe(plan.tasks.length);
+    expect(groupIds.size).toBe(plan.groups.length);
+    expect(resourceIds.size).toBe(plan.resources.length);
     expect(groupIds.size).toBeGreaterThan(0);
     for (const task of plan.tasks) {
-      expect(taskIds.has(task.id)).toBe(true);
       expect(groupIds.has(task.groupId!)).toBe(true);
       expect(task.assigneeIds.every((id) => resourceIds.has(id))).toBe(true);
     }

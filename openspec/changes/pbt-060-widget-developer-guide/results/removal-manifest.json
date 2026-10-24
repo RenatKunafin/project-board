@@ -710,6 +710,11 @@
       "path": "__shot.cjs",
       "bytes": 442,
       "sha256": "ff10ac6ea1ef2fd4ee76e1b9a19cd04e7f3dd4005bf5a5c1caf2065037442cf1"
+    },
+    {
+      "path": "tests/fixtures/gantt/reference-gantt.ts",
+      "bytes": 3106,
+      "sha256": "8a9c4da8fae55ffeb1079cf7b35ded406dc7d301aafc797413836d24c9f6bffc"
     }
   ]
 }

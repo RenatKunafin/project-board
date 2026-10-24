@@ -12,6 +12,7 @@ test('топ-бар показывает название и индикатор 
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const topbar = page.locator('.app-topbar');
 
+  await expect(page).toHaveTitle('Project Board');
   await expect(topbar).toBeVisible();
   await expect(topbar.getByRole('heading', { level: 1 })).toHaveText(
     'Project Board',

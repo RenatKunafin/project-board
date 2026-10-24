@@ -24,7 +24,7 @@ rules:
     - Зафиксируй решения, причины, альтернативы и ограничения; не выдавай гипотезу за принятое решение.
   tasks:
     - Шаги одной задачи, проверки и PR; не создавай незаметно новый самостоятельный scope.
-    - Проверки OpenSpec: openspec validate <change> --strict и openspec validate --all --strict.
+    - "Проверки OpenSpec: openspec validate <change> --strict и openspec validate --all --strict."
   apply:
     - Следуй одобренному объёму и .agents/rules; полученное одобрение действует дальше.
     - Проверяй доменные правила и целостность данных в PR самой функции.

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('сворачивание прячет содержимое, разворачивание возвращает черновик', async ({
   page,
@@ -44,8 +45,8 @@ test('закрытие одного из двух представлений с�
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  // Дебаунс 250мс + холодная запись IDB (PBT-016) — иначе reload обрывает запись.
-  await page.waitForTimeout(1500);
+  await persistedDocument(page, 'Список 1', { items: [{ text: 'Живёт во втором окне' }] });
+  await expect.poll(async () => (await storedWorkspace(page)).widgetInstances.length).toBe(3);
 
   await pane1
     .getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' })
@@ -53,7 +54,10 @@ test('закрытие одного из двух представлений с�
   await expect(pane1).toHaveCount(0);
   await expect(pane2.getByText('Живёт во втором окне')).toBeVisible();
 
+  await expect.poll(async () => (await storedWorkspace(page)).widgetInstances.length).toBe(2);
   await page.reload();
+  await expect(pane1).toHaveCount(0);
+  await expect(pane2.getByText('Живёт во втором окне')).toBeVisible();
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })

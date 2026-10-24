@@ -1,0 +1,16 @@
+[
+  {
+    "mutation": "packages/gantt/src/plan-conflicts.ts: diagnostic returns []",
+    "exitCode": 1,
+    "failedTests": 4,
+    "expectedFailedTests": 4,
+    "detected": true
+  },
+  {
+    "mutation": "packages/gantt/src/plan-dependencies.ts: diagnostic returns []",
+    "exitCode": 1,
+    "failedTests": 1,
+    "expectedFailedTests": 1,
+    "detected": true
+  }
+]

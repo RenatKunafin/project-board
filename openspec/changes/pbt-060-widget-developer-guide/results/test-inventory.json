@@ -1,0 +1,11 @@
+{
+  "unitBefore": 510,
+  "unitAfter": 497,
+  "browserBefore": 155,
+  "browserAfter": 150,
+  "fixedWaitCallsBefore": 124,
+  "fixedWaitCallsAfter": 115,
+  "literalWaitSecondsBefore": 114.2,
+  "literalWaitSecondsAfter": 103.5,
+  "note": "Сумма литералов не равна длительности прогона: тесты параллельны, часть вызовов находится в циклах."
+}

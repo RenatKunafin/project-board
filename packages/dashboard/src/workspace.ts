@@ -65,26 +65,6 @@ export function renameTab(
   };
 }
 
-/** Перемещает вкладку к соседней (-1 — влево, +1 — вправо); на границе бездействует. */
-export function moveTab(
-  state: WorkspaceState,
-  tabId: string,
-  direction: -1 | 1,
-): WorkspaceState {
-  const index = state.tabs.findIndex((tab) => tab.id === tabId);
-  if (index === -1) {
-    throw new WorkspaceError('unknown-tab', `Вкладка "${tabId}" не найдена.`);
-  }
-  const target = index + direction;
-  if (target < 0 || target >= state.tabs.length) {
-    return state;
-  }
-  const tabs = [...state.tabs];
-  const [moved] = tabs.splice(index, 1);
-  tabs.splice(target, 0, moved);
-  return { ...state, tabs };
-}
-
 export function setActive(
   state: WorkspaceState,
   tabId: string,
