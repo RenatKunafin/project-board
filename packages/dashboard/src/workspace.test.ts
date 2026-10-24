@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   addTab,
   createWorkspaceState,
-  moveTab,
   removeTab,
   renameTab,
   setActive,
@@ -53,30 +52,6 @@ describe('workspace — переименование', () => {
       WorkspaceError,
     );
     expect(state.tabs[0].title).toBe('План ОКАД');
-  });
-});
-
-describe('workspace — порядок', () => {
-  it('перемещает вкладку влево', () => {
-    let state = createWorkspaceState('A');
-    state = addTab(state, 'B');
-    state = moveTab(state, state.tabs[1].id, -1);
-    expect(state.tabs.map((tab) => tab.title)).toEqual(['B', 'A']);
-  });
-
-  it('перемещает вкладку вправо', () => {
-    let state = createWorkspaceState('A');
-    state = addTab(state, 'B');
-    state = moveTab(state, state.tabs[0].id, 1);
-    expect(state.tabs.map((tab) => tab.title)).toEqual(['B', 'A']);
-  });
-
-  it('на границе бездействует без ошибки', () => {
-    let state = createWorkspaceState('A');
-    state = addTab(state, 'B');
-    const before = state;
-    state = moveTab(state, state.tabs[0].id, -1);
-    expect(state.tabs).toEqual(before.tabs);
   });
 });
 

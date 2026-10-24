@@ -14,16 +14,17 @@
     "generate:pwa-assets": "node scripts/generate-pwa-assets.mjs",
     "verify:pwa-install": "node scripts/verify-pwa-install.mjs",
     "dev": "npm run dev -w apps/project-board",
-    "dev:load-demo": "npm run dev -w apps/load-demo",
     "build": "npm run build -w apps/project-board",
     "preview": "npm run preview -w apps/project-board",
-    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p apps/load-demo",
+    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p examples/counter-widget",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:browser": "playwright test",
     "test:pwa-updates": "node tests/pwa-updates/build.mjs && playwright test --config=playwright.pwa.config.ts",
     "test:planning": "playwright test --config=playwright.planning.config.ts",
-    "bench:release": "node tests/performance/run.mjs"
+    "bench:release": "node tests/performance/run.mjs",
+    "verify:repository": "node scripts/verify-repository.mjs",
+    "verify:widget-example": "node scripts/verify-widget-example.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

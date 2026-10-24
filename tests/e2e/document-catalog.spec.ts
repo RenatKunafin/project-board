@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test.describe.serial('каталог документов', () => {
   test('полный сценарий: создать → открыть дважды → закрыть → открыть → переименовать → перезапуск → удалить → выбрать другой', async ({
@@ -78,7 +79,14 @@ test.describe.serial('каталог документов', () => {
 
     // Перезапуск: название и содержимое переживают запись.
     await expect(page.getByText('Сохранено')).toBeVisible();
-    await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB — иначе reload обрывает запись
+    await persistedDocument(page, 'Продукты', { items: [{ text: 'Хлеб' }] });
+    await expect.poll(async () => {
+      const workspace = await storedWorkspace(page);
+      const activeId = (workspace.settings.find(row => row.key === 'workspace')?.value as { activeTabId?: string })?.activeTabId;
+      const documentId = workspace.documents.find(document => document.title === 'Продукты')?.id;
+      return workspace.tabs.find(tab => tab.id === activeId)?.title === 'Новая вкладка' &&
+        workspace.widgetInstances.filter(instance => instance.tabId === activeId && instance.documentId === documentId).length === 1;
+    }).toBe(true);
     await page.reload();
     await expect(
       page.getByRole('group', { name: 'Чек-лист · Продукты' }).getByText('Хлеб'),

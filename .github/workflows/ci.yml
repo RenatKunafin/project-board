@@ -20,6 +20,9 @@ jobs:
       - name: Установка зависимостей
         run: npm ci
 
+      - name: Проверка структуры репозитория
+        run: npm run verify:repository
+
       - name: Lint (включая границы ADR-3)
         run: npm run lint
 
@@ -35,4 +38,4 @@ jobs:
       - name: OpenSpec validation
         run: |
           npm i -g @fission-ai/openspec@1.11.0
-          openspec validate --all --strict --no-interactive
+          openspec validate --all --strict

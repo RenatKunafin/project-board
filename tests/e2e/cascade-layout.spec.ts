@@ -167,16 +167,6 @@ test('каскад: поле ввода не двигает окно; возвр
   ).toBeVisible();
 });
 
-test('каскад: скриншот перекрытых окон', async ({ page }) => {
-  await page.goto('/');
-  await switchToCascade(page);
-  await page.waitForTimeout(400);
-  await page.screenshot({
-    path: 'test-results/screenshots/cascade-layout.png',
-    fullPage: false,
-  });
-});
-
 test('каскад: resize расширяет канвас, окно доступно прокруткой (PBT-078)', async ({
   page,
 }) => {

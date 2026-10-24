@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('план создаётся через каталог, переживает перезагрузку и открывается по документу', async ({
   page,
@@ -26,10 +27,15 @@ test('план создаётся через каталог, переживае�
 
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
+  await persistedDocument(page, 'ОКАД', { tasks: [] });
+  const instanceId = await pane.locator('.plan-gantt').getAttribute('data-widget-instance');
+  await expect.poll(async () => (await storedWorkspace(page)).widgetInstances.find(instance => instance.id === instanceId)?.documentId).toBeTruthy();
+  const documentId = (await storedWorkspace(page)).widgetInstances.find(instance => instance.id === instanceId)!.documentId!;
 
-  // Панели живут в памяти: после перезагрузки документ открывается заново по каталогу.
+  // Сохранённое окно восстанавливается; повторное открытие добавляет второй вид.
   await page.reload();
+  await expect(pane).toHaveCount(1);
+  await expect(pane.locator('.plan-gantt')).toHaveAttribute('data-widget-instance', instanceId!);
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Каталог виджетов' })
@@ -42,39 +48,9 @@ test('план создаётся через каталог, переживае�
   // Перезагрузка восстанавливает сохранённое окно плана (PBT-024),
   // открытие из каталога добавляет второе представление того же документа.
   await expect(restored).toHaveCount(2);
-  await expect(restored.first().locator('.plan-gantt__chart')).toBeVisible();
-});
-
-test('второе представление существующего плана показывает тот же документ', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: 'Каталог виджетов' })
-    .getByRole('button', { name: /План/ })
-    .click();
-  const choice = page.getByRole('dialog', { name: 'Каталог виджетов' });
-  await choice.getByLabel('Название нового документа').fill('Ремонт');
-  await choice.getByRole('button', { name: 'Создать' }).click();
-  await expect(
-    page.getByRole('group', { name: 'План · Ремонт' }),
-  ).toBeVisible();
-  await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(1500);
-
-  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: 'Каталог виджетов' })
-    .getByRole('button', { name: /План/ })
-    .click();
-  await page
-    .getByRole('dialog', { name: 'Каталог виджетов' })
-    .getByRole('button', { name: 'Ремонт' })
-    .click();
-
-  const panes = page.getByRole('group', { name: 'План · Ремонт' });
-  await expect(panes).toHaveCount(2);
-  await expect(panes.first().locator('.plan-gantt__chart')).toBeVisible();
-  await expect(panes.nth(1).locator('.plan-gantt__chart')).toBeVisible();
+  for (const view of await restored.all()) {
+    await expect(view.locator('.plan-gantt__chart')).toBeVisible();
+  }
+  await expect.poll(async () => (await storedWorkspace(page)).widgetInstances
+    .filter(instance => instance.documentId === documentId).length).toBe(2);
 });

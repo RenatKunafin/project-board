@@ -663,10 +663,6 @@ export default function PlanGanttWidget({
     }
     blockedApis.add(instance);
     apiRef.current = instance;
-    const registry = ((window as unknown as Record<string, unknown>).__ganttApiRegistry ??
-      {}) as Record<string, IApi>;
-    registry[String(documentIdRef.current)] = instance;
-    (window as unknown as Record<string, unknown>).__ganttApiRegistry = registry;
     // Сводные полосы не двигаются (B2, design D3): задача документа
     // перетаскивается, строка группы — нет.
     instance.intercept('drag-task', (event: unknown) => {

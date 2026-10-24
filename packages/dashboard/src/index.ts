@@ -59,7 +59,7 @@ export type {
   DocumentStoreLike,
   SaveStateHandler,
 } from './document-service';
-export { createWorkspaceState, addTab, renameTab, moveTab, removeTab, setActive } from './workspace';
+export { createWorkspaceState, addTab, renameTab, removeTab, setActive } from './workspace';
 export type {
   WorkspaceState,
   WorkspaceTab,

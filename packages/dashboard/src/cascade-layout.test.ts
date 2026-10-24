@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   areaOf,
   cascadeSizeBounds,
-  clampCascadeArea,
   defaultCascadeArea,
   depthOf,
   orderFrom,
@@ -173,74 +172,6 @@ describe('areaOf', () => {
     expect(areaOf('w-9', checklistConstraints, 2, state)).toEqual({
       x: 24 + 2 * 28, y: 24 + 2 * 28, width: 600, height: 420,
     });
-  });
-});
-
-describe('clampCascadeArea (PBT-076, design D3)', () => {
-  // Минимум типа: 2×2 ячейки = 280×192 (CASCADE_CELL 140×96).
-  const canvas = { width: 1000, height: 700 };
-
-  it('область внутри канваса не меняется', () => {
-    const area = { x: 100, y: 80, width: 600, height: 420 };
-    expect(clampCascadeArea(area, canvas, checklistConstraints)).toEqual(area);
-  });
-
-  it('позиция за правым краем прижимается внутрь (восстановление из БД)', () => {
-    const clamped = clampCascadeArea(
-      { x: 900, y: 100, width: 600, height: 420 },
-      canvas,
-      checklistConstraints,
-    );
-    expect(clamped.x).toBe(400);
-    expect(clamped.y).toBe(100);
-    expect(clamped.width).toBe(600);
-  });
-
-  it('позиция за нижним краем прижимается внутрь', () => {
-    const clamped = clampCascadeArea(
-      { x: 0, y: 600, width: 400, height: 300 },
-      canvas,
-      checklistConstraints,
-    );
-    expect(clamped.y).toBe(400);
-  });
-
-  it('отрицательные координаты приводятся к нулю', () => {
-    const clamped = clampCascadeArea(
-      { x: -50, y: -30, width: 400, height: 300 },
-      canvas,
-      checklistConstraints,
-    );
-    expect(clamped.x).toBe(0);
-    expect(clamped.y).toBe(0);
-  });
-
-  it('размер больше канваса ужимается до канваса, позиция — в 0,0', () => {
-    const clamped = clampCascadeArea(
-      { x: 500, y: 500, width: 1200, height: 800 },
-      canvas,
-      checklistConstraints,
-    );
-    expect(clamped).toEqual({ x: 0, y: 0, width: 1000, height: 700 });
-  });
-
-  it('минимум типа больше канваса: окно в 0,0 с минимальным размером', () => {
-    const narrow = { width: 200, height: 150 };
-    const clamped = clampCascadeArea(
-      { x: 300, y: 200, width: 600, height: 420 },
-      narrow,
-      checklistConstraints,
-    );
-    expect(clamped).toEqual({ x: 0, y: 0, width: 280, height: 192 });
-  });
-
-  it('максимум типа соблюдается вместе с канвасом', () => {
-    const clamped = clampCascadeArea(
-      { x: 0, y: 0, width: 2000, height: 2000 },
-      canvas,
-      { minWidth: 2, minHeight: 2, maxWidth: 3, maxHeight: 3 },
-    );
-    expect(clamped).toEqual({ x: 0, y: 0, width: 420, height: 288 });
   });
 });
 

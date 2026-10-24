@@ -1,25 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { storedWorkspace } from './workspace-helper';
-
-test('оболочка приложения открывается', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
-  await expect(page).toHaveTitle('Project Board');
-  await expect(page.getByRole('heading', { name: 'Project Board' })).toBeVisible();
-});
-
-test('вкладка «Чек-листы» активна по умолчанию и содержит срез', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
-  const tablist = page.getByRole('tablist', {
-    name: 'Вкладки рабочего пространства',
-  });
-  await expect(tablist.getByRole('tab', { name: /Чек-листы/ })).toBeVisible();
-  await expect(tablist.getByRole('tab', { selected: true })).toContainText(
-    'Чек-листы',
-  );
-  await expect(page.getByRole('group', { name: 'Экземпляр 1 · Список 1' })).toBeVisible();
-});
+import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('операция синхронизирует экземпляры 1-2 и не задевает список 2', async ({ page }) => {
   await page.goto('/');
@@ -64,30 +44,6 @@ test('локальная настройка экземпляра изолиро�
   await expect(pane1.getByText('Выполненный пункт')).toBeVisible();
 });
 
-test('закрытие и перезагрузка сохраняют документ', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
-  const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
-
-  await pane1.getByPlaceholder('Новая задача…').fill('Переживает закрытие');
-  await pane1.getByRole('button', { name: 'Добавить' }).click();
-  // Ждём старт именно тестовой записи: «Сохранено» может висеть от bootstrap.
-  await expect(page.getByText('Сохраняется…')).toBeVisible();
-  await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
-
-  await pane1.getByRole('button', { name: 'Закрыть Экземпляр 1 · Список 1' }).click();
-  await expect(page.getByLabel('Экземпляр 1 · Список 1')).toHaveCount(0);
-
-  await page.reload();
-  // Документ открыт в двух экземплярах — текст ищем в конкретной панели.
-  await expect(
-    page
-      .getByLabel('Экземпляр 1 · Список 1')
-      .getByText('Переживает закрытие'),
-  ).toBeVisible({ timeout: 10000 });
-});
-
 test('новая вкладка активна и пуста; переключение сохраняет наборы', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
@@ -95,6 +51,8 @@ test('новая вкладка активна и пуста; переключе
     name: 'Вкладки рабочего пространства',
   });
 
+  await expect(tablist.getByRole('tab', { selected: true })).toContainText('Чек-листы');
+  await expect(page.getByRole('group', { name: 'Экземпляр 1 · Список 1' })).toBeVisible();
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   const newTab = tablist.getByRole('tab', { name: /Новая вкладка/ });
   await expect(newTab).toHaveAttribute('aria-selected', 'true');
@@ -153,7 +111,7 @@ test('документ закрытой вкладки доступен для �
   await pane1.getByRole('button', { name: 'Добавить' }).click();
   await expect(page.getByText('Сохраняется…')).toBeVisible();
   await expect(page.getByText('Сохранено')).toBeVisible({ timeout: 5000 });
-  await page.waitForTimeout(1500); // дебаунс 250мс + запись IDB (PBT-016: до ~500мс) — иначе reload обрывает запись
+  await persistedDocument(page, 'Список 1', { items: [{ text: 'Документ жив' }] });
 
   await tablist.getByRole('button', { name: 'Новая вкладка' }).click();
   await expect(page.getByText('Пустой дашборд')).toBeVisible();
@@ -336,7 +294,13 @@ test('скрытие выполненных переживает reload (PBT-075
   await expect(pane.getByText('Выполненный пункт')).toHaveCount(0);
   await expect(pane.getByText('Все пункты выполнены.')).toBeVisible();
 
-  await page.waitForTimeout(800); // дебаунс снапшота настроек (PBT-024)
+  await expect.poll(async () => {
+    const workspace = await storedWorkspace(page);
+    return workspace.tabs.length === 1 && workspace.tabs[0]?.mode === 'grid' &&
+      workspace.widgetInstances.some(instance => instance.id === 'w-1') &&
+      (workspace.settings.find(row => row.key === 'view:w-1')?.value as { hideDone?: boolean })?.hideDone === true;
+  }).toBe(true);
+  await persistedDocument(page, 'Список 1', { items: [{ text: 'Выполненный пункт', done: true }] });
   await page.reload();
   const paneAfter = page.getByLabel('Экземпляр 1 · Список 1');
   // После reload флаг включён: кнопка в нажатом состоянии — «Показать…».

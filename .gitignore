@@ -35,7 +35,7 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Локальная рабочая документация (ADR — в .docs/adr, в репозитории)
+# Локальная рабочая документация (ADR — в docs/adr, в репозитории)
 .context/
 
 # Редакторы и IDE
@@ -43,4 +43,13 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-.context/
+
+# Контрольные изображения не хранятся в OpenSpec (вывод — test-results/).
+/openspec/**/screenshots/
+/openspec/**/*.png
+/openspec/**/*.jpg
+/openspec/**/*.jpeg
+/openspec/**/*.gif
+/openspec/**/*.webp
+/openspec/**/*.mp4
+/openspec/**/*.webm
