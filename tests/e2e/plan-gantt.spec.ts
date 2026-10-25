@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 /**
  * Контрольные данные PBT-012 (small-plan): группа «Фаза 1», задачи A–E,
@@ -159,6 +159,14 @@ test('пустой план отображается без ошибки', async
   await expect(pane.locator('.plan-gantt--error')).toHaveCount(0);
 });
 
+async function prepareGesturePane(pane: Locator) {
+  // Для точного жеста нужна видимая шкала: начальный размер окна может
+  // обрезать полосу, а в недельном зуме 2 дня близки к порогу начала drag.
+  await pane.getByRole('button', { name: /Развернуть на весь дашборд/ }).click();
+  await pane.getByRole('button', { name: 'Дни', exact: true }).click();
+  await pane.page().evaluate(() => document.fonts.ready.then(() => undefined));
+}
+
 test('drag полосы переносит задачу с сохранением рабочей длительности (PBT-039)', async ({
   page,
 }) => {
@@ -171,6 +179,7 @@ test('drag полосы переносит задачу с сохранение�
     { id: documentId, content: smallPlanContent },
   );
   const pane = page.getByRole('group', { name: 'План · Драг' });
+  await prepareGesturePane(pane);
   const rowA = pane.locator('.wx-row', { hasText: 'Задача A' }).first();
   await expect(rowA).toBeVisible();
   const before = await rowA.textContent();
@@ -235,6 +244,7 @@ test('resize правого края через праздник сохраня�
     { id: documentId, content: smallPlanContent },
   );
   const pane = page.getByRole('group', { name: 'План · Резайз' });
+  await prepareGesturePane(pane);
   const row = pane.locator('.wx-row', { hasText: 'Задача A' }).first();
   await expect(row).toBeVisible();
   // Задача A: пн 12–пт 16. Тянем ЛЕВЫЙ край на 3 дня вправо — путь
@@ -278,6 +288,7 @@ test('сжатие левее начала отклоняется ядром и 
     { id: documentId, content: smallPlanContent },
   );
   const pane = page.getByRole('group', { name: 'План · Отмена' });
+  await prepareGesturePane(pane);
   const rowA = pane.locator('.wx-row', { hasText: 'Задача A' }).first();
   await expect(rowA).toBeVisible();
   const revisionBefore = await page.evaluate(
@@ -327,6 +338,7 @@ test('drag сводной полосы не меняет документ (PBT-0
     { id: documentId, content: smallPlanContent },
   );
   const pane = page.getByRole('group', { name: 'План · Сводная' });
+  await prepareGesturePane(pane);
   await expect(
     pane.locator('.wx-row', { hasText: 'Фаза 1' }).first(),
   ).toBeVisible();
@@ -384,6 +396,7 @@ test('drag однодневной задачи сохраняет длитель
     },
   );
   const pane = page.getByRole('group', { name: 'План · Однодневная' });
+  await prepareGesturePane(pane);
   const row = pane.locator('.wx-row', { hasText: 'День' }).first();
   await expect(row).toBeVisible();
   const bar = pane.locator('.wx-bar[data-id=":t-1"]');
