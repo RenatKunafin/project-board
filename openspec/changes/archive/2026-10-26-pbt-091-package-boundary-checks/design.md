@@ -1,6 +1,6 @@
 ## Context
 
-Причина изменения описана в [proposal.md](proposal.md). Границы задаёт [ADR PBT-002](../../../docs/adr/PBT-002.md); публичный SDK экспортирует только корень пакета. Используются ESLint 9 flat config и typescript-eslint. В tsconfig нет aliases/paths; Vite также не задаёт алиасы пакетов. Новая зависимость для проверки не нужна.
+Причина изменения описана в [proposal.md](proposal.md). Границы задаёт [ADR PBT-002](../../../../docs/adr/PBT-002.md); публичный SDK экспортирует только корень пакета. Используются ESLint 9 flat config и typescript-eslint. В tsconfig нет aliases/paths; Vite также не задаёт алиасы пакетов. Новая зависимость для проверки не нужна.
 
 ## Goals / Non-Goals
 
