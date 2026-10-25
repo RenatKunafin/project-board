@@ -11,7 +11,7 @@
 
 ## 3. Интеграция и PR
 
-- [ ] 3.1 Выполнить repository/lint/typecheck/unit/build/browser и strict validation change/всего OpenSpec; сохранить результаты вне OpenSpec, восстановить dev5173 после browser.
-- [ ] 3.2 Проверить чистое подключение учебного виджета на коммите изменения командой verify:widget-example; убедиться, что платформа/SDK не требуют правок и результаты сохранены вне OpenSpec.
+- [x] 3.1 Выполнить repository/lint/typecheck/unit/build/browser и strict validation change/всего OpenSpec; сохранить результаты вне OpenSpec, восстановить dev5173 после browser.
+- [x] 3.2 Проверить чистое подключение учебного виджета на коммите изменения командой verify:widget-example; убедиться, что платформа/SDK не требуют правок и результаты сохранены вне OpenSpec.
 - [ ] 3.3 Открыть отдельный PR в develop с объёмом, DoD и фактическими проверками; дождаться CI и отметить In review в локальном реестре.
 - [ ] 3.4 После принятия PR архивировать tooling change без sync продуктовых specs, дождаться CI архивного коммита, выполнить merge и только затем отметить Done.
