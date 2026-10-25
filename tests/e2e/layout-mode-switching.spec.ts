@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test, type Page } from '@playwright/test';
 
 async function paneBox(page: Page, label: string) {
@@ -21,7 +22,7 @@ async function switchMode(page: Page, mode: 'Сетка' | 'Каскад'): Prom
 test('режим принадлежит вкладке: смена не затрагивает другие вкладки', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await page.getByRole('button', { name: 'Новая вкладка' }).click();
   // На новой вкладке нужно окно — иначе она показывает пустое состояние.
@@ -65,7 +66,7 @@ test('режим принадлежит вкладке: смена не затр
 test('тайлинг → каскад → изменение состава → сетка → каскад (сценарий карточки)', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const label1 = 'Экземпляр 1 · Список 1';
   const label3 = 'Экземпляр 3 · Список 2';
@@ -145,7 +146,7 @@ test('тайлинг → каскад → изменение состава → 
 });
 
 test('сворачивание переживает смену режима', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const label = 'Экземпляр 1 · Список 1';
 

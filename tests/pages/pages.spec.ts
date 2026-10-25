@@ -1,3 +1,4 @@
+import { createDocumentWindow } from '../e2e/document-ui';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -5,7 +6,7 @@ import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';
 
 const base = '/project-board/';
 const origin = 'http://localhost:4187';
-const first = (page: Page) => page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
+const first = (page: Page) => page.getByRole('group', { name: 'Чек-лист · Список 1', exact: true });
 const offlineStatus = (page: Page) => page.getByRole('status', { name: 'Готовность к офлайн-работе' });
 const notification = (page: Page) => page.getByRole('status', { name: 'Обновление приложения', exact: true });
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Обновление Project Board' });
@@ -19,7 +20,7 @@ async function ready(page: Page) {
 async function savedWorkspace(page: Page) {
   await expect.poll(async () => {
     const state = await storedWorkspace(page);
-    return state.tabs.length === 1 && state.tabs[0]?.mode === 'grid' && state.widgetInstances.length === 3;
+    return state.tabs.length === 1 && state.tabs[0]?.mode === 'grid' && state.widgetInstances.length === 1;
   }).toBe(true);
 }
 async function allFiles(directory: string): Promise<string[]> {
@@ -39,6 +40,9 @@ test('реальный Pages-артефакт: все URL в подпути, man
   await page.goto('./');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
+  await expect(page.getByText('Пустой дашборд', { exact: true })).toBeVisible();
+  expect((await storedWorkspace(page)).documents).toEqual([]);
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   const cdp = await context.newCDPSession(page);
   const manifestData = await cdp.send('Page.getAppManifest');
   const installability = await cdp.send('Page.getInstallabilityErrors');
@@ -88,12 +92,16 @@ test('Pages A → B → A: старая подготовленная сесси�
   await page.goto('./');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
+  await expect(page.getByText('Пустой дашборд', { exact: true })).toBeVisible();
+  expect((await storedWorkspace(page)).documents).toEqual([]);
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await first(page).getByPlaceholder('Новая задача…').fill('Данные между релизами');
   await first(page).getByRole('button', { name: 'Добавить', exact: true }).click();
   await first(page).getByRole('button', { name: 'Скрыть выполненные' }).click();
   await persistedDocument(page, 'Список 1', { items: [{ text: 'Данные между релизами' }] });
   await savedWorkspace(page);
-  await expect.poll(async () => ((await storedWorkspace(page)).settings.find(row => row.key === 'view:w-1')?.value as { hideDone?: boolean })?.hideDone).toBe(true);
+  const instanceId = (await storedWorkspace(page)).widgetInstances[0].id;
+  await expect.poll(async () => ((await storedWorkspace(page)).settings.find(row => row.key === `view:${instanceId}`)?.value as { hideDone?: boolean })?.hideDone).toBe(true);
   const id = await first(page).locator('[data-document-id]').getAttribute('data-document-id');
   expect(id).toBeTruthy();
   const before = await page.evaluate(id => window.__projectBoard!.readDocument(id!), id);

@@ -198,7 +198,7 @@ test('native импорт → оба режима и представления 
   await page.mouse.down();
   await page.mouse.move(head!.x + 110, head!.y + 58, { steps: 5 });
   await page.mouse.up();
-  await waitWorkspace(page, 5); // 3 стартовых окна + исходное и ресурсное.
+  await waitWorkspace(page, 2); // Исходное и ресурсное представления; стартовая вкладка пуста.
   await expect.poll(async () => (await storedPlan(page, id))?.content.tasks.length).toBe(5);
   await expect(page.getByRole('status', { name: 'Готовность к офлайн-работе' })).toHaveText('Готово к работе офлайн');
   const before = await exportNative(page, plan);
@@ -228,7 +228,7 @@ test('native импорт → оба режима и представления 
   const offline = await context.newPage();
   await offline.goto('/');
   await expect.poll(() => workspace(offline)).toEqual(beforeWorkspace);
-  await offline.getByRole('tab', { name: /Чек-листы/ }).getByText('Чек-листы', { exact: true }).click();
+  await offline.getByRole('tab', { name: /Дашборд/ }).getByText('Дашборд', { exact: true }).click();
   await expect(offline.getByRole('button', { name: 'Сетка', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await offline.getByRole('tab', { name: /Новая вкладка/ }).getByText('Новая вкладка', { exact: true }).click();
   await expect(offline.getByRole('button', { name: 'Каскад', exact: true })).toHaveAttribute('aria-pressed', 'true');

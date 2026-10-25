@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test } from '@playwright/test';
 
 test('рабочее пространство восстанавливается после перезапуска', async ({
@@ -8,7 +9,7 @@ test('рабочее пространство восстанавливается
       console.log('PAGE_ERROR:', msg.text());
     }
   });
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
   // Настройка: названия вкладок, содержимое, сворачивание, режим каскада.

@@ -87,8 +87,6 @@ interface AppProps {
   widgetRegistry: WidgetRegistry;
   documentService: AutosavingDocumentService;
   workspaceStore: WorkspaceStore;
-  list1Id: string;
-  list2Id: string;
   restored?: RestoredWorkspace;
   /** Состояния представлений экземпляров из БД (PBT-049, ключи `view:*`). */
   initialViewStates?: Record<string, Record<string, unknown>>;
@@ -557,8 +555,6 @@ export default function App({
   widgetRegistry,
   documentService,
   workspaceStore,
-  list1Id,
-  list2Id,
   restored,
   initialViewStates,
   documentsLoadError = false,
@@ -603,33 +599,12 @@ export default function App({
             activeId:
               restored.activeTabId ?? restored.tabs[0]?.id ?? 'workspace-tab',
           }
-        : createWorkspaceState('Чек-листы'),
+        : createWorkspaceState('Дашборд'),
   );
 
   const [panesByTab, setPanesByTab] = useState<Record<string, PaneInstance[]>>(
     () =>
-      restored?.panesByTab ?? {
-        [workspace.tabs[0].id]: [
-          {
-            instanceId: 'w-1',
-            typeId: 'checklist',
-            label: 'Экземпляр 1 · Список 1',
-            documentId: list1Id,
-          },
-          {
-            instanceId: 'w-2',
-            typeId: 'checklist',
-            label: 'Экземпляр 2 · Список 1',
-            documentId: list1Id,
-          },
-          {
-            instanceId: 'w-3',
-            typeId: 'checklist',
-            label: 'Экземпляр 3 · Список 2',
-            documentId: list2Id,
-          },
-        ],
-      },
+      restored?.panesByTab ?? {},
   );
 
   const [headerPanel, setHeaderPanel] = useState<HeaderPanel>({ kind: 'none' });

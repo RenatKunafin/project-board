@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test } from '@playwright/test';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
@@ -5,7 +6,7 @@ test.describe.serial('каталог документов', () => {
   test('полный сценарий: создать → открыть дважды → закрыть → открыть → переименовать → перезапуск → удалить → выбрать другой', async ({
     page,
   }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
     // Создание «Покупки» на новой вкладке через каталог виджетов и пикер.
@@ -116,7 +117,7 @@ test.describe.serial('каталог документов', () => {
   });
 
   test('фильтр по типу: пустой результат отличим от пустого каталога', async ({ page }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     await page.getByRole('button', { name: 'Каталог документов' }).click();
     const documents = page.getByRole('dialog', { name: 'Каталог документов' });
@@ -139,7 +140,7 @@ test.describe.serial('каталог документов', () => {
   });
 
   test('отмена подтверждения удаления ничего не меняет', async ({ page }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     const pane1 = page.getByLabel('Экземпляр 1 · Список 1');
     await pane1.getByPlaceholder('Новая задача…').fill('Живой пункт');

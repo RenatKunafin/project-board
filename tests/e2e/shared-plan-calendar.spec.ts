@@ -78,7 +78,7 @@ test('назначение и календарь обновляют ресурс
   for (const pane of [first, second]) await expect(pane.locator('.rt-day-col[data-day="2026-10-14"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
-  await page.getByRole('tab').filter({ hasText: 'Чек-листы' }).locator('.tab__title').click();
+  await page.getByRole('tab').filter({ hasText: 'Дашборд' }).locator('.tab__title').click();
   await expect(second.locator('[data-rt-task]')).toHaveCount(2);
   await expect(second.locator('[data-rt-filter-resource]')).toHaveValue('r-2');
   await page.waitForTimeout(1200); // Дебаунсы документа, workspace и настроек перед reload.

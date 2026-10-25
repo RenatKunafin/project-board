@@ -53,7 +53,7 @@ test('пример: общий документ, настройки двух о�
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await expect(first).toHaveAttribute('data-counter-visible', 'false');
   await page.evaluate(id => window.__projectBoard!.writeDocumentContent(id, { count: 4 }), id);
-  await page.getByRole('tab').filter({ hasText: 'Чек-листы' }).locator('.tab__title').click();
+  await page.getByRole('tab').filter({ hasText: 'Дашборд' }).locator('.tab__title').click();
   await expect(first.getByLabel('Значение счётчика')).toHaveText('4');
   await expect(second.getByLabel('Значение счётчика')).toHaveText('4');
   await expect(page.getByLabel('Состояние сохранения')).toHaveText('Сохранено');
@@ -61,7 +61,7 @@ test('пример: общий документ, настройки двух о�
     const workspace = await storedWorkspace(page);
     return (workspace.settings.find(row => row.key === `view:${firstId}`)?.value as { compact?: boolean })?.compact === true &&
       workspace.widgetInstances.length === 2 && workspace.tabs.length === 2 &&
-      (workspace.settings.find(row => row.key === 'workspace')?.value as { activeTabId?: string })?.activeTabId === workspace.tabs.find(tab => tab.title === 'Чек-листы')?.id;
+      (workspace.settings.find(row => row.key === 'workspace')?.value as { activeTabId?: string })?.activeTabId === workspace.tabs.find(tab => tab.title === 'Дашборд')?.id;
   }).toBe(true);
   await page.reload();
   await expect(first.getByLabel('Значение счётчика')).toHaveText('4');
