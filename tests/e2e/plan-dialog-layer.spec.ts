@@ -178,6 +178,7 @@ test('черновик переживает hidden, а удаление влад
   await pane.locator('.widget-window__actions button').first().click();
   await expect(dialog).toHaveJSProperty('open', true);
   await expect(dialog.locator('[data-task-field="title"]')).toHaveValue('Не терять');
+  await expect(dialog.locator('[data-task-field="title"]')).toBeFocused();
   await pane.locator('.widget-window__actions button').last().evaluate(el => (el as HTMLButtonElement).click());
   await expect(page.locator('dialog.plan-dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();

@@ -45,9 +45,11 @@ export default function PlanDialog({
       pausedFocus.current = null;
     }
     return () => {
+      // Cleanup скрытого владельца не должен стирать фокус, сохранённый при hide.
+      if (!dialog.open) return;
       const active = document.activeElement;
       pausedFocus.current = active instanceof HTMLElement && dialog.contains(active) ? active : null;
-      if (dialog.open) dialog.close();
+      dialog.close();
     };
   }, [owner.id, owner.visible]);
 
