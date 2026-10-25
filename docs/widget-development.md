@@ -35,6 +35,10 @@ import { createCounterModule } from '@project-board/counter-widget';
 
 Пакет — обычный npm workspace в packages/, с private:true, type:module и exports на src/index.ts, как в [package.json примера](../examples/counter-widget/package.json). Предметный модуль импортирует публичный [widget-sdk](../packages/widget-sdk/src/index.ts); платформу, IndexedDB и модели соседних модулей он не импортирует. React в примере — peer dependency, разрешаемая сборкой приложения.
 
+`npm run lint` проверяет эти границы локальным правилом `project-board/package-boundaries`. Новые пакеты в packages/ и examples/ автоматически считаются предметными модулями; после добавления package.json перезапустите ESLint, чтобы обновить список. SDK доступен через `@project-board/widget-sdk`; глубокий или относительный путь к его исходникам не является публичным API. Относительный выход из собственного пакета в платформу, соседний модуль, приложение или корневой helper также запрещён. Подключение модулей выполняется в apps/.
+
+Проверка охватывает статические импорты/реэкспорты, type-only, import-type, import() со строкой и CommonJS. Линтер не определяет пакет назначения для вычисляемых путей и произвольных bundler/TypeScript aliases; при введении aliases нужно дополнить проверку. Прямой импорт Dexie разрешён только в платформе. SDK отдельно защищён от используемых UI-библиотек; список семейств явный и пересматривается при добавлении новых библиотек. Это проверка архитектуры в CI, а не изоляция недоверенного кода.
+
 [createCounterModule](../examples/counter-widget/src/index.ts) возвращает widgetTypes с defineWidgetType:
 
 | Поле WidgetTypeDefinition | Назначение |
