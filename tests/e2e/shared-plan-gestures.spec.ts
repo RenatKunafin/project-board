@@ -205,7 +205,7 @@ test('скрытие вкладки сохраняет завершённый ж
   expect(after.content.tasks[0]).toMatchObject({ start: '2026-10-12', end: '2026-10-18' });
   expect(after.content.tasks[1]).toEqual(before.content.tasks[1]);
   expect(after.revision).toBe(before.revision + 1);
-  await page.getByRole('tab', { name: /^Чек-листы/ }).click();
+  await page.getByRole('tab', { name: /^Дашборд/ }).click();
   await expect(pane.locator('.wx-row[data-id=":target"]')).toContainText('18.10');
   await page.waitForTimeout(2100);
   expect(await snapshot(page, id)).toEqual(after);

@@ -55,8 +55,8 @@ export function DocumentCatalogPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const visible = sortDocumentsByRecency(filterDocuments(documents, filter));
-  const isEmptyCatalog = documents.length === 0;
-  const isFilterEmpty = filter.kind === 'type' && visible.length === 0;
+  const isEmptyCatalog = !loadError && documents.length === 0;
+  const isFilterEmpty = !loadError && filter.kind === 'type' && visible.length === 0;
 
   const submitCreate = (): void => {
     const info = typeInfos.find(

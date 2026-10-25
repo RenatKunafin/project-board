@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test, type Page } from '@playwright/test';
 
 import { storedWorkspace as stored } from './workspace-helper';
@@ -6,7 +7,7 @@ const tablist = (page: Page) => page.getByRole('tablist', { name: 'Вкладк�
 const tab = (page: Page, title: string) => tablist(page).getByRole('tab').filter({ has: page.getByText(title, { exact: true }) });
 
 test('закрытие первой активной вкладки выбирает оставшуюся', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await tab(page, 'Чек-листы').getByText('Чек-листы', { exact: true }).click();
   await page.getByRole('button', { name: 'Закрыть Чек-листы', exact: true }).click();
@@ -15,7 +16,7 @@ test('закрытие первой активной вкладки выбира
 });
 
 test('закрытие неактивной вкладки удаляет её окна и настройки из БД', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
   await pane.getByRole('button', { name: 'Скрыть выполненные', exact: true }).click();
@@ -24,7 +25,10 @@ test('закрытие неактивной вкладки удаляет её �
   const before = await stored(page);
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await page.getByRole('button', { name: 'Закрыть Чек-листы', exact: true }).click();
-  await expect.poll(async () => (await stored(page)).tabs.length).toBe(1);
+  await expect.poll(async () => {
+    const state = await stored(page);
+    return { tabs: state.tabs.map(tab => tab.title), windows: state.widgetInstances.length, views: state.settings.filter(row => row.key.startsWith('view:')).length };
+  }).toEqual({ tabs: ['Новая вкладка'], windows: 0, views: 0 });
   const after = await stored(page);
   expect(after.widgetInstances).toEqual([]);
   expect(after.settings.filter(row => row.key.startsWith('view:'))).toEqual([]);
@@ -41,7 +45,7 @@ async function renameActive(page: Page, title: string) {
 }
 
 test('закрытие средней и последней вкладки, запрет единственной и повторное создание', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await renameActive(page, 'A');
   for (const name of ['B', 'C']) {
     await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
@@ -66,7 +70,7 @@ test('закрытие средней и последней вкладки, за
 
 for (const mode of ['Сетка', 'Каскад']) {
   test(`${mode}: закрытие вкладки с развёрнутым окном сохраняет общий документ и соседний вид`, async ({ page }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
     await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     const oldPane = page.getByRole('group', { name: 'Экземпляр 3 · Список 2', exact: true });
     await oldPane.getByPlaceholder('Новая задача…').fill('Сохранённый общий пункт');

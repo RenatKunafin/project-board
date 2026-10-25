@@ -1,3 +1,4 @@
+import { createDocumentWindow } from './document-ui';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { readdir, readFile } from 'node:fs/promises';
 
@@ -84,9 +85,10 @@ test('манифест, иконки и все production-ресурсы дос�
 
 test('холодный запуск, изменение и новый список без сети переживают повторное открытие', async ({ context, page }) => {
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await prepared(page);
-  const original = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
+  const original = page.getByRole('group', { name: 'Чек-лист · Список 1', exact: true });
   await original.getByPlaceholder('Новая задача…').fill('Подготовлено онлайн');
   await original.getByRole('button', { name: 'Добавить', exact: true }).click();
   await persistedItem(page, 'Список 1', 'Подготовлено онлайн', false);
@@ -108,7 +110,7 @@ test('холодный запуск, изменение и новый списо
   const offline = await newPageWithoutHttpCache(context);
   await offline.goto('/');
   await prepared(offline);
-  const restored = offline.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
+  const restored = offline.getByRole('group', { name: 'Чек-лист · Список 1', exact: true });
   await expect(restored.getByText('Подготовлено онлайн', { exact: true })).toBeVisible();
   await restored.getByRole('checkbox').check();
   await persistedItem(offline, 'Список 1', 'Подготовлено онлайн', true);
@@ -122,7 +124,7 @@ test('холодный запуск, изменение и новый списо
     const db = await new Promise<IDBDatabase>((resolve) => { request.onsuccess = () => resolve(request.result); });
     const all = db.transaction('widgetInstances').objectStore('widgetInstances').getAll();
     return new Promise<boolean>((resolve) => {
-      all.onsuccess = () => { db.close(); resolve(all.result.length === 4); };
+      all.onsuccess = () => { db.close(); resolve(all.result.length === 2); };
     });
   })).toBe(true);
   await offline.close();
@@ -130,7 +132,7 @@ test('холодный запуск, изменение и новый списо
   const reopened = await newPageWithoutHttpCache(context);
   await reopened.goto('/');
   await expect(reopened.getByRole('group', { name: 'Чек-лист · В дороге', exact: true }).getByText('Создано без сети')).toBeVisible();
-  await expect(reopened.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true }).getByRole('checkbox')).toBeChecked();
+  await expect(reopened.getByRole('group', { name: 'Чек-лист · Список 1', exact: true }).getByRole('checkbox')).toBeChecked();
   await reopened.screenshot({ path: 'test-results/screenshots/pwa-offline.png' });
 });
 
@@ -171,9 +173,10 @@ test('оба представления плана и шрифты загруж�
 test('отказ регистрации не объявляет офлайн-готовность и не блокирует список', async ({ page, context }) => {
   await context.route('**/sw.js', (route) => route.abort());
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await expect(ready(page)).toHaveText('Офлайн-режим недоступен');
-  const list = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
+  const list = page.getByRole('group', { name: 'Чек-лист · Список 1', exact: true });
   await list.getByPlaceholder('Новая задача…').fill('Доступно онлайн');
   await list.getByRole('button', { name: 'Добавить', exact: true }).click();
   await persistedItem(page, 'Список 1', 'Доступно онлайн', false);

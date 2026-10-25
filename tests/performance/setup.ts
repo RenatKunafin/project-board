@@ -1,3 +1,4 @@
+import { legacyChecklists, restoreSavedWorkspace } from '../e2e/saved-workspace';
 import { expect, type Page } from '@playwright/test';
 import { createPlan, documentId, restoreSize, storedPlan, workspace } from '../planning/helpers';
 import { benchmarkData } from './data';
@@ -36,18 +37,25 @@ async function importData(page: Page, pane: ReturnType<Page['locator']>, data: A
 }
 
 async function removeInitial(page: Page) {
-  await page.getByRole('tab').filter({ hasText: 'Чек-листы' }).locator('.tab__title').click();
+  await page.getByRole('tab').filter({ hasText: 'Дашборд' }).locator('.tab__title').click();
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   while (await page.locator('.tab-surface:not([hidden]) .widget-window').count()) {
     await page.locator('.tab-surface:not([hidden]) .widget-window').first().getByRole('button', { name: /^Закрыть/ }).click();
   }
-  await page.getByRole('button', { name: 'Закрыть Чек-листы', exact: true }).click();
+  await page.getByRole('button', { name: 'Закрыть Дашборд', exact: true }).click();
   // PBT-079: закрытие первой активной вкладки может оставить невалидный activeId.
   // Явный пользовательский выбор оставшейся вкладки вне замеряемой операции.
   await page.getByRole('tab').first().locator('.tab__title').click();
 }
 
+async function prepareBenchmarkProfile(page: Page) {
+  const snapshot = legacyChecklists();
+  snapshot.tabs = snapshot.tabs.map(tab => ({ ...tab, title: 'Дашборд' }));
+  await restoreSavedWorkspace(page, snapshot);
+}
+
 export async function setupA(page: Page, data: Awaited<ReturnType<typeof benchmarkData>>) {
+  await prepareBenchmarkProfile(page);
   const initial = await createPlan(page, 'Сетка');
   const id = await importData(page, initial, data[0]);
   await restoreSize(page);
@@ -62,7 +70,7 @@ export async function setupA(page: Page, data: Awaited<ReturnType<typeof benchma
 }
 
 export async function setupB(page: Page, data: Awaited<ReturnType<typeof benchmarkData>>, tabPerPlan = true) {
-  await page.goto('/');
+  await prepareBenchmarkProfile(page);
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await removeInitial(page);
   for (let index = 1; index <= 10; index++) {

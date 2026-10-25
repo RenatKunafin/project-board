@@ -37,7 +37,7 @@ it('закрытый экземпляр не возвращает настрой
     await act(async () => root.render(<App
       widgetRegistry={createWidgetRegistry([widget])}
       documentService={createDocumentService()}
-      workspaceStore={store} list1Id="unused-1" list2Id="unused-2"
+      workspaceStore={store}
       restored={{
         tabs: [{ id: 'a', title: 'A', mode: 'grid' }, { id: 'b', title: 'B', mode: 'cascade' }],
         activeTabId: 'a',

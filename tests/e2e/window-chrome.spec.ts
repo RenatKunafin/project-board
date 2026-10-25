@@ -1,10 +1,11 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test } from '@playwright/test';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('сворачивание прячет содержимое, разворачивание возвращает черновик', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
 
@@ -36,7 +37,7 @@ test('сворачивание прячет содержимое, развора
 test('закрытие одного из двух представлений сохраняет документ во втором', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   const pane2 = page.getByRole('group', { name: 'Экземпляр 2 · Список 1' });
@@ -76,7 +77,7 @@ test('закрытие одного из двух представлений с�
 });
 
 test('клик по рамке переключает активное окно', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   const pane2 = page.getByRole('group', { name: 'Экземпляр 2 · Список 1' });
@@ -91,7 +92,7 @@ test('клик по рамке переключает активное окно'
 });
 
 test('кнопки окна доступны с клавиатуры', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
 

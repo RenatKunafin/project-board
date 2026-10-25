@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test, type Page } from '@playwright/test';
 
 async function paneBox(page: Page, label: string) {
@@ -38,7 +39,7 @@ test('перенос за заголовок двигает окно, сосед
   page,
 }) => {
   test.setTimeout(60000);
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await addSecondChecklist(page);
 
@@ -82,7 +83,7 @@ test('перенос за заголовок двигает окно, сосед
 
 test('поле ввода не переносит окно', async ({ page }) => {
   test.setTimeout(60000);
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const before = await paneBox(page, 'Экземпляр 1 · Список 1');
   const input = page
@@ -105,7 +106,7 @@ test('поле ввода не переносит окно', async ({ page }) =>
 
 test('resize соблюдает минимальный размер типа', async ({ page }) => {
   test.setTimeout(60000);
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const pane = page.getByRole('group', { name: 'Экземпляр 1 · Список 1' });
   // Уголок resize рендерит адаптер внутри item сетки, рядом с рамкой окна.
@@ -148,7 +149,7 @@ test('resize соблюдает минимальный размер типа', a
 test('сворачивание сжимает окно до строки, разворачивание возвращает высоту', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const label = 'Экземпляр 1 · Список 1';
   const expanded = await paneBox(page, label);
@@ -174,7 +175,7 @@ test('шесть окон прокручиваются; раскладка ви�
   page,
 }) => {
   test.setTimeout(60000);
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await addSecondChecklist(page);
   for (let extra = 0; extra < 2; extra += 1) {
