@@ -21,6 +21,13 @@ export default defineConfig(async () => {
         strategies: 'generateSW',
         registerType: 'prompt',
         injectRegister: false, // PwaStatus регистрирует один SW и следит за активацией.
+        integration: {
+          configureOptions(config, options) {
+            // Manifest id разрешается от origin, а не от URL manifest.webmanifest.
+            // Берём итоговый base, включая CLI --base для Pages.
+            if (options.manifest && typeof options.manifest === 'object') options.manifest.id = config.base;
+          },
+        },
         includeAssets: ['icons/*.svg', 'icons/*.png', 'icons/*.txt'],
         manifest: {
           id: './',

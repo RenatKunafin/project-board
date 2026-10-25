@@ -7,12 +7,13 @@ import { chromium, expect } from '@playwright/test';
 
 // Настоящая установка Chrome через CDP в отдельном временном профиле.
 // Нужен запущенный production-preview; основной профиль пользователя не используется.
-const url = 'http://localhost:4173/';
+const url = process.argv[2] ?? process.env.PBT_PWA_URL ?? 'http://localhost:4173/';
 const profile = await mkdtemp(join(tmpdir(), 'project-board-pwa-'));
 const output = 'test-results/screenshots';
 await mkdir(output, { recursive: true });
 let context;
 let installed = false;
+let manifestId = url;
 let browserCdp;
 try {
   context = await chromium.launchPersistentContext(profile, { channel: 'chrome', headless: false });
@@ -23,18 +24,21 @@ try {
   const manifest = await cdp.send('Page.getAppManifest');
   const installability = await cdp.send('Page.getInstallabilityErrors');
   expect(installability.installabilityErrors).toEqual([]);
-  await cdp.send('PWA.install', { manifestId: url, installUrlOrBundleUrl: url });
+  await writeFile(`${output}/pwa-install-preflight.json`, JSON.stringify({ url, browser: context.browser().version(), manifest, installability }, null, 2) + '\n');
+  manifestId = manifest.manifest.id;
+  expect(manifestId).toBe(manifest.manifest.startUrl);
+  await cdp.send('PWA.install', { manifestId, installUrlOrBundleUrl: url });
   installed = true;
   // CDP устанавливает без диалога браузера: явно выбираем то же
   // пользовательское «Открывать в отдельном окне», что и при ручной установке.
-  await cdp.send('PWA.changeAppUserSettings', { manifestId: url, displayMode: 'standalone' });
+  await cdp.send('PWA.changeAppUserSettings', { manifestId, displayMode: 'standalone' });
   await page.close();
   // Закрыты все окна приложения. Новое запускается из установленной записи.
   // CDP-сессия страницы уже закрыта; browser session остаётся доступной.
   browserCdp = await context.browser().newBrowserCDPSession();
   await context.setOffline(true);
   const opened = context.waitForEvent('page');
-  const launch = await browserCdp.send('PWA.launch', { manifestId: url });
+  const launch = await browserCdp.send('PWA.launch', { manifestId });
   const app = await opened;
   await expect(app.getByRole('heading', { name: 'Project Board', exact: true })).toBeVisible();
   await expect(app.getByRole('status', { name: 'Готовность к офлайн-работе' })).toHaveText('Готово к работе офлайн');
@@ -53,7 +57,7 @@ try {
   try {
     if (installed) {
       const cleanupCdp = browserCdp ?? await context.browser().newBrowserCDPSession();
-      await cleanupCdp.send('PWA.uninstall', { manifestId: url });
+      await cleanupCdp.send('PWA.uninstall', { manifestId });
     }
   } finally {
     await context?.close();
