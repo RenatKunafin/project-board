@@ -8,6 +8,7 @@ import {
   type TaskFormIssue,
 } from './task-editor';
 import './task-editor.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 export interface TaskEditorSubmit {
   readonly title: string;
@@ -34,6 +35,7 @@ export type DependencyCommand =
   | { readonly type: 'deleteDependency'; readonly dependencyId: string };
 
 interface TaskEditorDialogProps {
+  readonly owner: PlanDialogOwner;
   readonly plan: PlanContent;
   readonly mode: 'create' | 'edit';
   readonly task?: PlanTask;
@@ -55,6 +57,7 @@ interface TaskEditorDialogProps {
  * Esc — отмена, Enter — подтверждение; фокус в первое поле.
  */
 export default function TaskEditorDialog({
+  owner,
   plan,
   mode,
   task,
@@ -200,13 +203,6 @@ export default function TaskEditorDialog({
     setIssue(undefined);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-    }
-  };
-
   // Enter в поле ввода — подтверждение формы (дизайн D4); Esc — отмена.
   // Инпут лага предшественника: Enter — сохранить, Esc — отмена редактирования.
   const handleDepInputKeyDown = (event: React.KeyboardEvent) => {
@@ -231,338 +227,315 @@ export default function TaskEditorDialog({
   };
 
   return (
-    <div
-      className="task-editor__overlay"
-      onKeyDown={handleKeyDown}
-      role="presentation"
+    <PlanDialog
+      owner={owner}
+      title={mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
+      description="Изменения записываются в документ плана; даты других задач не переносятся."
+      closeLabel="Закрыть форму"
+      className="task-editor"
+      onClose={onClose}
     >
-      <section
-        className="task-editor"
-        role="dialog"
-        aria-modal="true"
-        aria-label={mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
-      >
-        <header className="task-editor__head">
-          <div>
-            <h3 className="task-editor__title">
-              {mode === 'create' ? 'Новая задача' : 'Редактирование задачи'}
-            </h3>
-            <p className="task-editor__description">
-              Изменения записываются в документ плана; даты других задач не
-              переносятся.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="task-editor__close"
-            aria-label="Закрыть форму"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        <div className="task-editor__body">
-          <label className="task-editor__field">
-            <span className="task-editor__label">Название</span>
-            <input
-              ref={titleRef}
-              type="text"
-              value={title}
-              data-task-field="title"
-              onKeyDown={handleFieldKeyDown}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-            {issue?.field === 'title' && (
-              <span className="task-editor__error" role="alert">
-                {issue.message}
-              </span>
-            )}
-          </label>
-          <label className="task-editor__field">
-            <span className="task-editor__label">Группа</span>
-            <select
-              value={groupId}
-              data-task-field="group"
-              onChange={(event) => setGroupId(event.target.value)}
-            >
-              <option value="">Без группы</option>
-              {plan.groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.title}
-                </option>
-              ))}
-            </select>
-            {issue?.field === 'group' && (
-              <span className="task-editor__error" role="alert">
-                {issue.message}
-              </span>
-            )}
-          </label>
-          <div className="task-editor__row">
-            <label className="task-editor__field">
-              <span className="task-editor__label">Исполнители</span>
-              {plan.resources.length === 0 ? (
-                <span className="task-editor__preview">
-                  Справочник пуст — добавьте в «Справочниках».
-                </span>
-              ) : (
-                <div className="task-editor__checks" data-task-assignees>
-                  {plan.resources.map((resource) => (
-                    <label key={resource.id} className="task-editor__check">
-                      <input
-                        type="checkbox"
-                        checked={assigneeIds.includes(resource.id)}
-                        data-task-assignee={resource.title}
-                        onChange={() =>
-                          toggleId(assigneeIds, setAssigneeIds, resource.id)
-                        }
-                      />
-                      {resource.title}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </label>
-            <label className="task-editor__field">
-              <span className="task-editor__label">Типы работы</span>
-              {plan.workTypes.length === 0 ? (
-                <span className="task-editor__preview">
-                  Справочник пуст — добавьте в «Справочниках».
-                </span>
-              ) : (
-                <div className="task-editor__checks" data-task-worktypes>
-                  {plan.workTypes.map((workType) => (
-                    <label key={workType.id} className="task-editor__check">
-                      <input
-                        type="checkbox"
-                        checked={workTypeIds.includes(workType.id)}
-                        data-task-worktype={workType.title}
-                        onChange={() =>
-                          toggleId(workTypeIds, setWorkTypeIds, workType.id)
-                        }
-                      />
-                      {workType.title}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </label>
-          </div>
-          {mode === 'edit' && task !== undefined && (
-            <div className="task-editor__field">
-              <span className="task-editor__label">Предшественники (FS)</span>
-              {predecessors.length === 0 && (
-                <span className="task-editor__preview">Нет предшественников.</span>
-              )}
-              <ul className="catalog__list" data-dep-list>
-                {predecessors.map((dependency) => {
-                  const from = plan.tasks.find(
-                    (entry) => entry.id === dependency.fromTaskId,
-                  );
-                  return (
-                    <li key={dependency.id} className="catalog__row">
-                      {editingDep?.id === dependency.id ? (
-                        <>
-                          <span className="catalog__title">
-                            {from?.title ?? '—'}
-                          </span>
-                          <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={editingDep.lag}
-                            data-dep-lag-input
-                            onKeyDown={handleDepInputKeyDown}
-                            onChange={(event) =>
-                              setEditingDep({
-                                ...editingDep,
-                                lag: event.target.value,
-                              })
-                            }
-                          />
-                          <span className="task-editor__label">дн.</span>
-                          <button
-                            type="button"
-                            className="task-editor__button"
-                            aria-label="Сохранить лаг"
-                            onClick={submitDepLag}
-                          >
-                            ✓
-                          </button>
-                          <button
-                            type="button"
-                            className="task-editor__button"
-                            aria-label="Отменить изменение лага"
-                            onClick={() => setEditingDep(null)}
-                          >
-                            ×
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="catalog__title">
-                            {from?.title ?? '—'} · лаг {dependency.lagDays} дн.
-                          </span>
-                          <button
-                            type="button"
-                            className="task-editor__button"
-                            aria-label="Изменить лаг"
-                            onClick={() => {
-                              setEditingDep({
-                                id: dependency.id,
-                                lag: String(dependency.lagDays),
-                              });
-                              setDepError(null);
-                            }}
-                          >
-                            Изменить
-                          </button>
-                          <button
-                            type="button"
-                            className="task-editor__button task-editor__button--danger"
-                            aria-label={`Удалить связь от ${from?.title ?? ''}`}
-                            onClick={() => {
-                              applyDependencyCommand?.({
-                                type: 'deleteDependency',
-                                dependencyId: dependency.id,
-                              });
-                              setDepError(null);
-                            }}
-                          >
-                            Удалить
-                          </button>
-                        </>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="catalog__add">
-                <select
-                  value={newDepFrom}
-                  data-dep-new-from
-                  onChange={(event) => setNewDepFrom(event.target.value)}
-                >
-                  <option value="">Задача-предшественник</option>
-                  {plan.tasks.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {entry.title}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={newDepLag}
-                  data-dep-new-lag
-                  title="Лаг, рабочих дней"
-                  onChange={(event) => setNewDepLag(event.target.value)}
-                />
-                <span className="task-editor__label">дн.</span>
-                <button
-                  type="button"
-                  className="task-editor__button"
-                  data-dep-add
-                  onClick={submitNewDependency}
-                >
-                  Добавить
-                </button>
-              </div>
-              {depError !== null && (
-                <p className="task-editor__error" role="alert" data-dep-error>
-                  {depError}
-                </p>
-              )}
-            </div>
+      <div className="task-editor__body plan-dialog__body">
+        <label className="task-editor__field">
+          <span className="task-editor__label">Название</span>
+          <input
+            ref={titleRef}
+            type="text"
+            value={title}
+            data-task-field="title"
+            onKeyDown={handleFieldKeyDown}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+          {issue?.field === 'title' && (
+            <span className="task-editor__error" role="alert">
+              {issue.message}
+            </span>
           )}
-          <div className="task-editor__row">
-            <label className="task-editor__field">
-              <span className="task-editor__label">Дата начала</span>
-              <input
-                type="date"
-                value={start}
-                data-task-field="start"
-              onKeyDown={handleFieldKeyDown}
-                onChange={(event) => setStart(event.target.value)}
-              />
-              {issue?.field === 'start' && (
-                <span className="task-editor__error" role="alert">
-                  {issue.message}
-                </span>
-              )}
-            </label>
-            <label className="task-editor__field task-editor__field--narrow">
-              <span className="task-editor__label">Раб. дни</span>
+        </label>
+        <label className="task-editor__field">
+          <span className="task-editor__label">Группа</span>
+          <select
+            value={groupId}
+            data-task-field="group"
+            onChange={(event) => setGroupId(event.target.value)}
+          >
+            <option value="">Без группы</option>
+            {plan.groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.title}
+              </option>
+            ))}
+          </select>
+          {issue?.field === 'group' && (
+            <span className="task-editor__error" role="alert">
+              {issue.message}
+            </span>
+          )}
+        </label>
+        <div className="task-editor__row">
+          <label className="task-editor__field">
+            <span className="task-editor__label">Исполнители</span>
+            {plan.resources.length === 0 ? (
+              <span className="task-editor__preview">
+                Справочник пуст — добавьте в «Справочниках».
+              </span>
+            ) : (
+              <div className="task-editor__checks" data-task-assignees>
+                {plan.resources.map((resource) => (
+                  <label key={resource.id} className="task-editor__check">
+                    <input
+                      type="checkbox"
+                      checked={assigneeIds.includes(resource.id)}
+                      data-task-assignee={resource.title}
+                      onChange={() =>
+                        toggleId(assigneeIds, setAssigneeIds, resource.id)
+                      }
+                    />
+                    {resource.title}
+                  </label>
+                ))}
+              </div>
+            )}
+          </label>
+          <label className="task-editor__field">
+            <span className="task-editor__label">Типы работы</span>
+            {plan.workTypes.length === 0 ? (
+              <span className="task-editor__preview">
+                Справочник пуст — добавьте в «Справочниках».
+              </span>
+            ) : (
+              <div className="task-editor__checks" data-task-worktypes>
+                {plan.workTypes.map((workType) => (
+                  <label key={workType.id} className="task-editor__check">
+                    <input
+                      type="checkbox"
+                      checked={workTypeIds.includes(workType.id)}
+                      data-task-worktype={workType.title}
+                      onChange={() =>
+                        toggleId(workTypeIds, setWorkTypeIds, workType.id)
+                      }
+                    />
+                    {workType.title}
+                  </label>
+                ))}
+              </div>
+            )}
+          </label>
+        </div>
+        {mode === 'edit' && task !== undefined && (
+          <div className="task-editor__field">
+            <span className="task-editor__label">Предшественники (FS)</span>
+            {predecessors.length === 0 && (
+              <span className="task-editor__preview">Нет предшественников.</span>
+            )}
+            <ul className="catalog__list" data-dep-list>
+              {predecessors.map((dependency) => {
+                const from = plan.tasks.find(
+                  (entry) => entry.id === dependency.fromTaskId,
+                );
+                return (
+                  <li key={dependency.id} className="catalog__row">
+                    {editingDep?.id === dependency.id ? (
+                      <>
+                        <span className="catalog__title">
+                          {from?.title ?? '—'}
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={editingDep.lag}
+                          data-dep-lag-input
+                          onKeyDown={handleDepInputKeyDown}
+                          onChange={(event) =>
+                            setEditingDep({
+                              ...editingDep,
+                              lag: event.target.value,
+                            })
+                          }
+                        />
+                        <span className="task-editor__label">дн.</span>
+                        <button
+                          type="button"
+                          className="task-editor__button"
+                          aria-label="Сохранить лаг"
+                          onClick={submitDepLag}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          className="task-editor__button"
+                          aria-label="Отменить изменение лага"
+                          onClick={() => setEditingDep(null)}
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="catalog__title">
+                          {from?.title ?? '—'} · лаг {dependency.lagDays} дн.
+                        </span>
+                        <button
+                          type="button"
+                          className="task-editor__button"
+                          aria-label="Изменить лаг"
+                          onClick={() => {
+                            setEditingDep({
+                              id: dependency.id,
+                              lag: String(dependency.lagDays),
+                            });
+                            setDepError(null);
+                          }}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          className="task-editor__button task-editor__button--danger"
+                          aria-label={`Удалить связь от ${from?.title ?? ''}`}
+                          onClick={() => {
+                            applyDependencyCommand?.({
+                              type: 'deleteDependency',
+                              dependencyId: dependency.id,
+                            });
+                            setDepError(null);
+                          }}
+                        >
+                          Удалить
+                        </button>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="catalog__add">
+              <select
+                value={newDepFrom}
+                data-dep-new-from
+                onChange={(event) => setNewDepFrom(event.target.value)}
+              >
+                <option value="">Задача-предшественник</option>
+                {plan.tasks.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.title}
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
-                min={1}
+                min={0}
                 step={1}
-                value={Number.isNaN(duration) ? '' : duration}
-                data-task-field="duration"
-              onKeyDown={handleFieldKeyDown}
-                onChange={(event) =>
-                  setDuration(Number.parseInt(event.target.value, 10))
-                }
+                value={newDepLag}
+                data-dep-new-lag
+                title="Лаг, рабочих дней"
+                onChange={(event) => setNewDepLag(event.target.value)}
               />
-              {issue?.field === 'duration' && (
-                <span className="task-editor__error" role="alert">
-                  {issue.message}
-                </span>
-              )}
-            </label>
+              <span className="task-editor__label">дн.</span>
+              <button
+                type="button"
+                className="task-editor__button"
+                data-dep-add
+                onClick={submitNewDependency}
+              >
+                Добавить
+              </button>
+            </div>
+            {depError !== null && (
+              <p className="task-editor__error" role="alert" data-dep-error>
+                {depError}
+              </p>
+            )}
           </div>
-          <p className="task-editor__preview" data-task-end-preview>
-            {endPreview === undefined
-              ? 'Окончание: —'
-              : `Окончание (включительно): ${endPreview}`}
-          </p>
+        )}
+        <div className="task-editor__row">
+          <label className="task-editor__field">
+            <span className="task-editor__label">Дата начала</span>
+            <input
+              type="date"
+              value={start}
+              data-task-field="start"
+            onKeyDown={handleFieldKeyDown}
+              onChange={(event) => setStart(event.target.value)}
+            />
+            {issue?.field === 'start' && (
+              <span className="task-editor__error" role="alert">
+                {issue.message}
+              </span>
+            )}
+          </label>
+          <label className="task-editor__field task-editor__field--narrow">
+            <span className="task-editor__label">Раб. дни</span>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={Number.isNaN(duration) ? '' : duration}
+              data-task-field="duration"
+            onKeyDown={handleFieldKeyDown}
+              onChange={(event) =>
+                setDuration(Number.parseInt(event.target.value, 10))
+              }
+            />
+            {issue?.field === 'duration' && (
+              <span className="task-editor__error" role="alert">
+                {issue.message}
+              </span>
+            )}
+          </label>
         </div>
-        <footer className="task-editor__foot">
-          {mode === 'edit' && onDelete !== undefined && (
-            <button
-              type="button"
-              className="task-editor__button task-editor__button--danger"
-              data-task-delete
-              onClick={() => {
-                if (window.confirm(`Удалить задачу «${title}»?`)) {
-                  onDelete();
-                }
-              }}
-            >
-              Удалить
-            </button>
-          )}
-          {mode === 'edit' && onConvertToAbsence !== undefined && (
-            <button
-              type="button"
-              className="task-editor__button"
-              data-task-to-absence
-              onClick={onConvertToAbsence}
-            >
-              В отпуск…
-            </button>
-          )}
-          <div className="task-editor__foot-spacer" />
+        <p className="task-editor__preview" data-task-end-preview>
+          {endPreview === undefined
+            ? 'Окончание: —'
+            : `Окончание (включительно): ${endPreview}`}
+        </p>
+      </div>
+      <footer className="task-editor__foot">
+        {mode === 'edit' && onDelete !== undefined && (
+          <button
+            type="button"
+            className="task-editor__button task-editor__button--danger"
+            data-task-delete
+            onClick={() => {
+              if (window.confirm(`Удалить задачу «${title}»?`)) {
+                onDelete();
+              }
+            }}
+          >
+            Удалить
+          </button>
+        )}
+        {mode === 'edit' && onConvertToAbsence !== undefined && (
           <button
             type="button"
             className="task-editor__button"
-            data-task-cancel
-            onClick={onClose}
+            data-task-to-absence
+            onClick={onConvertToAbsence}
           >
-            Отмена
+            В отпуск…
           </button>
-          <button
-            type="button"
-            className="task-editor__button task-editor__button--primary"
-            data-task-save
-            onClick={submit}
-          >
-            Сохранить
-          </button>
-        </footer>
-      </section>
-    </div>
+        )}
+        <div className="task-editor__foot-spacer" />
+        <button
+          type="button"
+          className="task-editor__button"
+          data-task-cancel
+          onClick={onClose}
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          className="task-editor__button task-editor__button--primary"
+          data-task-save
+          onClick={submit}
+        >
+          Сохранить
+        </button>
+      </footer>
+    </PlanDialog>
   );
 }
 

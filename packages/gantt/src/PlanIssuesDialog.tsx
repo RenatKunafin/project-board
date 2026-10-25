@@ -3,6 +3,7 @@ import type { PlanContent } from './plan-document';
 import { dependencyViolations } from './plan-dependencies';
 import { resourceConflicts, type ResourceConflict } from './plan-conflicts';
 import './task-editor.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 type IssueKind = 'dependency' | 'parallel-work' | 'unavailability';
 
@@ -51,93 +52,70 @@ function resolveConflictTask(conflict: ResourceConflict): string {
 }
 
 export default function PlanIssuesDialog({
+  owner,
   issues,
   onClose,
   onShowTask,
 }: {
+  readonly owner: PlanDialogOwner;
   readonly issues: readonly PlanIssue[];
   readonly onClose: () => void;
   readonly onShowTask: (taskId: string) => void;
 }) {
   return (
-    <div
-      className="task-editor__overlay"
-      role="presentation"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation();
-          onClose();
-        }
-      }}
+    <PlanDialog
+      owner={owner}
+      title="Проблемы плана"
+      description="Нарушения зависимостей FS и конфликты ресурсов по календарю плана."
+      closeLabel="Закрыть проблемы плана"
+      className="task-editor catalog"
+      wide
+      onClose={onClose}
     >
-      <section
-        className="task-editor catalog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Проблемы плана"
-      >
-        <header className="task-editor__head">
-          <div>
-            <h3 className="task-editor__title">Проблемы плана</h3>
-            <p className="task-editor__description">
-              Нарушения зависимостей FS и конфликты ресурсов по календарю
-              плана.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="task-editor__close"
-            aria-label="Закрыть проблемы плана"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        <div className="task-editor__body">
-          {issues.length === 0 && (
-            <p className="task-editor__preview">Проблем нет.</p>
-          )}
-          <ul className="catalog__list" data-issues-list>
-            {issues.map((issue, index) => (
-              <li
-                key={`${issue.kind}-${index}`}
-                className={`catalog__row issues__row issues__row--${issue.kind}`}
-              >
-                {issue.taskId !== undefined ? (
-                  <button
-                    type="button"
-                    className="issues__action"
-                    data-issue-show={index}
-                    onClick={() => onShowTask(issue.taskId as string)}
-                  >
-                    <span className="catalog__title">
-                      <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
-                      {issue.message}
-                    </span>
-                    <span className="issues__show">Показать</span>
-                  </button>
-                ) : (
+      <div className="task-editor__body plan-dialog__body">
+        {issues.length === 0 && (
+          <p className="task-editor__preview">Проблем нет.</p>
+        )}
+        <ul className="catalog__list" data-issues-list>
+          {issues.map((issue, index) => (
+            <li
+              key={`${issue.kind}-${index}`}
+              className={`catalog__row issues__row issues__row--${issue.kind}`}
+            >
+              {issue.taskId !== undefined ? (
+                <button
+                  type="button"
+                  className="issues__action"
+                  data-issue-show={index}
+                  onClick={() => onShowTask(issue.taskId as string)}
+                >
                   <span className="catalog__title">
                     <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
                     {issue.message}
                   </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <footer className="task-editor__foot">
-          <div className="task-editor__foot-spacer" />
-          <button
-            type="button"
-            className="task-editor__button"
-            data-issues-close
-            onClick={onClose}
-          >
-            Готово
-          </button>
-        </footer>
-      </section>
-    </div>
+                  <span className="issues__show">Показать</span>
+                </button>
+              ) : (
+                <span className="catalog__title">
+                  <span className="issues__kind">{KIND_LABEL[issue.kind]}.</span>{' '}
+                  {issue.message}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <footer className="task-editor__foot">
+        <div className="task-editor__foot-spacer" />
+        <button
+          type="button"
+          className="task-editor__button"
+          data-issues-close
+          onClick={onClose}
+        >
+          Готово
+        </button>
+      </footer>
+    </PlanDialog>
   );
 }

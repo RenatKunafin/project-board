@@ -1650,6 +1650,8 @@ export default function PlanGanttWidget({
       ? plan?.tasks.find((task) => task.id === editor.taskId)
       : undefined;
 
+  const dialogOwner = { id: `${widgetInstanceId}:${documentId}`, title: document.title, visible };
+
   return (
     <section
       className="plan-gantt"
@@ -1662,7 +1664,12 @@ export default function PlanGanttWidget({
         </p>
       ) : (
         <div className="plan-gantt__inner">
-          <div className="plan-gantt__toolbar">
+          <div
+            className="plan-gantt__toolbar"
+            onClickCapture={(event) => {
+              if (event.target instanceof Element) event.target.closest('button')?.focus({ preventScroll: true });
+            }}
+          >
             <div className="plan-gantt__toolbar-row">
               <button
                 type="button"
@@ -1906,77 +1913,84 @@ export default function PlanGanttWidget({
               {footerStatus}
             </span>
           </footer>
-          {editor !== undefined && plan !== undefined && (
-            <TaskEditorDialog
-              plan={plan}
-              mode={editor.mode}
-              task={editingTask}
-              onSubmit={submitTaskForm}
-              applyDependencyCommand={applyDependencyCommand}
-              onDelete={deleteCurrentTask}
-              onConvertToAbsence={() => setAbsenceConvertOpen(true)}
-              onClose={closeEditor}
-            />
-          )}
-          {editor?.mode === 'edit' &&
-            absenceConvertOpen &&
-            editingTask !== undefined &&
-            plan !== undefined && (
-              <AbsenceConvertDialog
-                taskTitle={editingTask.title}
-                taskStart={editingTask.start}
-                taskEnd={editingTask.end}
-                resources={plan.resources}
-                onApply={applyAbsenceConvert}
-                onClose={() => setAbsenceConvertOpen(false)}
-              />
-            )}
-          {groupEditor !== undefined && plan !== undefined && (
-            <GroupEditorDialog
-              plan={plan}
-              mode={groupEditor.mode === 'group-create' ? 'create' : 'edit'}
-              group={
-                groupEditor.mode === 'group-edit'
-                  ? plan.groups.find((group) => group.id === groupEditor.groupId)
-                  : undefined
-              }
-              onSubmit={submitGroupForm}
-              onDelete={deleteCurrentGroup}
-              onClose={closeGroupEditor}
-            />
-          )}
-          {catalogOpen && plan !== undefined && (
-            <ResourceCatalogDialog
-              plan={plan}
-              applyCommand={applyCatalogCommand}
-              onClose={closeCatalog}
-            />
-          )}
-          {issuesOpen && (
-            <PlanIssuesDialog
-              issues={issues}
-              onShowTask={showTask}
-              onClose={() => setIssuesOpen(false)}
-            />
-          )}
-          {plantumlPreview !== undefined && (
-            <PlantUmlExportDialog
-              text={plantumlPreview.text}
-              report={plantumlPreview.report}
-              fileName={plantumlPreview.fileName}
-              onDownload={downloadPlantuml}
-              onClose={() => setPlantumlPreview(undefined)}
-            />
-          )}
-          {onlineganttPreview !== undefined && (
-            <OnlineGanttImportDialog
-              fileName={onlineganttPreview.fileName}
-              payload={onlineganttPreview.payload}
-              onApply={applyOnlineGanttImport}
-              onCancel={cancelOnlineGanttImport}
-            />
-          )}
         </div>
+      )}
+      {editor !== undefined && plan !== undefined && (
+        <TaskEditorDialog
+          owner={dialogOwner}
+          plan={plan}
+          mode={editor.mode}
+          task={editingTask}
+          onSubmit={submitTaskForm}
+          applyDependencyCommand={applyDependencyCommand}
+          onDelete={deleteCurrentTask}
+          onConvertToAbsence={() => setAbsenceConvertOpen(true)}
+          onClose={closeEditor}
+        />
+      )}
+      {editor?.mode === 'edit' &&
+        absenceConvertOpen &&
+        editingTask !== undefined &&
+        plan !== undefined && (
+          <AbsenceConvertDialog
+            owner={dialogOwner}
+            taskTitle={editingTask.title}
+            taskStart={editingTask.start}
+            taskEnd={editingTask.end}
+            resources={plan.resources}
+            onApply={applyAbsenceConvert}
+            onClose={() => setAbsenceConvertOpen(false)}
+          />
+        )}
+      {groupEditor !== undefined && plan !== undefined && (
+        <GroupEditorDialog
+          owner={dialogOwner}
+          plan={plan}
+          mode={groupEditor.mode === 'group-create' ? 'create' : 'edit'}
+          group={
+            groupEditor.mode === 'group-edit'
+              ? plan.groups.find((group) => group.id === groupEditor.groupId)
+              : undefined
+          }
+          onSubmit={submitGroupForm}
+          onDelete={deleteCurrentGroup}
+          onClose={closeGroupEditor}
+        />
+      )}
+      {catalogOpen && plan !== undefined && (
+        <ResourceCatalogDialog
+          owner={dialogOwner}
+          plan={plan}
+          applyCommand={applyCatalogCommand}
+          onClose={closeCatalog}
+        />
+      )}
+      {issuesOpen && (
+        <PlanIssuesDialog
+          owner={dialogOwner}
+          issues={issues}
+          onShowTask={showTask}
+          onClose={() => setIssuesOpen(false)}
+        />
+      )}
+      {plantumlPreview !== undefined && (
+        <PlantUmlExportDialog
+          owner={dialogOwner}
+          text={plantumlPreview.text}
+          report={plantumlPreview.report}
+          fileName={plantumlPreview.fileName}
+          onDownload={downloadPlantuml}
+          onClose={() => setPlantumlPreview(undefined)}
+        />
+      )}
+      {onlineganttPreview !== undefined && (
+        <OnlineGanttImportDialog
+          owner={dialogOwner}
+          fileName={onlineganttPreview.fileName}
+          payload={onlineganttPreview.payload}
+          onApply={applyOnlineGanttImport}
+          onCancel={cancelOnlineGanttImport}
+        />
       )}
     </section>
   );

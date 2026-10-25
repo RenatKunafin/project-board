@@ -916,6 +916,7 @@ export default function ResourceTimelineWidget({
       </footer>
       {editor !== undefined && editor.mode === 'edit' && plan !== undefined && (
         <TaskEditorDialog
+          owner={{ id: `${widgetInstanceId}:${documentId}`, title: document.title, visible }}
           plan={plan}
           mode="edit"
           task={plan.tasks.find((task) => task.id === editor.taskId)}

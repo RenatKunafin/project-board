@@ -3,6 +3,7 @@ import type { PlanCommandError } from './plan-commands';
 import type { PlanContent } from './plan-document';
 import PlanCalendarSection from './PlanCalendarSection';
 import './task-editor.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 /** Команды редакторов справочников — родитель исполняет их ядром. */
 export type CatalogCommand =
@@ -35,6 +36,7 @@ export type CatalogCommand =
     };
 
 interface ResourceCatalogDialogProps {
+  readonly owner: PlanDialogOwner;
   readonly plan: PlanContent;
   /** Возвращает ошибку ядра — показывается у места действия, документ не меняется. */
   readonly applyCommand: (command: CatalogCommand) => PlanCommandError | undefined;
@@ -56,6 +58,7 @@ interface EditingState {
  * Esc — закрыть, Enter — подтвердить действие поля.
  */
 export default function ResourceCatalogDialog({
+  owner,
   plan,
   applyCommand,
   onClose,
@@ -140,13 +143,6 @@ export default function ResourceCatalogDialog({
     }
     setEditing(null);
     setRowError(null);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-    }
   };
 
   const validateAbsence = (
@@ -241,467 +237,448 @@ export default function ResourceCatalogDialog({
   };
 
   return (
-    <div
-      className="task-editor__overlay"
-      onKeyDown={handleKeyDown}
-      role="presentation"
+    <PlanDialog
+      owner={owner}
+      title="Настройки плана"
+      description="Ресурсы, типы работ, отпуска и календарь этого плана."
+      closeLabel="Закрыть настройки плана"
+      className="task-editor catalog"
+      wide
+      onClose={onClose}
     >
-      <section
-        className="task-editor catalog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Настройки плана"
-      >
-        <header className="task-editor__head">
-          <div>
-            <h3 className="task-editor__title">Справочники плана</h3>
-            <p className="task-editor__description">
-              Ресурсы, типы работ, отпуска и календарь этого плана.
-            </p>
+      <div className="task-editor__body plan-dialog__body">
+        <section aria-label="Исполнители">
+          <h4 className="catalog__section-title">Исполнители</h4>
+          {plan.resources.length === 0 && (
+            <p className="task-editor__preview">Нет исполнителей — добавьте первого.</p>
+          )}
+          <ul className="catalog__list">
+            {plan.resources.map((resource) => (
+              <li key={resource.id} className="catalog__row">
+                {editing?.section === 'resources' && editing.id === resource.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editing.title}
+                      autoFocus
+                      data-catalog-edit="resource"
+                      onKeyDown={handleEditingKeyDown}
+                      onChange={(event) =>
+                        setEditing({ ...editing, title: event.target.value })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Сохранить название"
+                      onClick={submitRename}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Отменить переименование"
+                      onClick={() => setEditing(null)}
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="catalog__title">{resource.title}</span>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label={`Изменить ${resource.title}`}
+                      onClick={() => {
+                        setEditing({
+                          section: 'resources',
+                          id: resource.id,
+                          title: resource.title,
+                        });
+                        setRowError(null);
+                      }}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button task-editor__button--danger"
+                      aria-label={`Удалить ${resource.title}`}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Удалить исполнителя «${resource.title}»? Задачи потеряют назначение, его периоды недоступности будут удалены.`,
+                          )
+                        ) {
+                          applyCommand({
+                            type: 'deleteResource',
+                            resourceId: resource.id,
+                          });
+                          setRowError(null);
+                        }
+                      }}
+                    >
+                      Удалить
+                    </button>
+                  </>
+                )}
+                {rowError?.id === resource.id && (
+                  <span className="task-editor__error" role="alert">
+                    {rowError.message}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="catalog__add">
+            <input
+              ref={newResourceRef}
+              type="text"
+              value={newResourceTitle}
+              placeholder="Новый исполнитель"
+              data-catalog-new="resource"
+              onKeyDown={handleFieldKeyDown}
+              onChange={(event) => setNewResourceTitle(event.target.value)}
+            />
+            <button
+              type="button"
+              className="task-editor__button"
+              data-catalog-add="resource"
+              onClick={submitNewResource}
+            >
+              Добавить
+            </button>
           </div>
-          <button
-            type="button"
-            className="task-editor__close"
-            aria-label="Закрыть настройки плана"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        <div className="task-editor__body">
-          <section aria-label="Исполнители">
-            <h4 className="catalog__section-title">Исполнители</h4>
-            {plan.resources.length === 0 && (
-              <p className="task-editor__preview">Нет исполнителей — добавьте первого.</p>
-            )}
-            <ul className="catalog__list">
+        </section>
+        <section aria-label="Типы работ">
+          <h4 className="catalog__section-title">Типы работ</h4>
+          <p className="task-editor__preview">
+            Разработка — нельзя параллельно; ПСИ — можно: пересечение
+            непараллелизуемых работ одного исполнителя — конфликт.
+          </p>
+          {plan.workTypes.length === 0 && (
+            <p className="task-editor__preview">Нет типов работ — добавьте первый.</p>
+          )}
+          <ul className="catalog__list">
+            {plan.workTypes.map((workType) => (
+              <li key={workType.id} className="catalog__row">
+                {editing?.section === 'workTypes' && editing.id === workType.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editing.title}
+                      autoFocus
+                      data-catalog-edit="workType"
+                      onKeyDown={handleEditingKeyDown}
+                      onChange={(event) =>
+                        setEditing({ ...editing, title: event.target.value })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Сохранить название"
+                      onClick={submitRename}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Отменить переименование"
+                      onClick={() => setEditing(null)}
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="catalog__title">{workType.title}</span>
+                    <label className="catalog__flag">
+                      <input
+                        type="checkbox"
+                        checked={workType.allowsParallel}
+                        data-catalog-parallel={workType.id}
+                        onChange={(event) =>
+                          applyCommand({
+                            type: 'toggleWorkTypeParallel',
+                            workTypeId: workType.id,
+                            allowsParallel: event.target.checked,
+                          })
+                        }
+                      />
+                      можно параллельно
+                    </label>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label={`Изменить ${workType.title}`}
+                      onClick={() => {
+                        setEditing({
+                          section: 'workTypes',
+                          id: workType.id,
+                          title: workType.title,
+                        });
+                        setRowError(null);
+                      }}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button task-editor__button--danger"
+                      aria-label={`Удалить ${workType.title}`}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Удалить тип работы «${workType.title}»? Задачи потеряют тип и станут непараллелизуемыми по умолчанию.`,
+                          )
+                        ) {
+                          applyCommand({
+                            type: 'deleteWorkType',
+                            workTypeId: workType.id,
+                          });
+                          setRowError(null);
+                        }
+                      }}
+                    >
+                      Удалить
+                    </button>
+                  </>
+                )}
+                {rowError?.id === workType.id && (
+                  <span className="task-editor__error" role="alert">
+                    {rowError.message}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="catalog__add">
+            <input
+              type="text"
+              value={newWorkTypeTitle}
+              placeholder="Новый тип работы"
+              data-catalog-new="workType"
+              onKeyDown={handleFieldKeyDown}
+              onChange={(event) => setNewWorkTypeTitle(event.target.value)}
+            />
+            <label className="catalog__flag">
+              <input
+                type="checkbox"
+                checked={newWorkTypeParallel}
+                data-catalog-new-parallel
+                onChange={(event) => setNewWorkTypeParallel(event.target.checked)}
+              />
+              можно параллельно
+            </label>
+            <button
+              type="button"
+              className="task-editor__button"
+              data-catalog-add="workType"
+              onClick={submitNewWorkType}
+            >
+              Добавить
+            </button>
+          </div>
+        </section>
+        <section aria-label="Отпуска">
+          <h4 className="catalog__section-title">Отпуска</h4>
+          {plan.unavailability.length === 0 && (
+            <p className="task-editor__preview">Периодов недоступности нет.</p>
+          )}
+          <ul className="catalog__list">
+            {plan.unavailability.map((absence) => (
+              <li key={absence.id} className="catalog__row">
+                {editingAbsence?.id === absence.id ? (
+                  <>
+                    <select
+                      value={editingAbsence.resourceId}
+                      data-absence-edit="resource"
+                      onChange={(event) =>
+                        setEditingAbsence({
+                          ...editingAbsence,
+                          resourceId: event.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Выберите ресурс</option>
+                      {plan.resources.map((resource) => (
+                        <option key={resource.id} value={resource.id}>
+                          {resource.title}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={editingAbsence.start}
+                      data-absence-edit="start"
+                      onChange={(event) =>
+                        setEditingAbsence({
+                          ...editingAbsence,
+                          start: event.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      type="date"
+                      value={editingAbsence.end}
+                      data-absence-edit="end"
+                      onChange={(event) =>
+                        setEditingAbsence({
+                          ...editingAbsence,
+                          end: event.target.value,
+                        })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Сохранить период"
+                      onClick={submitAbsenceEdit}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Отменить изменение периода"
+                      onClick={() => setEditingAbsence(null)}
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="catalog__title">
+                      {absenceTitle(absence.resourceId)}: {absence.start} —{' '}
+                      {absence.end}
+                    </span>
+                    <button
+                      type="button"
+                      className="task-editor__button"
+                      aria-label="Изменить период"
+                      onClick={() => {
+                        setEditingAbsence({
+                          id: absence.id,
+                          resourceId: absence.resourceId,
+                          start: absence.start,
+                          end: absence.end,
+                        });
+                        setRowError(null);
+                      }}
+                    >
+                      Изменить
+                    </button>
+                    <button
+                      type="button"
+                      className="task-editor__button task-editor__button--danger"
+                      aria-label="Удалить период"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Удалить отпуск «${absenceTitle(absence.resourceId)}: ${absence.start} — ${absence.end}»?`,
+                          )
+                        ) {
+                          applyCommand({
+                            type: 'deleteUnavailability',
+                            unavailabilityId: absence.id,
+                          });
+                          setRowError(null);
+                        }
+                      }}
+                    >
+                      Удалить
+                    </button>
+                  </>
+                )}
+                {rowError?.id === absence.id && (
+                  <span className="task-editor__error" role="alert">
+                    {rowError.message}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="catalog__add">
+            <select
+              value={newAbsence.resourceId}
+              data-absence-new="resource"
+              onChange={(event) =>
+                setNewAbsence({
+                  ...newAbsence,
+                  resourceId: event.target.value,
+                })
+              }
+            >
+              <option value="">Выберите ресурс</option>
               {plan.resources.map((resource) => (
-                <li key={resource.id} className="catalog__row">
-                  {editing?.section === 'resources' && editing.id === resource.id ? (
-                    <>
-                      <input
-                        type="text"
-                        value={editing.title}
-                        autoFocus
-                        data-catalog-edit="resource"
-                        onKeyDown={handleEditingKeyDown}
-                        onChange={(event) =>
-                          setEditing({ ...editing, title: event.target.value })
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Сохранить название"
-                        onClick={submitRename}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Отменить переименование"
-                        onClick={() => setEditing(null)}
-                      >
-                        ×
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="catalog__title">{resource.title}</span>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label={`Изменить ${resource.title}`}
-                        onClick={() => {
-                          setEditing({
-                            section: 'resources',
-                            id: resource.id,
-                            title: resource.title,
-                          });
-                          setRowError(null);
-                        }}
-                      >
-                        Изменить
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button task-editor__button--danger"
-                        aria-label={`Удалить ${resource.title}`}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Удалить исполнителя «${resource.title}»? Задачи потеряют назначение, его периоды недоступности будут удалены.`,
-                            )
-                          ) {
-                            applyCommand({
-                              type: 'deleteResource',
-                              resourceId: resource.id,
-                            });
-                            setRowError(null);
-                          }
-                        }}
-                      >
-                        Удалить
-                      </button>
-                    </>
-                  )}
-                  {rowError?.id === resource.id && (
-                    <span className="task-editor__error" role="alert">
-                      {rowError.message}
-                    </span>
-                  )}
-                </li>
+                <option key={resource.id} value={resource.id}>
+                  {resource.title}
+                </option>
               ))}
-            </ul>
-            <div className="catalog__add">
-              <input
-                ref={newResourceRef}
-                type="text"
-                value={newResourceTitle}
-                placeholder="Новый исполнитель"
-                data-catalog-new="resource"
-                onKeyDown={handleFieldKeyDown}
-                onChange={(event) => setNewResourceTitle(event.target.value)}
-              />
-              <button
-                type="button"
-                className="task-editor__button"
-                data-catalog-add="resource"
-                onClick={submitNewResource}
-              >
-                Добавить
-              </button>
-            </div>
-          </section>
-          <section aria-label="Типы работ">
-            <h4 className="catalog__section-title">Типы работ</h4>
-            <p className="task-editor__preview">
-              Разработка — нельзя параллельно; ПСИ — можно: пересечение
-              непараллелизуемых работ одного исполнителя — конфликт.
-            </p>
-            {plan.workTypes.length === 0 && (
-              <p className="task-editor__preview">Нет типов работ — добавьте первый.</p>
-            )}
-            <ul className="catalog__list">
-              {plan.workTypes.map((workType) => (
-                <li key={workType.id} className="catalog__row">
-                  {editing?.section === 'workTypes' && editing.id === workType.id ? (
-                    <>
-                      <input
-                        type="text"
-                        value={editing.title}
-                        autoFocus
-                        data-catalog-edit="workType"
-                        onKeyDown={handleEditingKeyDown}
-                        onChange={(event) =>
-                          setEditing({ ...editing, title: event.target.value })
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Сохранить название"
-                        onClick={submitRename}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Отменить переименование"
-                        onClick={() => setEditing(null)}
-                      >
-                        ×
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="catalog__title">{workType.title}</span>
-                      <label className="catalog__flag">
-                        <input
-                          type="checkbox"
-                          checked={workType.allowsParallel}
-                          data-catalog-parallel={workType.id}
-                          onChange={(event) =>
-                            applyCommand({
-                              type: 'toggleWorkTypeParallel',
-                              workTypeId: workType.id,
-                              allowsParallel: event.target.checked,
-                            })
-                          }
-                        />
-                        можно параллельно
-                      </label>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label={`Изменить ${workType.title}`}
-                        onClick={() => {
-                          setEditing({
-                            section: 'workTypes',
-                            id: workType.id,
-                            title: workType.title,
-                          });
-                          setRowError(null);
-                        }}
-                      >
-                        Изменить
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button task-editor__button--danger"
-                        aria-label={`Удалить ${workType.title}`}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Удалить тип работы «${workType.title}»? Задачи потеряют тип и станут непараллелизуемыми по умолчанию.`,
-                            )
-                          ) {
-                            applyCommand({
-                              type: 'deleteWorkType',
-                              workTypeId: workType.id,
-                            });
-                            setRowError(null);
-                          }
-                        }}
-                      >
-                        Удалить
-                      </button>
-                    </>
-                  )}
-                  {rowError?.id === workType.id && (
-                    <span className="task-editor__error" role="alert">
-                      {rowError.message}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className="catalog__add">
-              <input
-                type="text"
-                value={newWorkTypeTitle}
-                placeholder="Новый тип работы"
-                data-catalog-new="workType"
-                onKeyDown={handleFieldKeyDown}
-                onChange={(event) => setNewWorkTypeTitle(event.target.value)}
-              />
-              <label className="catalog__flag">
-                <input
-                  type="checkbox"
-                  checked={newWorkTypeParallel}
-                  data-catalog-new-parallel
-                  onChange={(event) => setNewWorkTypeParallel(event.target.checked)}
-                />
-                можно параллельно
-              </label>
-              <button
-                type="button"
-                className="task-editor__button"
-                data-catalog-add="workType"
-                onClick={submitNewWorkType}
-              >
-                Добавить
-              </button>
-            </div>
-          </section>
-          <section aria-label="Отпуска">
-            <h4 className="catalog__section-title">Отпуска</h4>
-            {plan.unavailability.length === 0 && (
-              <p className="task-editor__preview">Периодов недоступности нет.</p>
-            )}
-            <ul className="catalog__list">
-              {plan.unavailability.map((absence) => (
-                <li key={absence.id} className="catalog__row">
-                  {editingAbsence?.id === absence.id ? (
-                    <>
-                      <select
-                        value={editingAbsence.resourceId}
-                        data-absence-edit="resource"
-                        onChange={(event) =>
-                          setEditingAbsence({
-                            ...editingAbsence,
-                            resourceId: event.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Выберите ресурс</option>
-                        {plan.resources.map((resource) => (
-                          <option key={resource.id} value={resource.id}>
-                            {resource.title}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="date"
-                        value={editingAbsence.start}
-                        data-absence-edit="start"
-                        onChange={(event) =>
-                          setEditingAbsence({
-                            ...editingAbsence,
-                            start: event.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="date"
-                        value={editingAbsence.end}
-                        data-absence-edit="end"
-                        onChange={(event) =>
-                          setEditingAbsence({
-                            ...editingAbsence,
-                            end: event.target.value,
-                          })
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Сохранить период"
-                        onClick={submitAbsenceEdit}
-                      >
-                        ✓
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Отменить изменение периода"
-                        onClick={() => setEditingAbsence(null)}
-                      >
-                        ×
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="catalog__title">
-                        {absenceTitle(absence.resourceId)}: {absence.start} —{' '}
-                        {absence.end}
-                      </span>
-                      <button
-                        type="button"
-                        className="task-editor__button"
-                        aria-label="Изменить период"
-                        onClick={() => {
-                          setEditingAbsence({
-                            id: absence.id,
-                            resourceId: absence.resourceId,
-                            start: absence.start,
-                            end: absence.end,
-                          });
-                          setRowError(null);
-                        }}
-                      >
-                        Изменить
-                      </button>
-                      <button
-                        type="button"
-                        className="task-editor__button task-editor__button--danger"
-                        aria-label="Удалить период"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Удалить отпуск «${absenceTitle(absence.resourceId)}: ${absence.start} — ${absence.end}»?`,
-                            )
-                          ) {
-                            applyCommand({
-                              type: 'deleteUnavailability',
-                              unavailabilityId: absence.id,
-                            });
-                            setRowError(null);
-                          }
-                        }}
-                      >
-                        Удалить
-                      </button>
-                    </>
-                  )}
-                  {rowError?.id === absence.id && (
-                    <span className="task-editor__error" role="alert">
-                      {rowError.message}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <div className="catalog__add">
-              <select
-                value={newAbsence.resourceId}
-                data-absence-new="resource"
-                onChange={(event) =>
-                  setNewAbsence({
-                    ...newAbsence,
-                    resourceId: event.target.value,
-                  })
-                }
-              >
-                <option value="">Выберите ресурс</option>
-                {plan.resources.map((resource) => (
-                  <option key={resource.id} value={resource.id}>
-                    {resource.title}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={newAbsence.start}
-                data-absence-new="start"
-                onChange={(event) =>
-                  setNewAbsence({ ...newAbsence, start: event.target.value })
-                }
-              />
-              <input
-                type="date"
-                value={newAbsence.end}
-                data-absence-new="end"
-                onChange={(event) =>
-                  setNewAbsence({ ...newAbsence, end: event.target.value })
-                }
-              />
-              <button
-                type="button"
-                className="task-editor__button"
-                data-absence-add
-                onClick={submitNewAbsence}
-              >
-                Добавить
-              </button>
-            </div>
-            {absenceError !== null && (
-              <p className="task-editor__error" role="alert" data-absence-error>
-                {absenceError}
-              </p>
-            )}
-          </section>
-          <PlanCalendarSection
-            calendar={plan.calendar}
-            onApply={(workingDays, holidays, workingExceptions) =>
-              applyCommand({
-                type: 'updateCalendar',
-                workingDays,
-                holidays,
-                workingExceptions,
-              })
-            }
-          />
-          {addError !== null && (
-            <p className="task-editor__error" role="alert" data-catalog-error>
-              {addError}
+            </select>
+            <input
+              type="date"
+              value={newAbsence.start}
+              data-absence-new="start"
+              onChange={(event) =>
+                setNewAbsence({ ...newAbsence, start: event.target.value })
+              }
+            />
+            <input
+              type="date"
+              value={newAbsence.end}
+              data-absence-new="end"
+              onChange={(event) =>
+                setNewAbsence({ ...newAbsence, end: event.target.value })
+              }
+            />
+            <button
+              type="button"
+              className="task-editor__button"
+              data-absence-add
+              onClick={submitNewAbsence}
+            >
+              Добавить
+            </button>
+          </div>
+          {absenceError !== null && (
+            <p className="task-editor__error" role="alert" data-absence-error>
+              {absenceError}
             </p>
           )}
-        </div>
-        <footer className="task-editor__foot">
-          <div className="task-editor__foot-spacer" />
-          <button
-            type="button"
-            className="task-editor__button"
-            data-catalog-close
-            onClick={onClose}
-          >
-            Готово
-          </button>
-        </footer>
-      </section>
-    </div>
+        </section>
+        <PlanCalendarSection
+          calendar={plan.calendar}
+          onApply={(workingDays, holidays, workingExceptions) =>
+            applyCommand({
+              type: 'updateCalendar',
+              workingDays,
+              holidays,
+              workingExceptions,
+            })
+          }
+        />
+        {addError !== null && (
+          <p className="task-editor__error" role="alert" data-catalog-error>
+            {addError}
+          </p>
+        )}
+      </div>
+      <footer className="task-editor__foot">
+        <div className="task-editor__foot-spacer" />
+        <button
+          type="button"
+          className="task-editor__button"
+          data-catalog-close
+          onClick={onClose}
+        >
+          Готово
+        </button>
+      </footer>
+    </PlanDialog>
   );
 }
