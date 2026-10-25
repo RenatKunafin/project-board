@@ -1,3 +1,4 @@
+import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';
 import { createDocumentWindow } from '../e2e/document-ui';
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import { readdir } from 'node:fs/promises';
@@ -212,6 +213,14 @@ test('первый переход с настоящего PBT-028 происхо
   await list(page).getByPlaceholder('Новая задача…').fill('Сохранено в PBT-028');
   await list(page).getByRole('button', { name: 'Добавить', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
+  // Старая сборка не умеет flush перед обновлением. Подтверждаем запись
+  // документа И раскладки: прежний новый bootstrap маскировал её отсутствие,
+  // заново открывая демоокна вместо восстановления сохранённого снимка.
+  await persistedDocument(page, 'Список 1', { items: [{ text: 'Сохранено в PBT-028' }] });
+  await expect.poll(async () => {
+    const state = await storedWorkspace(page);
+    return state.tabs.length === 1 && state.tabs[0].mode === 'grid' && state.widgetInstances.length === 3;
+  }).toBe(true);
   const previousWorkers = context.serviceWorkers();
   await publish(request, 'B');
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())!.update());
