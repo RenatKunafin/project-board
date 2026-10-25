@@ -1,0 +1,16 @@
+{
+  "name": "@project-board/checklist",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@project-board/widget-sdk": "*",
+    "lucide-react": "0.575.0"
+  }
+}

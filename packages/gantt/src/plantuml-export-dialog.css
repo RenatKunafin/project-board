@@ -1,0 +1,121 @@
+/* Предпросмотр экспорта PlantUML (PBT-056). Только токены :root
+   (хекс-коды запрещены до PBT-066). Каркас — по образцу диалогов. */
+
+.plan-gantt .plantuml-export__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay);
+}
+
+.plan-gantt .plantuml-export {
+  display: flex;
+  flex-direction: column;
+  width: min(576px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-float);
+}
+
+.plan-gantt .plantuml-export__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-gantt .plantuml-export__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-gantt .plantuml-export__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .plantuml-export__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.plan-gantt .plantuml-export__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-gantt .plantuml-export__section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.plan-gantt .plantuml-export__text {
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre;
+  overflow: auto;
+  max-height: 220px;
+  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  cursor: text;
+}
+
+.plan-gantt .plantuml-export__scroll {
+  max-height: 120px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.plan-gantt .plantuml-export__list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.plan-gantt .plantuml-export__hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.plan-gantt .plantuml-export__file {
+  margin: 0;
+  font-size: 12px;
+}
+
+.plan-gantt .plantuml-export__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.plan-gantt .plantuml-export__button {
+  cursor: pointer;
+}
+
+.plan-gantt .plantuml-export__button--primary {
+  font-weight: 600;
+}

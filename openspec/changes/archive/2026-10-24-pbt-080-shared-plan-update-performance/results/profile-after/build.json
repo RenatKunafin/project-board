@@ -1,0 +1,11 @@
+{
+  "baseCommit": "d673454f63a985e59b89b4a3c5acec7e4b21f5ad",
+  "stage": "candidate before merge; uncommitted implementation",
+  "bundle": "index-bFkSr3WE.js",
+  "bundleSha256": "2ca615f009134935e89c64b7afec9ee357c024693ba99f0b8040e12e23ae718b",
+  "sha256": {
+    "packages/gantt/src/calendar-view.ts": "cf04194c26f1ecfb5703f9004a6e91fe6fa175529e05ca887b2320a8178c7758",
+    "packages/gantt/src/svar-adapter.ts": "f8be52d03c2432b71e989e940c97743e19225a4b389c7126aa16d73f43ec463b",
+    "packages/gantt/src/ResourceTimelineWidget.tsx": "f8fa3259e85fb8e01968f5a6c562b730de73ec6bcc472c6678883d31ac3c1eff"
+  }
+}

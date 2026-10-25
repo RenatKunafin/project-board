@@ -1,0 +1,649 @@
+import type {
+  DocumentChangeHandler,
+  DocumentCreateInput,
+  DocumentMigrationsSupport,
+  DocumentService,
+  ManagedDocument,
+  Unsubscribe,
+} from '@project-board/widget-sdk';
+import {
+  DocumentConflictError,
+  DocumentFutureVersionError,
+  assertDocumentTitle,
+} from '@project-board/widget-sdk';
+
+export type DocumentSaveStatus = 'saved' | 'saving' | 'error' | 'conflict';
+
+export interface DocumentSaveState {
+  readonly status: DocumentSaveStatus;
+  readonly at: string;
+}
+
+export type SaveStateHandler = (state: DocumentSaveState) => void;
+
+/** Проблема восстановления документа: миграция не выполнена, документ нетронут. */
+export interface DocumentRecoveryIssue {
+  readonly documentId: string;
+  readonly moduleId: string;
+  readonly documentType: string;
+  readonly storedVersion: number;
+  readonly targetVersion: number;
+  readonly reason: 'chain-gap' | 'step-failed';
+  readonly detail?: string;
+}
+
+/** Минимальный контракт хранилища, необходимый сервису. */
+export interface DocumentStoreLike {
+  save(
+    document: ManagedDocument,
+    expectedStoredRevision: number,
+  ): Promise<void>;
+  /** Пакетная фиксация в одной транзакции: сбой любой записи откатывает всё. */
+  saveAll(
+    entries: readonly {
+      readonly document: ManagedDocument;
+      readonly expectedStoredRevision: number;
+    }[],
+  ): Promise<void>;
+  get(documentId: string): Promise<ManagedDocument | undefined>;
+  listAll(): Promise<ManagedDocument[]>;
+  delete(documentId: string): Promise<void>;
+}
+
+export interface PersistenceHooks {
+  readonly store: DocumentStoreLike;
+  readonly saveDelayMs?: number;
+  /** Поддержка миграций: собирается приложением из зарегистрированных типов. */
+  readonly migrations?: readonly DocumentMigrationsSupport[];
+}
+
+interface DocumentRecord {
+  document: ManagedDocument;
+  handlers: DocumentChangeHandler[];
+}
+
+interface SaveQueueEntry {
+  pending: ManagedDocument | null;
+  lastSavedRevision: number;
+  inFlight: Promise<void> | null;
+  timer: ReturnType<typeof setTimeout> | null;
+  retryAttempt: number;
+}
+
+const MAX_SAVE_RETRIES = 3;
+const RETRY_DELAYS_MS = [250, 500, 1000];
+
+export interface AutosavingDocumentService extends DocumentService {
+  /** Восстанавливает все документы из хранилища в память. */
+  restoreAll(): Promise<ManagedDocument[]>;
+  /** Подтверждает запись всей очереди, включая in-flight; отказ отклоняет Promise. */
+  flushAll(): Promise<void>;
+  /** Выборка документов из памяти, опционально по модулю и типу. */
+  listDocuments(
+    filter?: { readonly moduleId?: string; readonly documentType?: string },
+  ): ManagedDocument[];
+  getSaveState(documentId: string): DocumentSaveState | undefined;
+  subscribeSaveState(
+    documentId: string,
+    handler: SaveStateHandler,
+  ): Unsubscribe;
+  /**
+   * Сводное состояние записи всех документов (PBT-072, индикатор топ-бара):
+   * приоритет conflict > error > saving > saved; без записей — saved
+   * (всё содержимое памяти восстановлено из хранилища).
+   */
+  getAggregateSaveStatus(): DocumentSaveStatus;
+  subscribeAggregateSaveStatus(
+    handler: (status: DocumentSaveStatus) => void,
+  ): Unsubscribe;
+  /** Проблемы миграций последнего восстановления (design D2). */
+  listRecoveryIssues(): DocumentRecoveryIssue[];
+  /** Документ записан версией новее поддерживаемой: запись запрещена. */
+  isFutureVersion(documentId: string): boolean;
+  /** Активные подписки на документы — диагностика утечек (PBT-027). */
+  activeSubscriptionCount(): number;
+}
+
+/** Разрыв цепочки миграций: нет шага из хранимой версии. */
+class MigrationChainGapError extends Error {}
+
+export function createDocumentService(
+  persistence?: Partial<PersistenceHooks>,
+): AutosavingDocumentService {
+  const store = persistence?.store;
+  const saveDelayMs = persistence?.saveDelayMs ?? 250;
+
+  const documents = new Map<string, DocumentRecord>();
+  const viewSettings = new Map<string, Record<string, unknown>>();
+  const queue = new Map<string, SaveQueueEntry>();
+  const deletions = new Map<string, Promise<void>>();
+  const deleteErrors = new Map<string, unknown>();
+  const saveStates = new Map<string, DocumentSaveState>();
+  const saveStateHandlers = new Map<string, Set<SaveStateHandler>>();
+  const aggregateHandlers = new Set<(status: DocumentSaveStatus) => void>();
+  let notifyingDocumentId: string | null = null;
+
+  // Индекс поддержки миграций и результаты последнего восстановления.
+  const migrationsIndex = new Map<string, DocumentMigrationsSupport>();
+  for (const support of persistence?.migrations ?? []) {
+    migrationsIndex.set(
+      `${support.moduleId}/${support.documentType}`,
+      support,
+    );
+  }
+  const futureVersionIds = new Set<string>();
+  const recoveryIssues: DocumentRecoveryIssue[] = [];
+
+  const supportKey = (
+    document: Pick<ManagedDocument, 'moduleId' | 'documentType'>,
+  ): string => `${document.moduleId}/${document.documentType}`;
+
+  /** Записи в документ версии новее поддерживаемой запрещены (design D3). */
+  function assertNotFutureVersion(document: ManagedDocument): void {
+    const support = migrationsIndex.get(supportKey(document));
+    if (support && document.schemaVersion > support.actualVersion) {
+      throw new DocumentFutureVersionError(
+        document.id,
+        document.schemaVersion,
+        support.actualVersion,
+      );
+    }
+  }
+
+  /** Цепочка шагов «от хранимой версии к актуальной»; разрыв — исключение. */
+  function buildChain(
+    support: DocumentMigrationsSupport,
+    fromVersion: number,
+  ): { step: DocumentMigrationsSupport['steps'][number] }[] {
+    const chain: { step: DocumentMigrationsSupport['steps'][number] }[] = [];
+    let current = fromVersion;
+    while (current < support.actualVersion) {
+      const step = support.steps.find(
+        (candidate) => candidate.from === current,
+      );
+      if (!step) {
+        throw new MigrationChainGapError(
+          `разрыв цепочки миграций: нет шага из версии ${current} (актуальная ${support.actualVersion})`,
+        );
+      }
+      chain.push({ step });
+      current = step.to;
+    }
+    return chain;
+  }
+
+  function setSaveState(documentId: string, status: DocumentSaveStatus): void {
+    const state: DocumentSaveState = {
+      status,
+      at: new Date().toISOString(),
+    };
+    saveStates.set(documentId, state);
+    const handlers = saveStateHandlers.get(documentId);
+    if (handlers) {
+      for (const handler of [...handlers]) {
+        handler(state);
+      }
+    }
+    notifyAggregate();
+  }
+
+  const AGGREGATE_PRIORITY: readonly DocumentSaveStatus[] = [
+    'conflict',
+    'error',
+    'saving',
+  ];
+
+  function aggregateSaveStatus(): DocumentSaveStatus {
+    const statuses = new Set(
+      [...saveStates.values()].map((state) => state.status),
+    );
+    return AGGREGATE_PRIORITY.find((status) => statuses.has(status)) ?? 'saved';
+  }
+
+  // Уведомление только при смене сводного статуса: сервис ставит saving
+  // и при постановке в очередь, и при старте записи — App не дёргаем зря.
+  let lastAggregate: DocumentSaveStatus = 'saved';
+
+  function notifyAggregate(): void {
+    const status = aggregateSaveStatus();
+    if (status === lastAggregate) {
+      return;
+    }
+    lastAggregate = status;
+    for (const handler of [...aggregateHandlers]) {
+      handler(status);
+    }
+  }
+
+  function enqueue(document: ManagedDocument): void {
+    if (!store) {
+      return;
+    }
+    let entry = queue.get(document.id);
+    if (!entry) {
+      entry = {
+        pending: null,
+        lastSavedRevision: 0,
+        inFlight: null,
+        timer: null,
+        retryAttempt: 0,
+      };
+      queue.set(document.id, entry);
+    }
+    deleteErrors.delete(document.id);
+    entry.pending = document;
+    setSaveState(document.id, 'saving');
+    if (entry.inFlight || entry.timer !== null) {
+      // Flush уже запланирован: обновляем только pending, чтобы сохранить
+      // порядок планирования между документами.
+      return;
+    }
+    entry.timer = setTimeout(() => {
+      entry.timer = null;
+      void flushDocument(document.id).catch(() => {});
+    }, saveDelayMs);
+  }
+
+  function flushDocument(documentId: string): Promise<void> {
+    const entry = queue.get(documentId);
+    if (!store || !entry || deletions.has(documentId)) return Promise.resolve();
+    if (entry.inFlight) return entry.inFlight;
+    if (entry.timer !== null) {
+      clearTimeout(entry.timer);
+      entry.timer = null;
+    }
+    if (entry.pending === null) return Promise.resolve();
+
+    // Один Promise владеет всеми попытками и следующими редакциями документа.
+    // Явный flush присоединяется к нему, а не возвращает успех при in-flight.
+    const drain = async (): Promise<void> => {
+      entry.retryAttempt = 0;
+      while (entry.pending !== null && !deletions.has(documentId)) {
+        const document = entry.pending;
+        entry.pending = null;
+        setSaveState(documentId, 'saving');
+        try {
+          await store.save(document, entry.lastSavedRevision);
+          entry.lastSavedRevision = document.revision;
+          entry.retryAttempt = 0;
+        } catch (error) {
+          if (error instanceof DocumentConflictError) {
+            try {
+              await resolveConflict(documentId, entry);
+            } catch (recoveryError) {
+              entry.pending ??= document;
+              setSaveState(documentId, 'error');
+              throw recoveryError;
+            }
+            throw error;
+          }
+          // Правка, поступившая во время await, имеет приоритет над повтором.
+          entry.pending ??= document;
+          if (deletions.has(documentId) || entry.retryAttempt >= MAX_SAVE_RETRIES) {
+            setSaveState(documentId, 'error');
+            throw error;
+          }
+          const delay = RETRY_DELAYS_MS[entry.retryAttempt++];
+          await new Promise<void>((resolve) => setTimeout(resolve, delay));
+        }
+      }
+      if (!deletions.has(documentId)) setSaveState(documentId, 'saved');
+    };
+    entry.inFlight = drain().finally(() => {
+      entry.inFlight = null;
+      // Подписчик статуса мог добавить правку на уведомлении saved.
+      if (entry.pending && !deletions.has(documentId) && saveStates.get(documentId)?.status === 'saving') {
+        queueMicrotask(() => { void flushDocument(documentId).catch(() => {}); });
+      }
+    });
+    return entry.inFlight;
+  }
+
+  async function resolveConflict(
+    documentId: string,
+    entry: SaveQueueEntry,
+  ): Promise<void> {
+    entry.retryAttempt = 0;
+    const stored = (await store?.get(documentId)) ?? undefined;
+    const record = documents.get(documentId);
+    if (stored && record) {
+      record.document = stored;
+      entry.lastSavedRevision = stored.revision;
+      notifyingDocumentId = documentId;
+      try {
+        for (const handler of [...record.handlers]) {
+          handler(stored);
+        }
+      } finally {
+        notifyingDocumentId = null;
+      }
+    }
+    entry.pending = null;
+    setSaveState(documentId, 'conflict');
+  }
+
+  const base: DocumentService = {
+    create(input: DocumentCreateInput): ManagedDocument {
+      const now = new Date().toISOString();
+      const document: ManagedDocument = {
+        id: crypto.randomUUID(),
+        moduleId: input.moduleId,
+        documentType: input.documentType,
+        title: assertDocumentTitle(input.title),
+        schemaVersion: input.schemaVersion,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+        content: input.content,
+      };
+      documents.set(document.id, { document, handlers: [] });
+      enqueue(document);
+      return document;
+    },
+
+    get(documentId: string): ManagedDocument | undefined {
+      return documents.get(documentId)?.document;
+    },
+
+    update(
+      documentId: string,
+      expectedRevision: number,
+      nextContent: ManagedDocument['content'],
+    ): ManagedDocument {
+      if (deletions.has(documentId)) throw new Error('Документ удаляется. Дождитесь завершения операции.');
+      if (notifyingDocumentId === documentId) {
+        throw new Error(
+          `Недопустимо обновлять документ "${documentId}" во время доставки его уведомлений.`,
+        );
+      }
+
+      const record = documents.get(documentId);
+      if (!record) {
+        throw new DocumentConflictError(documentId, 0, expectedRevision);
+      }
+      assertNotFutureVersion(record.document);
+
+      const actualRevision = record.document.revision;
+      if (actualRevision !== expectedRevision) {
+        throw new DocumentConflictError(
+          documentId,
+          actualRevision,
+          expectedRevision,
+        );
+      }
+
+      const updated: ManagedDocument = {
+        ...record.document,
+        revision: actualRevision + 1,
+        updatedAt: new Date().toISOString(),
+        content: nextContent,
+      };
+      record.document = updated;
+      enqueue(updated);
+
+      notifyingDocumentId = documentId;
+      try {
+        for (const handler of [...record.handlers]) {
+          handler(updated);
+        }
+      } finally {
+        notifyingDocumentId = null;
+      }
+      return updated;
+    },
+
+    subscribe(documentId: string, handler: DocumentChangeHandler): Unsubscribe {
+      const record = documents.get(documentId);
+      if (!record) {
+        return () => {};
+      }
+      record.handlers.push(handler);
+      return () => {
+        record.handlers = record.handlers.filter((h) => h !== handler);
+      };
+    },
+
+    rename(
+      documentId: string,
+      expectedRevision: number,
+      title: string,
+    ): ManagedDocument {
+      if (deletions.has(documentId)) throw new Error('Документ удаляется. Дождитесь завершения операции.');
+      if (notifyingDocumentId === documentId) {
+        throw new Error(
+          `Недопустимо обновлять документ "${documentId}" во время доставки его уведомлений.`,
+        );
+      }
+      const record = documents.get(documentId);
+      if (!record) {
+        throw new DocumentConflictError(documentId, 0, expectedRevision);
+      }
+      assertNotFutureVersion(record.document);
+      const actualRevision = record.document.revision;
+      if (actualRevision !== expectedRevision) {
+        throw new DocumentConflictError(
+          documentId,
+          actualRevision,
+          expectedRevision,
+        );
+      }
+      const renamed: ManagedDocument = {
+        ...record.document,
+        title: assertDocumentTitle(title),
+        revision: actualRevision + 1,
+        updatedAt: new Date().toISOString(),
+      };
+      record.document = renamed;
+      enqueue(renamed);
+      notifyingDocumentId = documentId;
+      try {
+        for (const handler of [...record.handlers]) {
+          handler(renamed);
+        }
+      } finally {
+        notifyingDocumentId = null;
+      }
+      return renamed;
+    },
+
+    delete(documentId: string): Promise<void> {
+      const existingDelete = deletions.get(documentId);
+      if (existingDelete) return existingDelete;
+      const operation = (async () => {
+        const existing = documents.get(documentId)?.document;
+        if (existing) assertNotFutureVersion(existing);
+        const entry = queue.get(documentId);
+        if (entry) {
+          if (entry.timer !== null) clearTimeout(entry.timer);
+          entry.timer = null;
+          entry.pending = null;
+          // Уже начатый put не должен воскресить документ после delete.
+          await entry.inFlight?.catch(() => {});
+          entry.pending = null;
+        }
+        if (store) await store.delete(documentId);
+        queue.delete(documentId);
+        documents.delete(documentId);
+        saveStates.delete(documentId);
+        saveStateHandlers.delete(documentId);
+        deleteErrors.delete(documentId);
+        notifyAggregate();
+      })();
+      deletions.set(documentId, operation);
+      void operation.then(
+        () => { deletions.delete(documentId); },
+        (error) => {
+          deletions.delete(documentId);
+          deleteErrors.set(documentId, error);
+          setSaveState(documentId, 'error');
+        },
+      );
+      return operation;
+    },
+
+    getViewSettings(
+      viewSettingsKey: string,
+    ): Record<string, unknown> | undefined {
+      return viewSettings.get(viewSettingsKey);
+    },
+
+    setViewSettings(
+      viewSettingsKey: string,
+      settings: Record<string, unknown>,
+    ): void {
+      viewSettings.set(viewSettingsKey, settings);
+    },
+  };
+
+  return {
+    ...base,
+    async flushAll(): Promise<void> {
+      if (!store && documents.size > 0) {
+        throw new Error('Хранилище документов не подключено.');
+      }
+      do {
+        await Promise.all([
+          ...deletions.values(),
+          ...[...queue.keys()].map((id) => flushDocument(id)),
+        ]);
+        if (deleteErrors.size > 0) throw [...deleteErrors.values()][0];
+        if ([...saveStates.values()].some((state) => state.status === 'conflict')) {
+          throw new Error('Обнаружен конфликт сохранения. Проверьте документы перед обновлением.');
+        }
+      } while (deletions.size > 0 || [...queue.values()].some((entry) => entry.pending || entry.inFlight));
+    },
+    async restoreAll(): Promise<ManagedDocument[]> {
+      if (!store) {
+        return [];
+      }
+      const all = await store.listAll();
+
+      // Классификация (design D2): actual / outdated / future / unknown.
+      const recovered: {
+        document: ManagedDocument;
+        expectedStoredRevision: number;
+      }[] = [];
+      futureVersionIds.clear();
+      recoveryIssues.length = 0;
+
+      for (const stored of all) {
+        const support = migrationsIndex.get(supportKey(stored));
+        if (!support) {
+          continue; // unknown: модуль не зарегистрирован — документ не трогаем.
+        }
+        if (stored.schemaVersion === support.actualVersion) {
+          continue; // actual: миграции не выполняются (однократность, D5).
+        }
+        if (stored.schemaVersion > support.actualVersion) {
+          futureVersionIds.add(stored.id); // future: чтение без записи (D3).
+          continue;
+        }
+        // outdated: цепочка миграций от хранимой версии к актуальной.
+        try {
+          const chain = buildChain(support, stored.schemaVersion);
+          let content = stored.content;
+          for (const { step } of chain) {
+            content = step.migrate(content);
+          }
+          recovered.push({
+            document: {
+              ...stored,
+              schemaVersion: support.actualVersion,
+              content,
+            },
+            expectedStoredRevision: stored.revision,
+          });
+        } catch (error) {
+          // Сбой шага/разрыв: документ остаётся нетронутым, восстановление
+          // продолжается (spec «Сбой преобразования не повреждает документ»).
+          const isChainGap = error instanceof MigrationChainGapError;
+          recoveryIssues.push({
+            documentId: stored.id,
+            moduleId: stored.moduleId,
+            documentType: stored.documentType,
+            storedVersion: stored.schemaVersion,
+            targetVersion: support.actualVersion,
+            reason: isChainGap ? 'chain-gap' : 'step-failed',
+            detail: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      // Атомарная фиксация одной транзакцией: сбой отклоняется целиком,
+      // хранилище остаётся в исходном состоянии.
+      if (recovered.length > 0) {
+        await store.saveAll(recovered);
+      }
+
+      for (const document of all) {
+        const migrated = recovered.find(
+          (entry) => entry.document.id === document.id,
+        );
+        const finalDocument = migrated?.document ?? document;
+        documents.set(finalDocument.id, { document: finalDocument, handlers: [] });
+        const entry: SaveQueueEntry = {
+          pending: null,
+          lastSavedRevision: finalDocument.revision,
+          inFlight: null,
+          timer: null,
+          retryAttempt: 0,
+        };
+        queue.set(finalDocument.id, entry);
+      }
+      return all.map(
+        (document) => documents.get(document.id)?.document ?? document,
+      );
+    },
+    listRecoveryIssues(): DocumentRecoveryIssue[] {
+      return [...recoveryIssues];
+    },
+    isFutureVersion(documentId: string): boolean {
+      return futureVersionIds.has(documentId);
+    },
+    activeSubscriptionCount(): number {
+      let total = 0;
+      for (const record of documents.values()) {
+        total += record.handlers.length;
+      }
+      return total;
+    },
+    listDocuments(
+      filter?: { readonly moduleId?: string; readonly documentType?: string },
+    ): ManagedDocument[] {
+      return [...documents.values()]
+        .map((record) => record.document)
+        .filter(
+          (document) =>
+            (!filter?.moduleId || document.moduleId === filter.moduleId) &&
+            (!filter?.documentType ||
+              document.documentType === filter.documentType),
+        );
+    },
+    getSaveState(documentId: string): DocumentSaveState | undefined {
+      return saveStates.get(documentId);
+    },
+    subscribeSaveState(
+      documentId: string,
+      handler: SaveStateHandler,
+    ): Unsubscribe {
+      let handlers = saveStateHandlers.get(documentId);
+      if (!handlers) {
+        handlers = new Set();
+        saveStateHandlers.set(documentId, handlers);
+      }
+      handlers.add(handler);
+      return () => {
+        handlers.delete(handler);
+      };
+    },
+    getAggregateSaveStatus(): DocumentSaveStatus {
+      return aggregateSaveStatus();
+    },
+    subscribeAggregateSaveStatus(handler): Unsubscribe {
+      aggregateHandlers.add(handler);
+      return () => {
+        aggregateHandlers.delete(handler);
+      };
+    },
+  };
+}

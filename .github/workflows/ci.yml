@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Проверка структуры репозитория
+        run: npm run verify:repository
+
+      - name: Lint (включая границы ADR-3)
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit-тесты
+        run: npm test
+
+      - name: Production-сборка
+        run: npm run build
+
+      - name: OpenSpec validation
+        run: |
+          npm i -g @fission-ai/openspec@1.11.0
+          openspec validate --all --strict
+
+      - name: Проверки публикации в подпути
+        run: |
+          npx playwright install --with-deps chromium
+          npm run build:pages
+          npm run verify:pages
+          npm run test:pages

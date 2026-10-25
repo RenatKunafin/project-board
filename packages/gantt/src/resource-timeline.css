@@ -1,0 +1,383 @@
+/* Ресурсные дорожки PBT-047; тёмная тема по прототипу — PBT-074
+   (flexi-dashboard-hub, блок .resource-timeline-chart). Только токены
+   :root (хекс-коды запрещены до PBT-066); дефолты RCT переопределяются
+   усиленными селекторами (прецедент спайка PBT-015). */
+
+.resource-timeline {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+}
+
+.resource-timeline__hint {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.resource-timeline__issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.resource-timeline--error {
+  overflow: auto;
+}
+
+.resource-timeline__chart {
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
+  font-size: 12px;
+  background: var(--surface);
+}
+
+/* ─── Тулбар (PBT-049; оформление по прототипу — PBT-074) ────────────────
+   Поиск с иконкой внутри поля занимает доступную ширину, селект ресурса
+   и зум-кнопки прижаты справа; ghost-кнопки 28×28, иконки lucide 14px. */
+
+.resource-timeline__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.resource-timeline__filter-field {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 144px;
+}
+
+.resource-timeline__filter-field svg {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.resource-timeline__filter-input {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  padding: 0 8px 0 30px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.resource-timeline__filter-select {
+  font: inherit;
+  font-size: 12px;
+  height: 28px;
+  max-width: 192px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.resource-timeline__zoom-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.resource-timeline__zoom-button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.resource-timeline__zoom-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ─── Шапка шкалы RCT (PBT-074: surface-raised, месяц — chrome, mono) ──── */
+
+.resource-timeline .rct-header-root,
+.resource-timeline .react-calendar-timeline .rct-header-root {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+}
+
+.resource-timeline .rct-header-root .rct-title,
+.resource-timeline .rct-dateHeader-primary {
+  color: var(--foreground);
+}
+
+.resource-timeline .rct-dateHeader {
+  background-color: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  border-left-color: var(--border);
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* primary-строка после общей (равная специфичность, дефолт беты даёт
+   background-color: initial — порядок решает, по прототипу строка 167).
+   Границы месячных колонок — тем же токеном и той же толщиной, что
+   дневные (дефолт беты красит правую границу месяца в светлый #bbb —
+   ревью PR#53). */
+.resource-timeline .rct-dateHeader-primary {
+  background: var(--chrome);
+  border-color: var(--border);
+  border-left-width: 1px;
+  border-right-width: 1px;
+}
+
+/* Дефолт беты утолщает первые границы (2px) — приводим к единой 1px,
+   как у дневных линий. */
+.resource-timeline .rct-dateHeader {
+  border-left-width: 1px;
+}
+
+/* Заголовок сайдбара (SidebarHeader «Исполнитель»). */
+.resource-timeline .rct-sidebar-header {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 0 12px 8px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+/* ─── Сайдбар: аватары ресурсов (PBT-074, по прототипу groupRenderer) ──── */
+
+/* Фон строк — одним цветом surface, зебра снимается. Усиление селекторов:
+   дефолты беты для hl-odd (0,3,0) и sidebar-row-odd (0,4,0:
+   `.rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd`) специфичнее
+   коротких — без усиления строки остаются в дефолтной зебре #0000000d. */
+.resource-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-odd,
+.resource-timeline .rct-sidebar .rct-sidebar-row.rct-sidebar-row-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd {
+  background: var(--surface);
+}
+
+.resource-timeline .rct-sidebar-row {
+  padding: 0;
+}
+
+.resource-timeline__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+  padding: 0 8px;
+  min-width: 0;
+}
+
+.resource-timeline__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.resource-timeline__group-name {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Границы RCT — токеном. */
+.resource-timeline .rct-sidebar,
+.resource-timeline .rct-sidebar .rct-sidebar-row,
+.resource-timeline .rct-vl,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd,
+.resource-timeline .rct-calendar-header {
+  border-color: var(--border);
+}
+
+/* Усиление (по прототипу, строки 171/183–190): дефолтный селектор беты
+   `.react-calendar-timeline .rct-vertical-lines .rct-vl` специфичнее
+   (0,3,0) — без усиления вертикальные линии остаются дефолтным светлым
+   #bbb и выглядят ярко на тёмной теме (ревью PR#52); z-index 1 уводит
+   линии под строки. */
+.resource-timeline .rct-vertical-lines .rct-vl,
+.resource-timeline .rct-horizontal-lines .rct-hl-even,
+.resource-timeline .rct-horizontal-lines .rct-hl-odd,
+.resource-timeline .rct-sidebar .rct-sidebar-row {
+  border-color: var(--border);
+}
+
+.resource-timeline .rct-vertical-lines .rct-vl {
+  z-index: 1;
+}
+
+/* Первая вертикальная линия канвы толще (дефолт 2px) — выравниваем
+   к дневной 1px, границы месяцев не выделяются (ревью PR#53). */
+.resource-timeline .rct-vertical-lines .rct-vl.rct-vl-first {
+  border-left-width: 1px;
+}
+
+/* Линия курсора при жесте — акцент (по прототипу). */
+.resource-timeline .rct-cursor-line {
+  background: var(--primary);
+}
+
+/* Канва вне полос — курсор-рука (ручья проверка владельца PR#52):
+   канва RCT панорамируется колесом; полосы имеют собственный курсор
+   из инлайн-стилей беты (pointer/move) и приоритетнее. */
+.resource-timeline .rct-scroll,
+.resource-timeline .rct-canvas {
+  cursor: grab;
+}
+
+.resource-timeline .rct-scroll:active,
+.resource-timeline .rct-canvas:active {
+  cursor: grabbing;
+}
+
+/* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
+   нерабочих дней задаётся календарём плана собственным слоем дней
+   (rt-day-*), а не днём недели и не линиями RCT (календарь настраиваемый,
+   PBT-044; слой независим от единицы шкалы — уточнение владельца
+   2026-10-15). */
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-0,
+.resource-timeline .react-calendar-timeline .rct-vl.rct-day-6,
+.resource-timeline .rct-vl.rct-day-0,
+.resource-timeline .rct-vl.rct-day-6 {
+  background: transparent;
+}
+
+/* Собственный слой нерабочих дней (PBT-047, уточнение владельца):
+   колонки дней в canvas-координатах через портал в канву RCT —
+   работают при любой единице шкалы; под строками и элементами.
+   Заливки PBT-074 — полупрозрачные rt-токены (прототип .resource-day). */
+.resource-timeline .rt-day-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.resource-timeline .rt-day-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.resource-timeline .rt-day-col.rt-day--weekend {
+  background: var(--color-rt-weekend);
+}
+
+.resource-timeline .rt-day-col.rt-day--holiday {
+  background: var(--color-rt-holiday);
+}
+
+/* Полосы: цвета задаёт адаптер через itemProps.style (токены PBT-074) —
+   здесь только скругление и типографика содержимого. */
+.resource-timeline .rct-item .rct-item-content {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  /* Подпись не выходит за полосу: иначе содержимое узкой полосы
+     («Недоступен») перекрывает соседнюю и перехватывает её клики
+     (находка PBT-048). */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Легенда и футер (PBT-074): свотчи + mono-диапазон видимой
+   области; футер — название документа (единый паттерн PBT-073). ──────── */
+
+.resource-timeline__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  flex: none;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.resource-timeline__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resource-timeline__swatch {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.resource-timeline__swatch--task {
+  background: var(--primary);
+}
+
+.resource-timeline__swatch--unavailability {
+  background: var(--color-rt-unavailability-bg);
+  border: 1px solid var(--warning);
+}
+
+.resource-timeline__swatch--conflict {
+  background: var(--color-rt-conflict-bg);
+  border: 1px solid var(--destructive);
+}
+
+.resource-timeline__legend-range {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.resource-timeline__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 24px;
+  padding: 0 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.resource-timeline__footer-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

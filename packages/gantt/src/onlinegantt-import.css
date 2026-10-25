@@ -1,0 +1,123 @@
+/* Предпросмотр импорта OnlineGantt (PBT-053). Только токены :root
+   (хекс-коды запрещены до PBT-066). Каркас — по образцу task-editor. */
+
+.plan-gantt .onlinegantt-import__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay);
+}
+
+.plan-gantt .onlinegantt-import {
+  display: flex;
+  flex-direction: column;
+  width: min(576px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-float);
+}
+
+.plan-gantt .onlinegantt-import__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-gantt .onlinegantt-import__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-gantt .onlinegantt-import__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .onlinegantt-import__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.plan-gantt .onlinegantt-import__file {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground, var(--foreground));
+}
+
+.plan-gantt .onlinegantt-import__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-gantt .onlinegantt-import__label {
+  font-size: 12px;
+}
+
+.plan-gantt .onlinegantt-import__summary {
+  margin: 0;
+  font-size: 13px;
+}
+
+.plan-gantt .onlinegantt-import__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-gantt .onlinegantt-import__section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.plan-gantt .onlinegantt-import__hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.plan-gantt .onlinegantt-import__scroll {
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.plan-gantt .onlinegantt-import__list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.plan-gantt .onlinegantt-import__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.plan-gantt .onlinegantt-import__button {
+  cursor: pointer;
+}
+
+.plan-gantt .onlinegantt-import__button--primary {
+  font-weight: 600;
+}

@@ -1,0 +1,1391 @@
+@import './tokens.css';
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 8px;
+}
+
+.shell__title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.shell__hint {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+.shell__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.catalog {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.catalog__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--secondary);
+}
+
+.catalog__id {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.instances {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+  /* Пространство вкладки занимает оставшуюся высоту окна и прокручивается,
+     когда окна в сетке не помещаются (решения §4.2). */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.unknown-widget {
+  padding: 12px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.unknown-widget__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.unknown-widget__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.tiled-grid {
+  overflow: visible;
+}
+
+/* Каскадный канвас: точечная сетка прототипа (canvas-grid, PBT-069 D6);
+   в тайлинге не рисуется — раскладку структурирует сетка RGL. */
+.cascade-viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tab-surface--maximized .cascade-viewport {
+  overflow: hidden;
+}
+
+.cascade-layout {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
+  background-size: var(--cascade-snap) var(--cascade-snap);
+  background-position: var(--cascade-dot-offset) var(--cascade-dot-offset);
+}
+
+.cascade-layout__bounds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.cascade-layout__window {
+  pointer-events: auto;
+}
+
+.cascade-layout__window > .widget-window {
+  height: 100%;
+  overflow: hidden;
+}
+
+.cascade-resize {
+  border-radius: var(--radius-sm);
+}
+
+/* Уголок resize каскада — геометрия прототипа (PBT-070 D3 → ревью
+   PR#54): путь «M9 3 L3 9 M9 6 L6 9», stroke-width 1.2/10. Хэндл
+   react-rnd (inline: 20×20, right/bottom −10px) центрирован на углу
+   и наполовину ЗА окном — маска привязана к углу ОКНА: right/bottom
+   11px от хэндла (10px вылета + 1px зазор), размер 16×16. */
+.cascade-resize-se::before {
+  content: none;
+}
+
+.cascade-resize-se::after {
+  content: '';
+  position: absolute;
+  right: 11px;
+  bottom: 11px;
+  width: 16px;
+  height: 16px;
+  background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Сегмент-контрол режима (PBT-072 D3): общая рамка, активный сегмент — accent. */
+.layout-mode-switch {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.layout-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.layout-mode-switch button:hover {
+  color: var(--foreground);
+}
+
+.layout-mode-switch button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.layout-mode-switch svg,
+.add-widget-button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.tiled-grid__cell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.tiled-grid__cell > .widget-window {
+  height: 100%;
+  overflow: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: var(--primary);
+  opacity: 0.16;
+  border-radius: var(--radius-lg);
+  transition-duration: 100ms;
+}
+
+/* Хэндл ресайза тайлинга — та же маска прототипа, что у каскада
+   (ревью PR#54): 16×16, к правому-нижнему углу с отступом 1px.
+   Только визуал ::after: геометрия и жесты RGL не тронуты. */
+.react-grid-item > .react-resizable-handle {
+  width: 16px;
+  height: 16px;
+  border-radius: 0 0 var(--radius-md) 0;
+}
+
+.react-grid-item.react-draggable-dragging .widget-window,
+.react-grid-item.resizing .widget-window {
+  pointer-events: none;
+}
+
+.react-grid-item > .react-resizable-handle::before {
+  content: none;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: color-mix(in oklch, var(--muted-foreground) 70%, transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M9 3 L3 9 M9 6 L6 9' stroke='black' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+  -webkit-mask-position: calc(100% - 1px) calc(100% - 1px);
+  mask-position: calc(100% - 1px) calc(100% - 1px);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.widget-window {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  /* Переходы только тени и границы (PBT-070 D4): активация мягкая,
+     геометрия не анимируется — жесты раскладок не затрагиваются. */
+  transition:
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+/* Активное окно — «плавающая» тень без акцентной рамки (ревью PR#54:
+   голубой аутлайн убран по решению владельца; спека app-theme будет
+   скорректирована при архивации change). */
+.widget-window--active {
+  border-color: var(--border);
+  box-shadow: var(--shadow-float);
+}
+
+/* Заголовок фиксированной высоты 32px с фоном приподнятой поверхности
+   (PBT-070 D1, прототип WidgetFrame h-8). */
+.widget-window__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--surface-raised) 40%, transparent);
+}
+
+.widget-window--collapsed .widget-window__head {
+  border-bottom-color: transparent;
+}
+
+/* Свёрнутое окно — ровно заголовок (правка владельца, PBT-027): рамка
+   сжимается до head; пустая зона ячейки сетки / обёртки каскада прозрачна. */
+.tiled-grid__cell > .widget-window--collapsed,
+.cascade-layout__window > .widget-window--collapsed {
+  height: auto;
+}
+
+.tiled-grid__cell > .widget-window--collapsed {
+  align-self: start;
+}
+
+.widget-type-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.widget-catalog__tile,
+.doc-picker__tile,
+.doc-catalog__tile {
+  color: var(--primary);
+}
+
+.widget-window__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.widget-window__grip {
+  display: inline-flex;
+  flex: none;
+  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+}
+
+.widget-window__grip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.widget-window__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Типографика прототипа (PBT-070 D1): text-sm, обычный вес. */
+  font-size: 14px;
+  font-weight: 400;
+  color: color-mix(in oklch, var(--foreground) 90%, transparent);
+}
+
+.widget-window__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Кнопки-иконки 24×24 ghost (PBT-070 D2, прототип IconBtn). */
+.widget-window__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.widget-window__button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* Закрытие — hover акцентом опасного действия (PBT-070 D2). */
+.widget-window__button--danger:hover {
+  color: var(--destructive);
+}
+
+.widget-window__button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.widget-window__body {
+  /* Тело растягивается на высоту окна (ревью PR#51, замечание владельца
+     по PBT-073): виджеты с height:100% (Гантт) получают всю высоту,
+     строка состояния виджета фиксирована. Прежде тело росло по
+     контенту — height:100% виджета считался не от чего, чарт жил
+     фиксированной высотой (маскировалось min-height). */
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 12px 12px;
+}
+
+
+
+
+
+
+
+
+
+
+
+.selftest__result {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.selftest__result.is-ok {
+  color: var(--success);
+}
+
+.selftest__result.is-failed {
+  color: var(--destructive);
+}
+
+.selftest__steps {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--muted-foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.save-state {
+  margin: 0;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: var(--radius-lg);
+}
+
+.save-state.is-saved {
+  color: var(--success);
+  background: color-mix(in oklch, var(--success) 12%, transparent);
+}
+
+.save-state.is-saving {
+  color: var(--muted-foreground);
+  background: color-mix(in oklch, var(--muted-foreground) 12%, transparent);
+}
+
+.save-state.is-error {
+  color: var(--destructive);
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+}
+
+.save-state.is-conflict {
+  color: var(--warning);
+  background: color-mix(in oklch, var(--warning) 12%, transparent);
+}
+
+.reopen {
+  display: flex;
+  gap: 8px;
+}
+
+.reopen__button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+
+/* Топ-бар каркаса (PBT-072 D1): хром-поверхность, лого, статусная зона. */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  /* Фиксированная полоса: без flex: none колонка .shell сжимает хром
+     пропорционально базису .instances (высоте контента) — при росте числа
+     окон топ-бар и вкладки «проседали» до ~30px, раскладка сдвигалась
+     при монтировании окон (найдено e2e PBT-072: промах dblclick). */
+  flex: none;
+  padding: 0 12px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-topbar__logo {
+  display: inline-flex;
+  color: var(--primary);
+}
+
+.app-topbar__logo svg {
+  width: 16px;
+  height: 16px;
+}
+
+.app-topbar__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.pwa-state {
+  margin: 0;
+  padding-right: 8px;
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.pwa-state.is-unavailable {
+  color: var(--warning);
+}
+
+.pwa-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.pwa-update button,
+.pwa-update-dialog button {
+  font: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--foreground);
+}
+
+.pwa-update-dialog {
+  box-sizing: border-box;
+  width: min(576px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: var(--shadow-float);
+  font-size: 14px;
+}
+
+.pwa-update-dialog::backdrop { background: var(--overlay); }
+.pwa-update-dialog h2 { margin-top: 0; font-size: 18px; }
+.pwa-update-dialog p { line-height: 1.5; }
+.pwa-update-dialog [role='alert'] { color: var(--destructive); }
+.pwa-update-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pwa-update-dialog button:last-child { background: var(--primary); color: var(--primary-foreground); }
+.pwa-update-dialog button:disabled { opacity: 0.5; cursor: wait; }
+
+/* Индикатор сохранения в топ-баре (PBT-072 D1): точка статуса +
+   приглушённая подпись, как в прототипе; цвет статуса — у точки. */
+.app-topbar .save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  color: var(--muted-foreground);
+}
+
+.app-topbar .save-state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.app-topbar .save-state.is-saved::before {
+  background: var(--success);
+}
+
+.app-topbar .save-state.is-saving::before {
+  background: var(--muted-foreground);
+}
+
+.app-topbar .save-state.is-error {
+  color: var(--destructive);
+}
+
+.app-topbar .save-state.is-error::before {
+  background: var(--destructive);
+}
+
+.app-topbar .save-state.is-conflict {
+  color: var(--warning);
+}
+
+.app-topbar .save-state.is-conflict::before {
+  background: var(--warning);
+}
+
+.shell--workspace {
+  justify-content: flex-start;
+  gap: 0;
+  height: 100vh;
+  padding-top: 0;
+}
+
+/* Полоса вкладок — поверхность каркаса (chrome): темнее канваса
+   (spec app-theme: три различимых уровня поверхностей). */
+.tabs-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 40px;
+  flex: none; /* см. .app-topbar: хром не сжимается контентом канваса */
+  padding: 0 8px 0 0;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--border);
+}
+
+.tablist {
+  display: flex;
+  align-items: stretch;
+  /* Вкладки — на всю высоту полосы: фон активной и полоса акцента от края. */
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* Вкладка прототипа: активная — фон канваса и полоса акцента сверху,
+   неактивная — приглушённая с hover (PBT-072 D2). */
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  padding: 0 16px;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  justify-content: center;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.tab:hover {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.tab.is-active {
+  background: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+  font-weight: 500;
+}
+
+.tab.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--primary);
+}
+
+.tab__title {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab__rename {
+  font: inherit;
+  font-size: 13px;
+  width: 140px;
+  min-width: 0;
+}
+
+/* Управление вкладкой проявляется по hover/focus (PBT-072 D2):
+   прозрачность не блокирует клики и клавиатуру (aria сохранены). */
+.tab__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(1px);
+}
+
+.tab__close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tab:hover .tab__close,
+.tab:focus-within .tab__close {
+  opacity: 1;
+}
+
+.tab__close:hover {
+  color: var(--destructive);
+}
+
+.tablist__add {
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 10px;
+  flex: none;
+  align-self: stretch;
+}
+
+.tablist__add:hover {
+  color: var(--foreground);
+}
+
+/* Пустое состояние (PBT-072 D6). */
+.empty-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* Центр канваса, как в прототипе: заполняет поверхность вкладки. */
+  flex: 1 1 auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.empty-workspace__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--muted-foreground);
+  margin-bottom: 8px;
+}
+
+.empty-workspace__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.empty-workspace__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.empty-workspace__hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.empty-workspace__add {
+  margin-top: 12px;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  cursor: pointer;
+}
+
+.empty-workspace__add:hover {
+  background: color-mix(in oklch, var(--primary) 90%, var(--foreground));
+}
+
+.tabs-header__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: none;
+}
+
+.add-widget-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  font: inherit;
+  font-size: 13px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+/* Ghost-кнопки шапки (PBT-072): hover и раскрытая панель — accent. */
+.add-widget-button:hover,
+.add-widget-button[aria-expanded='true'] {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.header-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 280px;
+  max-height: min(480px, 70vh);
+  overflow-y: auto;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-float);
+  z-index: 30;
+}
+
+.dropdown-panel__title {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.widget-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-catalog__search {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: inherit;
+}
+
+.widget-catalog__empty,
+.doc-picker__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.widget-catalog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Карточка типа (PBT-072 D4–D5): иконка-плитка + название и описание. */
+.widget-catalog__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.widget-catalog__item:hover {
+  background: var(--accent);
+}
+
+.widget-catalog__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: 15px;
+}
+
+.widget-catalog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.widget-catalog__name {
+  font-size: 14px;
+}
+
+.widget-catalog__desc {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-catalog__icon {
+  font-size: 16px;
+}
+
+.doc-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-catalog__error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--muted-foreground);
+  border-radius: var(--radius-md);
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.doc-catalog__create {
+  display: flex;
+  gap: 6px;
+}
+
+.doc-catalog__type {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  max-width: 120px;
+}
+
+.doc-catalog__input,
+.doc-picker__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: inherit;
+}
+
+.doc-catalog__submit,
+.doc-picker__submit {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.doc-catalog__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-catalog__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.doc-catalog__chip[aria-pressed='true'] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.doc-catalog__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.doc-catalog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doc-catalog__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doc-catalog__row form {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+}
+
+.doc-catalog__open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.doc-catalog__open:hover {
+  background: var(--accent);
+}
+
+/* Плитка типа документа и тело строки (PBT-072 D4). */
+.doc-catalog__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: 13px;
+}
+
+.doc-catalog__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.doc-catalog__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-catalog__kind {
+  flex: none;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.doc-catalog__badge {
+  flex: none;
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--muted-foreground);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+}
+
+.doc-catalog__row-actions {
+  display: flex;
+  gap: 4px;
+  /* Действия проявляются по hover/focus строки (PBT-072 D4):
+     прозрачность не блокирует клики и клавиатуру. */
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.doc-catalog__row:hover .doc-catalog__row-actions,
+.doc-catalog__row:focus-within .doc-catalog__row-actions {
+  opacity: 1;
+}
+
+.doc-catalog__action {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.doc-catalog__action--danger {
+  border-color: var(--destructive);
+  color: var(--destructive);
+}
+
+.doc-catalog__confirm {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.doc-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-picker__create {
+  display: flex;
+  gap: 6px;
+}
+
+.doc-picker__caption {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.doc-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doc-picker__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.doc-picker__item:hover {
+  background: var(--accent);
+}
+
+.doc-picker__tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: 13px;
+}
+
+.doc-picker__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-picker__cancel {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.open-with {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.open-with__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.open-with__item:hover {
+  border-color: var(--muted-foreground);
+}
+
+
+.pane-document-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+/* Поверхность вкладки (PBT-027): скрытые вкладки остаются смонтированы.
+   relative — якорь overlay-слоя разворота окна (PBT-071). */
+.tab-surface {
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Разворот окна на весь дашборд (PBT-071 D4): поверхность занимает
+   видимую область канваса, прокрутка гаснет, overlay покрывает вкладку. */
+.tab-surface--maximized {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Overlay-слой развёрнутого окна: узел переносится сюда эффектом
+   WidgetWindow без размонтирования (PBT-071 D1). */
+.widget-maximize-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+
+/* Слой фиксирует размеры — окно растягивается на всю область вкладки. */
+.widget-maximize-layer .widget-window {
+  height: 100%;
+}
+
+.widget-maximize-layer[hidden] {
+  display: none;
+}
+
+/* Сосед активной максимизации: скрыты, но смонтированы (keep-mounted
+   PBT-027; прототип — hidden). */
+.widget-window--maximize-hidden {
+  display: none;
+}
+
+.tab-surface[hidden] {
+  display: none;
+}
+
+.widget-pane__content {
+  height: 100%;
+}
+
+.widget-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.widget-error__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.widget-error__message {
+  margin: 0;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.widget-error__retry {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.pane-document-missing--choosing {
+  align-items: flex-start;
+}
+
+.pane-document-missing__text {
+  margin: 0;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.pane-document-missing__hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.pane-document-missing__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pane-document-missing__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.pane-document-missing__button {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  color: inherit;
+  cursor: pointer;
+}
+
+.pane-document-missing__button--muted {
+  background: transparent;
+  border-style: dashed;
+  color: var(--muted-foreground);
+}

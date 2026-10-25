@@ -1,0 +1,80 @@
+# Публикация на GitHub Pages
+
+Постоянный адрес: https://renatkunafin.github.io/project-board/. Исходники — RenatKunafin/project-board, ветка выпуска — main. Сборка публикуется только после опубликованного GitHub Release: обычный push, merge в main, отдельный тег и draft-релиз сайт не обновляют. Событие `published` включает также опубликованные pre-release.
+
+## Первоначальная настройка
+
+1. Владелец переводит репозиторий в public. Это уже сделано для PBT-059.
+2. В Settings → Pages → Build and deployment выбрать **GitHub Actions**.
+3. В Settings → Environments → github-pages разрешить deployment из **tags** (настроено правило `**/*`, включая имена с `/`). Release-workflow запускается с ref тега; политика «только branch main» заблокирует такой запуск. Принадлежность коммита main отдельно проверяет workflow.
+4. Принятый PR PBT-059 включить в develop, затем продвинуть проверенную версию в main обычным PR. В тег первого выпуска должен входить deploy-pages.yml и его скрипты.
+
+GitHub Actions использует стандартный GITHUB_TOKEN: contents:read для сборки, pages:write/id-token:write для deployment. Собственный PAT и клиентские секреты не нужны. Изменения доступа к репозиторию/выпуск Release не являются побочным эффектом npm build.
+
+## Выпуск
+
+1. Проверить CI продвижения в main. Выбрать коммит релиза из истории main.
+2. В GitHub → Releases → Draft a new release выбрать новый тег на нужном коммите main, заполнить описание и нажать **Publish release**. Номер тега определяет владелец.
+3. В Actions открыть **Publish release to Pages**. Workflow получает исходники именно тега, проверяет соответствие SHA событию и его принадлежность main, затем выполняет проверки и сборку.
+4. Успешный build загружает только apps/project-board/dist; deploy выполняется после build через environment github-pages. В журнале есть SHA, тег, URL и версии инструментов. Pages-артефакт хранится30 дней.
+5. Дождаться завершения выпуска, прежде чем публиковать следующий. Concurrency исключает параллельное изменение сайта, но не обещает очередь всех одновременно созданных релизов.
+
+Workflow должен присутствовать в самом выпускаемом теге. Существующие теги не передвигаются для подмены выпущенной версии. Повтор job работает с SHA исходного события; если тег сдвинулся, проверка завершится ошибкой.
+
+## Проверки перед публикацией
+
+Из корня:
+
+```bash
+npm ci
+npm run verify:repository
+npm run lint
+npm run typecheck
+npm test
+npm run build:pages
+npm run verify:pages
+npx playwright install chromium
+npm run test:pages
+openspec validate --all --strict
+```
+
+Build:pages передаёт Vite base=/project-board/, сохраняя обычный npm run build/dev для корня. Verify:pages проверяет состав артефакта и пути HTML/CSS/иконок/manifest/update-guard. Test:pages использует настоящий продуктовый артефакт и отдельные A/B-сборки той же комплектации с тестовым JS-probe; probe не попадает в production dist. Проверяются реальный SW scope, installability, все опубликованные URL, IndexedDB/reload и offline без HTTP-кэша, обновление A→B и совместимый возврат B→A. Сервер теста отдаёт только текущую версию, без хранения старых assets.
+
+Dev и живую MCP-сессию остановить перед автоматическими browser-проверками. Результаты находятся в test-results/pages-results.json и test-results/pages/. Локальный preview не заменяет проверку постоянного HTTPS-адреса.
+
+Для живого просмотра Pages-сборки:
+
+```bash
+npm run build:pages
+npm run preview -w apps/project-board -- --base=/project-board/ --host 127.0.0.1 --port 4173 --strictPort
+```
+
+Открыть http://localhost:4173/project-board/. Для проверки настоящей установки Chrome в отдельном профиле:
+
+```bash
+npm run verify:pwa-install -- http://localhost:4173/project-board/
+```
+
+Команда использует реальный установленный Chrome и CDP; отчёт — test-results/screenshots/pwa-installation.json. Для опубликованного сайта передать его HTTPS-URL. Это запуск установщика, а не только проверка манифеста.
+
+## Проверка опубликованной версии
+
+В отдельном профиле браузера на постоянном URL:
+
+- Проверить загрузку ресурсов/иконок/шрифтов, manifest и scope Service Worker; записать фактические HTTP-заголовки HTML/sw.js/manifest/assets и SHA deployment.
+- Создать документ, дождаться сохранения и готовности офлайн, перезагрузить страницу. Установить PWA, закрыть все её окна и повторно запустить без сети.
+- После следующего разрешённого Release дождаться новой версии, проверить «Позже», затем применить обновление. Документы, окна и настройки должны сохраниться; повторный запуск офлайн должен работать.
+
+Сохранённые документы остаются в IndexedDB пользователя и не публикуются. Localhost и github.io — разные origin: локальные документы не появляются на новом адресе автоматически. Два приложения в разных подпутях одного github.io-origin не получают отдельные IndexedDB автоматически.
+
+GitHub Pages управляет CDN-заголовками; workflow не притворяется сервером с произвольными _headers. Появление файлов нового релиза может задерживаться: проверять фактически загруженную версию, а не только зелёный deployment. Подготовленная старая сессия использует свой precache до явного обновления; бессрочное хранение старых файлов на сервере не обещается.
+
+## Повтор и возврат версии
+
+При ошибке до deployment прежний сайт остаётся опубликованным. Исправить причину и повторить соответствующий workflow run; проверить tag/SHA и его журнал. Результат только локальной сборки не считается успешной публикацией.
+
+Для возврата выбрать ранее выпущенный коммит из main, совместимый с текущими схемами локальных данных, создать **новый тег и новый Release**. Запустится тот же pipeline. Откат статических файлов не откатывает IndexedDB; нельзя добиваться совместимости очисткой данных. Guard будущих версий должен оставаться включённым. Если предыдущая версия не понимает текущую схему, использовать совместимый исправленный выпуск.
+
+Возврат распространяется через обычное управляемое обновление PWA: открытые окна не переключаются мгновенно. Публикация второго/возвратного Release и продвижение main выполняются по отдельному поручению владельца. PBT-059 остаётся незавершённой до проверок реального сайта; итоговая приёмка первой версии — PBT-061.
+
+Механизмы: [GitHub release events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release), [Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Vite deployment](https://vite.dev/guide/static-deploy#github-pages).

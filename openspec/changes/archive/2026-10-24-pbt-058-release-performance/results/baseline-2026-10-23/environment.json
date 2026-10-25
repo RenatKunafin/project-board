@@ -1,0 +1,12 @@
+{
+  "runId": "2026-10-23T15:14:12.768Z",
+  "commit": "65aba991361aca1c8ee58eb007823d35660986a9",
+  "node": "v22.12.0",
+  "osRelease": "25.6.0",
+  "arch": "arm64",
+  "cpu": "Apple M4 Pro",
+  "memoryBytes": 25769803776,
+  "headless": false,
+  "args": [],
+  "lockfileSha256": "c90c2ebdf24599761da70cf89542cde08d56bfcc5ca8c98867cc2e660607f87f"
+}

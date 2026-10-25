@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Project Board — PWA-дашборд на React18 + TypeScript + Vite, npm workspaces.
+  Платформа dashboard и публичный widget-sdk независимы от предметных модулей.
+  Приложение apps/project-board собирает комплект типов виджетов.
+  Постоянные инструкции: AGENTS.md и .agents/rules/{workflow,code,testing}.md.
+  Архитектура и ручная семантика плана — docs/adr; текущее поведение — openspec/specs.
+  В рабочем checkout владельца .context/tasks/README.md содержит статусы и PR,
+  .context/tasks/PBT-XXX.md — scope/DoD, .context/project-decisions.md — решения.
+  .context не входит в git; без неё используются поручение/PR и артефакты change.
+  Один PBT = один change = один PR в develop; имя change — pbt-xxx-slug.
+  Кандидаты и принятые решения различаются явно. Текущая стадия здесь не хранится.
+
+rules:
+  proposal:
+    - Содержание по-русски; служебные заголовки OpenSpec — английские.
+    - Укажи согласованный scope, impact и non-goals; существенный дизайн показать до кода.
+    - Для tooling/docs/research без изменения поведения используй skip_specs:true в .openspec.yaml; не выдумывай capabilities.
+  specs:
+    - Опиши наблюдаемое поведение; служебные Requirements/Scenario/SHALL/GIVEN/WHEN/THEN — английские.
+    - Технические решения помещай в design/ADR; актуальные specs меняются при принятой архивации.
+  design:
+    - Зафиксируй решения, причины, альтернативы и ограничения; не выдавай гипотезу за принятое решение.
+  tasks:
+    - Шаги одной задачи, проверки и PR; не создавай незаметно новый самостоятельный scope.
+    - "Проверки OpenSpec: openspec validate <change> --strict и openspec validate --all --strict."
+  apply:
+    - Следуй одобренному объёму и .agents/rules; полученное одобрение действует дальше.
+    - Проверяй доменные правила и целостность данных в PR самой функции.
+  archive:
+    - Архивировать в ветке задачи после одобрения PR, заключительным коммитом перед merge; дождаться CI.
+    - Для tooling без продуктовых дельт архивировать без sync specs.
+
+operations:
+  apply:
+    guidance:
+      - Отмечай фактически выполненные шаги и DoD. Результаты UI и консоль проверяй живым браузером.
+      - Скриншоты и временные логи сохраняй в test-results/ или вложениях PR, не в OpenSpec.
+  archive:
+    guidance:
+      - In review — PR на рассмотрении; Done — только после фактического merge.

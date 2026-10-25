@@ -1,0 +1,8 @@
+[WebServer] (node:83710) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+  ✓  1 .context/diagnostics/pbt-080/tests/performance/profile.bench.ts:19:1 › CPU-profile — отдельная диагностика добавления, не бюджетный замер (11.1s)
+
+  1 passed (12.3s)

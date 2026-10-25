@@ -1,0 +1,467 @@
+.plan-gantt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* Ревью PR#51 (замечание владельца): диаграмма растягивается на всю
+     высоту виджета, тулбар и футер фиксированы. Жёсткий минимум здесь
+     и на __chart (прежде 220/200px) фиксировал высоту чарта в малых
+     окнах и выталкивал контент за границу — в референсе ограничений
+     нет (flexi-dashboard-hub, .svar-gantt). */
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.plan-gantt__hint {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt--error {
+  overflow: auto;
+}
+
+.plan-gantt__inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.plan-gantt__chart {
+  flex: 1;
+  /* Растягивается на всё остаток высоты после тулбара и футера
+     (замечание ревью PR#51); минимум 0 — сжимается в малых окнах. */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* SVAR растягивается на высоту контейнера (спайк PBT-014). */
+.plan-gantt__chart .wx-theme {
+  height: 100%;
+}
+
+/* Нерабочие дни: сплошная вертикальная заливка колонки на всю высоту
+   (по образцу OnlineGantt); SVAR рисует слой с нулевой высотой —
+   растягиваем слой и элементы. */
+.plan-gantt .wx-gantt-holidays {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Шкала дат/месяцев (.wx-scale, sticky) по умолчанию прозрачна: при
+   вертикальном скролле полосы задач просвечивают сквозь неё (находка
+   владельца 2026-10-16, приёмка PBT-053) — непрозрачный фон токеном.
+   PBT-073: фон surface-raised по прототипу (строка 146 styles.css). */
+.plan-gantt__chart .wx-scale {
+  background: var(--surface-raised);
+}
+
+/* Тёмная тема SVAR на семантических токенах (PBT-073, design D1).
+   Референс: прототип flexi-dashboard-hub, styles.css — блок
+   «.svar-gantt .wx-willow-dark-theme» (переносим визуальный язык, не код).
+   Значения совпадают с токенами PBT-069; полосы задач — primary, сводные —
+   success, связи muted → primary при наведении, радиус 3px, без теней. */
+.plan-gantt .wx-willow-dark-theme {
+  --wx-font-family: var(--font-sans);
+  --wx-font-size: 14px;
+  --wx-font-size-sm: 12px;
+  /* Таблица наследует размер от темы (SVAR не применяет --wx-font-size
+     к ячейкам): без явного размера ячейки получали body-16px вместо
+     14px прототипа — находка ревью PR#52, упущение PBT-073. */
+  font-size: var(--wx-font-size);
+  --wx-background: var(--surface);
+  --wx-background-alt: var(--surface-raised);
+  --wx-background-hover: var(--accent);
+  --wx-color-font: var(--foreground);
+  --wx-color-font-alt: var(--muted-foreground);
+  --wx-color-secondary-font: var(--muted-foreground);
+  --wx-color-font-disabled: var(--muted-foreground);
+  --wx-color-primary: var(--primary);
+  --wx-color-link: var(--primary);
+  --wx-border: 1px solid var(--border);
+  --wx-gantt-border-color: var(--border);
+  --wx-gantt-icon-color: var(--muted-foreground);
+  --wx-gantt-task-color: color-mix(in oklch, var(--primary) 50%, var(--surface));
+  --wx-gantt-task-fill-color: var(--primary);
+  --wx-gantt-task-font-color: var(--foreground);
+  --wx-gantt-task-border-color: var(--primary);
+  --wx-gantt-summary-color: color-mix(in oklch, var(--success) 35%, var(--surface));
+  --wx-gantt-summary-fill-color: var(--success);
+  --wx-gantt-summary-font-color: var(--foreground);
+  --wx-gantt-summary-border-color: var(--success);
+  --wx-gantt-link-color: var(--muted-foreground);
+  --wx-gantt-link-color-hovered: var(--primary);
+  --wx-gantt-select-color: var(--accent);
+  --wx-gantt-holiday-background: var(--muted);
+  --wx-gantt-holiday-color: var(--muted-foreground);
+  --wx-gantt-bar-shadow: none;
+  --wx-gantt-bar-border-radius: 3px;
+  --wx-grid-header-font-color: var(--muted-foreground);
+  --wx-grid-body-font-color: var(--foreground);
+  --wx-grid-body-row-border: 1px solid var(--border);
+  --wx-grid-header-shadow: none;
+  --wx-table-header-background: var(--surface-raised);
+  --wx-table-select-background: var(--accent);
+  --wx-timescale-font-color: var(--muted-foreground);
+  --wx-timescale-font: 12px var(--font-mono);
+  --wx-timescale-shadow: none;
+}
+
+/* Границы ячеек/строк таблицы — на токене (прототип, строка 160). */
+.plan-gantt .wx-cell,
+.plan-gantt .wx-row {
+  border-color: var(--border);
+}
+
+/* Даты «Начало»/«Конец» — моноширинно (PBT-073, design D4; прототип,
+   строки 147–148). data-col-id контентных ячеек SVAR — с префиксом «:»
+   (кастомный cell-рендер), заголовков/дефолтных — без: покрываем оба. */
+.plan-gantt .wx-cell[data-col-id='start'],
+.plan-gantt .wx-cell[data-col-id=':start'],
+.plan-gantt .wx-cell[data-col-id='end'],
+.plan-gantt .wx-cell[data-col-id=':end'] {
+  font-family: var(--font-mono);
+}
+
+/* Состав таблицы — 5 колонок (ревью PR#51): колонки фикс, сумма 712
+   (держит SVAR через gridWidth=712: Задача 240 + Начало 76 +
+   Окончание 96 + Рабочих дней 120 + Исполнители 180). Стартовая
+   ширина — по контенту; разделитель таблица/чарт штатный — таблицу
+   можно сужать и расширять вручную. Минимальная ширина области
+   диаграммы — 1023px (712 + читаемая шкала 311): при узком окне
+   появляется горизонтальная прокрутка контейнера. Высота SVAR — от
+   контейнера: вертикальный скролл остаётся внутренним у библиотеки. */
+.plan-gantt__chart {
+  overflow: auto;
+}
+
+.plan-gantt .wx-gantt {
+  height: 100%;
+  min-width: 1023px;
+}
+
+/* Простор между колонками: паддинг ячеек 14px (токен SVAR, база 12).
+   text-transform: none — SVAR капитализирует заголовки («Рабочих Дней»);
+   наши заголовки пишутся как заданы («Рабочих дней», ревью PR#51). */
+.plan-gantt .wx-willow-dark-theme {
+  --wx-grid-cell-padding-x: 14px;
+  --wx-grid-header-text-transform: none;
+}
+
+/* Заголовки колонок — в одну строку (ревью PR#51); ширины колонок
+   подобраны с запасом под самый длинный заголовок. */
+.plan-gantt .wx-h-row .wx-text {
+  white-space: nowrap;
+}
+
+/* Контент узких колонок переносится по пробелам вместо наезда на
+   соседние: контент кастомных ячеек SVAR лежит прямо в .wx-cell без
+   .wx-text (data-col-id с префиксом «:») — без этого правила длинные
+   имена вылезали на соседнюю колонку. Главная колонка «Задача»
+   (дефолтный рендер через .wx-text) сохраняет ellipsis. */
+.plan-gantt .wx-cell[data-col-id='end'],
+.plan-gantt .wx-cell[data-col-id=':end'],
+.plan-gantt .wx-cell[data-col-id='work-days'],
+.plan-gantt .wx-cell[data-col-id=':work-days'],
+.plan-gantt .wx-cell[data-col-id='assignees'],
+.plan-gantt .wx-cell[data-col-id=':assignees'] {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.plan-gantt .wx-gantt-holidays > * {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
+.plan-gantt .gantt-weekend {
+  background: var(--color-gantt-weekend);
+}
+
+.plan-gantt .gantt-holiday {
+  background: var(--color-gantt-holiday);
+}
+
+/* ─── Панель инструментов и строка состояния (PBT-073, design D5) ───────
+   Две строки по прототипу (GanttPrototype.tsx): команды — строка 1,
+   фильтры и масштаб — строка 2. Кнопки: primary — основное действие,
+   остальные ghost; иконки lucide 14px. */
+
+.plan-gantt__toolbar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-gantt__toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.plan-gantt__toolbar-row--filters {
+  gap: 8px;
+}
+
+.plan-gantt__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.plan-gantt__button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.plan-gantt__button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.plan-gantt__button--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.plan-gantt__button--primary:hover {
+  background: color-mix(in oklch, var(--primary) 90%, var(--foreground));
+  color: var(--primary-foreground);
+}
+
+.plan-gantt__button--icon {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Проблемы (design D5): warning при наличии, приглушённая в покое. */
+.plan-gantt__button--issues {
+  margin-left: auto;
+}
+
+.plan-gantt__button--issues.is-warning {
+  color: var(--warning);
+}
+
+.plan-gantt__button--issues.is-warning:hover {
+  background: color-mix(in oklch, var(--warning) 14%, transparent);
+  color: var(--warning);
+}
+
+.plan-gantt__toolbar-separator {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+/* Поиск с иконкой (строка 2, по прототипу): растягивается на всю
+   доступную ширину, прижимая контролы строки вправо (PBT-076, D1 —
+   max-width снят по замечанию владельца 2026-10-21). */
+.plan-gantt__search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 128px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__search svg {
+  position: absolute;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.plan-gantt__search .plan-gantt__filter-input {
+  width: 100%;
+  min-width: 0;
+  padding-left: 28px;
+}
+
+/* Сегмент масштаба «Дни/Недели» (design D3) — паттерн сегмента
+   раскладки платформы (.layout-mode-switch). */
+.plan-gantt__zoom {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.plan-gantt__zoom button {
+  height: 24px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.plan-gantt__zoom button:hover {
+  color: var(--foreground);
+}
+
+.plan-gantt__zoom button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* Строка состояния (design D5): название плана + статус действия. */
+.plan-gantt__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  height: 24px;
+  padding: 0 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__footer-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-gantt__footer-status {
+  flex: none;
+  margin-left: auto;
+}
+
+/* Фильтры представления (PBT-049; строка 2 тулбара с PBT-073). */
+.plan-gantt__filter-input {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  min-width: 140px;
+}
+
+.plan-gantt__filter-select {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  max-width: 160px;
+}
+
+/* Счётчик задач (PBT-076, design D1): общий стиль подписей строки —
+   12px muted, как у прототипа (text-xs text-muted-foreground);
+   прежде класс не был оформлен и шрифт выбивался из ряда строки. */
+.plan-gantt__count {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.plan-gantt__filter-empty {
+  margin: 8px 12px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+/* Перенос плана файлом (PBT-051): скрытый input и результат импорта. */
+/* Перенос плана файлом (PBT-051): скрытый input и результат импорта.
+   Координаты обязательны: без top/left absolute-элемент занимает место
+   в потоке тулбара, раздувает его высоту и сдвигает чарт (наблюдение
+   бисекта PBT-051: двойной клик по строке попадал в соседнюю строку). */
+.plan-gantt__import-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+/* Иконочные кнопки переноса (PBT-051): эмодзи выше текста 13px —
+   без ограничения ряд тулбара растёт и сдвигает чарт. */
+.plan-gantt__icon-button {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.plan-gantt__transfer-result {
+  margin: 8px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt__transfer-result--error {
+  border-color: var(--destructive);
+  color: var(--destructive);
+}
+
+.plan-gantt__transfer-issues {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+/* SVAR задаёт top через --wx-body-offset для виртуальных строк.
+   Базовый position из react-grid/style.css не входит в style.css Гантта.
+   Без него top игнорируется и выбранная строка остаётся за viewport. */
+.plan-gantt .wx-table .wx-body {
+  position: relative;
+}
+
+/* Строки с отрицательным offset проходят под неподвижной шапкой. */
+.plan-gantt .wx-table .wx-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wx-table-header-background);
+}

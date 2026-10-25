@@ -1,0 +1,455 @@
+{
+  "profileWallMs": 1117.311,
+  "windowMs": 717.5,
+  "window": "PBT080-submit mark through ready+two rAF; preparation and profiler stop excluded",
+  "sampledMs": 715.5219999999986,
+  "idleMs": 0,
+  "self": [
+    {
+      "name": "../../../../packages/gantt/src/svar-adapter.ts",
+      "ms": 248.2,
+      "percent": 34.69
+    },
+    {
+      "name": "(program)",
+      "ms": 123.43,
+      "percent": 17.25
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx",
+      "ms": 61.82,
+      "percent": 8.64
+    },
+    {
+      "name": "../../../../node_modules/react-dom/cjs/react-dom.production.min.js",
+      "ms": 55.84,
+      "percent": 7.8
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-gantt/dist/index.es.js",
+      "ms": 38.93,
+      "percent": 5.44
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/gantt-store/dist/index.js",
+      "ms": 25.75,
+      "percent": 3.6
+    },
+    {
+      "name": "toDataURL",
+      "ms": 20.41,
+      "percent": 2.85
+    },
+    {
+      "name": "../../../../packages/gantt/src/PlanGanttWidget.tsx",
+      "ms": 19.55,
+      "percent": 2.73
+    },
+    {
+      "name": "../../../../packages/gantt/src/working-calendar.ts",
+      "ms": 15.04,
+      "percent": 2.1
+    },
+    {
+      "name": "(garbage collector)",
+      "ms": 14.28,
+      "percent": 2
+    },
+    {
+      "name": "../../../../node_modules/react-calendar-timeline/dist/react-calendar-timeline.es.js",
+      "ms": 13.6,
+      "percent": 1.9
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-conflicts.ts",
+      "ms": 12.55,
+      "percent": 1.75
+    },
+    {
+      "name": "../../../../packages/gantt/src/resource-timeline-adapter.ts",
+      "ms": 11.45,
+      "percent": 1.6
+    },
+    {
+      "name": "removeChild",
+      "ms": 10.05,
+      "percent": 1.4
+    },
+    {
+      "name": "appendChild",
+      "ms": 8.78,
+      "percent": 1.23
+    },
+    {
+      "name": "../../../../node_modules/react/cjs/react-jsx-runtime.production.min.js",
+      "ms": 7.56,
+      "percent": 1.06
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-document.ts",
+      "ms": 6.69,
+      "percent": 0.93
+    },
+    {
+      "name": "replaceChildren",
+      "ms": 5.04,
+      "percent": 0.7
+    },
+    {
+      "name": "../../../../node_modules/dayjs/dayjs.min.js",
+      "ms": 3.75,
+      "percent": 0.52
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-grid/dist/index.es.js",
+      "ms": 2.52,
+      "percent": 0.35
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-dependencies.ts",
+      "ms": 2.51,
+      "percent": 0.35
+    },
+    {
+      "name": "setAttribute",
+      "ms": 2.51,
+      "percent": 0.35
+    },
+    {
+      "name": "../../../../node_modules/lucide-react/dist/esm/Icon.js",
+      "ms": 1.26,
+      "percent": 0.18
+    },
+    {
+      "name": "getContext",
+      "ms": 1.26,
+      "percent": 0.18
+    },
+    {
+      "name": "createElement",
+      "ms": 1.25,
+      "percent": 0.18
+    },
+    {
+      "name": "../../../../node_modules/react/cjs/react.production.min.js",
+      "ms": 1.11,
+      "percent": 0.16
+    },
+    {
+      "name": "mark",
+      "ms": 0.38,
+      "percent": 0.05
+    }
+  ],
+  "frames": [
+    {
+      "name": "../../../../packages/gantt/src/svar-adapter.ts:122 nonWorkingDayKind",
+      "ms": 245.69,
+      "percent": 34.34
+    },
+    {
+      "name": "(program):0 (program)",
+      "ms": 123.43,
+      "percent": 17.25
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx:540 We",
+      "ms": 36.59,
+      "percent": 5.11
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-gantt/dist/index.es.js:1577 ",
+      "ms": 35.16,
+      "percent": 4.91
+    },
+    {
+      "name": "toDataURL:0 toDataURL",
+      "ms": 20.41,
+      "percent": 2.85
+    },
+    {
+      "name": "../../../../node_modules/react-dom/cjs/react-dom.production.min.js:49 sb",
+      "ms": 19.84,
+      "percent": 2.77
+    },
+    {
+      "name": "../../../../packages/gantt/src/PlanGanttWidget.tsx:1564 date",
+      "ms": 16.81,
+      "percent": 2.35
+    },
+    {
+      "name": "(garbage collector):0 (garbage collector)",
+      "ms": 14.28,
+      "percent": 2
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-conflicts.ts:76 resourceConflicts",
+      "ms": 12.55,
+      "percent": 1.75
+    },
+    {
+      "name": "../../../../node_modules/react-dom/cjs/react-dom.production.min.js:224 Ej",
+      "ms": 10.93,
+      "percent": 1.53
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx:610 ",
+      "ms": 10.69,
+      "percent": 1.49
+    },
+    {
+      "name": "../../../../packages/gantt/src/resource-timeline-adapter.ts:80 timelineDayIso",
+      "ms": 10.2,
+      "percent": 1.43
+    },
+    {
+      "name": "removeChild:0 removeChild",
+      "ms": 10.05,
+      "percent": 1.4
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx:99 BF",
+      "ms": 8.8,
+      "percent": 1.23
+    },
+    {
+      "name": "appendChild:0 appendChild",
+      "ms": 8.78,
+      "percent": 1.23
+    },
+    {
+      "name": "../../../../node_modules/react/cjs/react-jsx-runtime.production.min.js:11 q",
+      "ms": 7.56,
+      "percent": 1.06
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/gantt-store/dist/index.js:1 wt",
+      "ms": 7.55,
+      "percent": 1.05
+    },
+    {
+      "name": "../../../../packages/gantt/src/working-calendar.ts:62 addCalendarDays",
+      "ms": 7.52,
+      "percent": 1.05
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx:107 UF",
+      "ms": 5.74,
+      "percent": 0.8
+    },
+    {
+      "name": "replaceChildren:0 replaceChildren",
+      "ms": 5.04,
+      "percent": 0.7
+    },
+    {
+      "name": "../../../../packages/gantt/src/working-calendar.ts:133 addWorkingDays",
+      "ms": 3.76,
+      "percent": 0.53
+    },
+    {
+      "name": "../../../../packages/gantt/src/working-calendar.ts:38 toUtcDate",
+      "ms": 3.76,
+      "percent": 0.53
+    },
+    {
+      "name": "../../../../node_modules/dayjs/dayjs.min.js:1 q",
+      "ms": 3.75,
+      "percent": 0.52
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-document.ts:202 validateSection",
+      "ms": 3.36,
+      "percent": 0.47
+    },
+    {
+      "name": "../../../../packages/gantt/src/PlanGanttWidget.tsx:1199 ",
+      "ms": 2.74,
+      "percent": 0.38
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/gantt-store/dist/index.js:1 ",
+      "ms": 2.58,
+      "percent": 0.36
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/gantt-store/dist/index.js:1 Wa",
+      "ms": 2.54,
+      "percent": 0.36
+    },
+    {
+      "name": "../../../../node_modules/react-calendar-timeline/dist/react-calendar-timeline.es.js:3750 getItemStyle",
+      "ms": 2.52,
+      "percent": 0.35
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-grid/dist/index.es.js:1584 Jt",
+      "ms": 2.52,
+      "percent": 0.35
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-dependencies.ts:209 dependencyViolations",
+      "ms": 2.51,
+      "percent": 0.35
+    }
+  ],
+  "inclusive": [
+    {
+      "name": "(root)",
+      "ms": 715.52,
+      "percent": 100
+    },
+    {
+      "name": "../../../../node_modules/react-dom/cjs/react-dom.production.min.js",
+      "ms": 576.17,
+      "percent": 80.52
+    },
+    {
+      "name": "../../../../packages/gantt/src/ResourceTimelineWidget.tsx",
+      "ms": 294.3,
+      "percent": 41.13
+    },
+    {
+      "name": "../../../../node_modules/react/cjs/react.production.min.js",
+      "ms": 273.98,
+      "percent": 38.29
+    },
+    {
+      "name": "../../../../packages/gantt/src/svar-adapter.ts",
+      "ms": 249.45,
+      "percent": 34.86
+    },
+    {
+      "name": "(program)",
+      "ms": 123.43,
+      "percent": 17.25
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-gantt/dist/index.es.js",
+      "ms": 101.64,
+      "percent": 14.2
+    },
+    {
+      "name": "../../../../node_modules/scheduler/cjs/scheduler.production.min.js",
+      "ms": 95.75,
+      "percent": 13.38
+    },
+    {
+      "name": "../../../../packages/gantt/src/PlanGanttWidget.tsx",
+      "ms": 94.13,
+      "percent": 13.16
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/gantt-store/dist/index.js",
+      "ms": 64.22,
+      "percent": 8.98
+    },
+    {
+      "name": "../../../../node_modules/react-calendar-timeline/dist/react-calendar-timeline.es.js",
+      "ms": 34.4,
+      "percent": 4.81
+    },
+    {
+      "name": "../../../../packages/gantt/src/PlanIssuesDialog.tsx",
+      "ms": 21.32,
+      "percent": 2.98
+    },
+    {
+      "name": "toDataURL",
+      "ms": 20.41,
+      "percent": 2.85
+    },
+    {
+      "name": "../../../../packages/gantt/src/working-calendar.ts",
+      "ms": 15.04,
+      "percent": 2.1
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-dependencies.ts",
+      "ms": 15.04,
+      "percent": 2.1
+    },
+    {
+      "name": "(garbage collector)",
+      "ms": 14.28,
+      "percent": 2
+    },
+    {
+      "name": "../../../../packages/gantt/src/resource-timeline-adapter.ts",
+      "ms": 12.71,
+      "percent": 1.78
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-conflicts.ts",
+      "ms": 12.55,
+      "percent": 1.75
+    },
+    {
+      "name": "removeChild",
+      "ms": 10.05,
+      "percent": 1.4
+    },
+    {
+      "name": "appendChild",
+      "ms": 8.78,
+      "percent": 1.23
+    },
+    {
+      "name": "../../../../node_modules/react/cjs/react-jsx-runtime.production.min.js",
+      "ms": 7.56,
+      "percent": 1.06
+    },
+    {
+      "name": "../../../../packages/gantt/src/plan-document.ts",
+      "ms": 6.69,
+      "percent": 0.93
+    },
+    {
+      "name": "replaceChildren",
+      "ms": 5.04,
+      "percent": 0.7
+    },
+    {
+      "name": "../../../../node_modules/dayjs/dayjs.min.js",
+      "ms": 5.02,
+      "percent": 0.7
+    },
+    {
+      "name": "../../../../node_modules/@svar-ui/react-grid/dist/index.es.js",
+      "ms": 3.78,
+      "percent": 0.53
+    },
+    {
+      "name": "setAttribute",
+      "ms": 2.51,
+      "percent": 0.35
+    },
+    {
+      "name": "../../../../node_modules/lucide-react/dist/esm/Icon.js",
+      "ms": 1.26,
+      "percent": 0.18
+    },
+    {
+      "name": "getContext",
+      "ms": 1.26,
+      "percent": 0.18
+    },
+    {
+      "name": "createElement",
+      "ms": 1.25,
+      "percent": 0.18
+    },
+    {
+      "name": "../../../../packages/gantt/src/use-task-form.ts",
+      "ms": 0.82,
+      "percent": 0.11
+    }
+  ],
+  "traceDurationsMs": {
+    "UpdateLayoutTree": 42.60599999999999,
+    "MinorGC": 14.107000000000001,
+    "Layout": 37.864000000000004,
+    "PrePaint": 27.045,
+    "Paint": 34.41699999999867
+  }
+}

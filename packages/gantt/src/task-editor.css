@@ -1,0 +1,298 @@
+/* Форма задачи PBT-038. Только токены :root (хекс-коды запрещены до PBT-066). */
+
+.plan-gantt .task-editor__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay);
+}
+
+/* ─── Диалоги (PBT-073, design D7) ──────────────────────────────────────
+   Единый стиль модуля: max-width 576px (max-w-xl прототипа), surface,
+   заголовок + описание. Шапка — общие классы, специфические стили форм
+   остаются в файлах диалогов. */
+
+.plan-gantt .task-editor {
+  display: flex;
+  flex-direction: column;
+  width: min(576px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-float);
+}
+
+.plan-gantt .task-editor__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Строка описания диалога (PBT-073, design D7 — по образцу
+   DialogDescription прототипа); общая для всех диалогов модуля. */
+.plan-gantt .task-editor__description,
+.plan-gantt .onlinegantt-import__description,
+.plan-gantt .plantuml-export__description,
+.plan-gantt .absence-convert__description {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt .task-editor__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-gantt .task-editor__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .task-editor__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.plan-gantt .task-editor__row {
+  display: flex;
+  gap: 12px;
+}
+
+.plan-gantt .task-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.plan-gantt .task-editor__field--narrow {
+  flex: 0 0 110px;
+}
+
+.plan-gantt .task-editor__label {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt .task-editor__field input,
+.plan-gantt .task-editor__field select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: var(--surface);
+  color: inherit;
+}
+
+.plan-gantt .task-editor__error {
+  font-size: 12px;
+  color: var(--destructive);
+}
+
+.plan-gantt .task-editor__preview {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+/* Назначения задачи PBT-042: чекбоксы справочников. */
+
+.plan-gantt .task-editor__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 96px;
+  overflow: auto;
+}
+
+.plan-gantt .task-editor__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.plan-gantt .task-editor__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.plan-gantt .task-editor__foot-spacer {
+  flex: 1;
+}
+
+.plan-gantt .task-editor__button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.plan-gantt .task-editor__button--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.plan-gantt .task-editor__button--danger {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+
+/* Редактор справочников PBT-041 (общие стили диалогов task-editor__). */
+
+.plan-gantt .catalog {
+  width: min(576px, calc(100% - 32px));
+}
+
+.plan-gantt .catalog__section-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.plan-gantt .catalog__list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plan-gantt .catalog__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-gantt .catalog__title {
+  flex: 1;
+  min-width: 120px;
+}
+
+.plan-gantt .catalog__flag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.plan-gantt .catalog__add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.plan-gantt .catalog__add input[type='text'],
+.plan-gantt .catalog__add input[type='date'],
+.plan-gantt .catalog__add select,
+.plan-gantt .catalog__add input[type='number'],
+.plan-gantt .catalog__row select,
+.plan-gantt .catalog__row input[type='date'],
+.plan-gantt .catalog__row input[type='number'] {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.plan-gantt .catalog__row input[type='number'] {
+  width: 70px;
+}
+
+.plan-gantt .catalog__add input[type='text'] {
+  flex: 1;
+}
+
+/* Календарь плана PBT-044. */
+
+.plan-gantt .catalog__week {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-gantt .catalog__week-day {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.plan-gantt .catalog__sub {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Список проблем плана PBT-046. */
+
+.plan-gantt .issues__row {
+  border-left: 3px solid var(--destructive);
+  padding-left: 8px;
+  align-items: flex-start;
+}
+
+.plan-gantt .issues__kind {
+  font-weight: 600;
+}
+
+.plan-gantt .issues__action {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plan-gantt .issues__action:hover {
+  background: var(--surface-raised);
+}
+
+.plan-gantt .issues__action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.plan-gantt .issues__show {
+  color: var(--primary);
+  flex-shrink: 0;
+}

@@ -1,0 +1,55 @@
+# Зависимости
+node_modules/
+
+# Сборка и кэш (Vite и инструменты)
+dist/
+dist-ssr/
+.vite/
+.cache/
+*.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+/.playwright-mcp/
+/screenshots/
+
+# Логи
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Окружение и секреты
+.env
+.env.*
+!.env.example
+
+# Покрытие тестами
+coverage/
+
+# Локальное состояние инструментов
+*.local
+.DS_Store
+Thumbs.db
+
+# Локальная рабочая документация (ADR — в docs/adr, в репозитории)
+.context/
+
+# Редакторы и IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Контрольные изображения не хранятся в OpenSpec (вывод — test-results/).
+/openspec/**/screenshots/
+/openspec/**/*.png
+/openspec/**/*.jpg
+/openspec/**/*.jpeg
+/openspec/**/*.gif
+/openspec/**/*.webp
+/openspec/**/*.mp4
+/openspec/**/*.webm

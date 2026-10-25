@@ -1,0 +1,76 @@
+{
+  "format": "project-board-plan",
+  "formatVersion": 1,
+  "title": "Малый контрольный набор",
+  "schemaVersion": 1,
+  "content": {
+    "calendar": {
+      "workingDays": [1, 2, 3, 4, 5],
+      "holidays": ["2026-10-14"],
+      "workingExceptions": []
+    },
+    "workTypes": [
+      { "id": "dev", "title": "Разработка", "allowsParallel": false },
+      { "id": "psi", "title": "ПСИ", "allowsParallel": true }
+    ],
+    "resources": [
+      { "id": "r1", "title": "Разработчик R1" },
+      { "id": "r2", "title": "Разработчик R2" }
+    ],
+    "groups": [{ "id": "g-phase-1", "title": "Фаза 1" }],
+    "tasks": [
+      {
+        "id": "t-a",
+        "title": "Задача A",
+        "groupId": "g-phase-1",
+        "start": "2026-10-12",
+        "end": "2026-10-16",
+        "assigneeIds": ["r1"],
+        "workTypeIds": ["dev"]
+      },
+      {
+        "id": "t-b",
+        "title": "Задача B (ПСИ)",
+        "groupId": "g-phase-1",
+        "start": "2026-10-19",
+        "end": "2026-10-20",
+        "assigneeIds": ["r1"],
+        "workTypeIds": ["psi"]
+      },
+      {
+        "id": "t-c",
+        "title": "Задача C",
+        "groupId": "g-phase-1",
+        "start": "2026-10-19",
+        "end": "2026-10-23",
+        "assigneeIds": ["r1"],
+        "workTypeIds": ["dev"]
+      },
+      {
+        "id": "t-d",
+        "title": "Задача D",
+        "groupId": "g-phase-1",
+        "start": "2026-10-20",
+        "end": "2026-10-21",
+        "assigneeIds": ["r1"],
+        "workTypeIds": ["dev"]
+      },
+      {
+        "id": "t-e",
+        "title": "Задача E",
+        "groupId": "g-phase-1",
+        "start": "2026-10-26",
+        "end": "2026-10-28",
+        "assigneeIds": ["r1"],
+        "workTypeIds": ["dev"]
+      }
+    ],
+    "dependencies": [
+      { "id": "d-1", "fromTaskId": "t-a", "toTaskId": "t-b", "lagDays": 0 },
+      { "id": "d-2", "fromTaskId": "t-c", "toTaskId": "t-e", "lagDays": 1 }
+    ],
+    "unavailability": [
+      { "id": "u-r1", "resourceId": "r1", "start": "2026-10-26", "end": "2026-10-27" }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "project-board-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "generate:pwa-assets": "node scripts/generate-pwa-assets.mjs",
+    "verify:pwa-install": "node scripts/verify-pwa-install.mjs",
+    "dev": "npm run dev -w apps/project-board",
+    "build": "npm run build -w apps/project-board",
+    "preview": "npm run preview -w apps/project-board",
+    "typecheck": "tsc --noEmit -p apps/project-board && tsc --noEmit -p packages/widget-sdk && tsc --noEmit -p packages/dashboard && tsc --noEmit -p packages/gantt && tsc --noEmit -p packages/checklist && tsc --noEmit -p examples/counter-widget",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "test:browser": "playwright test",
+    "test:pwa-updates": "node tests/pwa-updates/build.mjs && playwright test --config=playwright.pwa.config.ts",
+    "test:planning": "playwright test --config=playwright.planning.config.ts",
+    "bench:release": "node tests/performance/run.mjs",
+    "verify:repository": "node scripts/verify-repository.mjs",
+    "verify:widget-example": "node scripts/verify-widget-example.mjs",
+    "build:pages": "npm run build -w apps/project-board -- --base=/project-board/",
+    "verify:pages": "node scripts/verify-pages-artifact.mjs",
+    "test:pages": "node tests/pages/build.mjs && playwright test --config=playwright.pages.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "27.0.0",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^3.2.7"
+  }
+}
