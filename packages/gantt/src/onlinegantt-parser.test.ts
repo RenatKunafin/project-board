@@ -624,7 +624,7 @@ describe('записи и назначения', () => {
     }
   });
 
-  it('color и Progress перечислены в отчёте как непереносимые', () => {
+  it('цвет вне палитры — Авто, в отчёте только прогресс (PBT-084)', () => {
     const result = parseOnlineGanttFile(
       ganttFile({
         data: [
@@ -646,10 +646,51 @@ describe('записи и назначения', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
+      expect((result.payload.content.tasks[0] as ImportedPlanTask).color).toBeUndefined();
       const warning = findWarning(result, 'dropped-task-fields');
       expect(warning).toBeDefined();
-      expect(warning!.message).toContain('color (1)');
-      expect(warning!.message).toContain('Progress (1)');
+      expect(warning!.message).not.toContain('color (');
+      expect(warning!.message).toContain('1');
+      expect(warning!.message).toContain('автоматическое');
+    }
+  });
+
+  it('hex записи, точно совпавший с палитрой, переносится идентификатором', () => {
+    const result = parseOnlineGanttFile(
+      ganttFile({
+        data: [
+          {
+            TaskID: 1,
+            TaskName: 'Задача',
+            StartDate: '2026-08-31T05:00:00.000Z',
+            EndDate: '2026-09-04T14:00:00.000Z',
+            Duration: 5,
+            Progress: 0,
+            color: '#3186E9',
+            Predecessor: '',
+            resources: [],
+            DurationUnit: 'day',
+          },
+          {
+            TaskID: 2,
+            TaskName: 'Вторая',
+            StartDate: '2026-09-07T05:00:00.000Z',
+            EndDate: '2026-09-11T14:00:00.000Z',
+            Duration: 5,
+            Progress: 0,
+            color: '#123456',
+            Predecessor: '',
+            resources: [],
+            DurationUnit: 'day',
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect((result.payload.content.tasks[0] as ImportedPlanTask).color).toBe('sapphire');
+      expect((result.payload.content.tasks[1] as ImportedPlanTask).color).toBeUndefined();
     }
   });
 

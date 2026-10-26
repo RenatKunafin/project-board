@@ -1,5 +1,6 @@
 import { type PlanContent, type PlanTask } from './plan-document';
 import { addCalendarDays, createWorkingCalendar } from './working-calendar';
+import { taskColor } from './task-colors';
 
 /**
  * Генерация PlantUML Gantt для публикации плана (PBT-055).
@@ -259,7 +260,15 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
 
   const emitTask = (task: PlanTask, alias: string): void => {
     const workingDaysCount = calendar.workingDaysBetween(task.start, task.end);
-    const block = taskRequiresBlock(alias, task.title, task.start, workingDaysCount, stageColor(task.title));
+    // PBT-084: ручной цвет (hex палитры) приоритетнее эвристики этапов.
+    const manualColor = taskColor(task.color)?.hex.toLowerCase();
+    const block = taskRequiresBlock(
+      alias,
+      task.title,
+      task.start,
+      workingDaysCount,
+      manualColor ?? stageColor(task.title),
+    );
     lines.push(...block);
     lines.push('');
     if (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Timeline from 'react-calendar-timeline';
 import type { DateHeaderProps, TimelineKeys } from 'react-calendar-timeline';
@@ -14,7 +14,7 @@ import {
 } from './plan-document';
 import { calendarView } from './calendar-view';
 import { resourceConflicts } from './plan-conflicts';
-import { moveTask, setTaskDates } from './plan-commands';
+import { moveTask, setTaskDates, updateTask } from './plan-commands';
 import { addCalendarDays, calendarDaySpan } from './working-calendar';
 import {
   planToTimelineGroups,
@@ -28,6 +28,7 @@ import {
 } from './resource-timeline-adapter';
 import TaskEditorDialog from './TaskEditorDialog';
 import { useTaskForm, type TaskEditorState } from './use-task-form';
+import { TaskColorMenu, type TaskColorMenuState } from './task-color-picker';
 import './resource-timeline.css';
 import './task-editor.css';
 
@@ -216,6 +217,7 @@ export default function ResourceTimelineWidget({
   }, []);
 
   const {
+    commitPlan,
     submitTaskForm,
     deleteCurrentTask,
   } = useTaskForm({
@@ -224,6 +226,38 @@ export default function ResourceTimelineWidget({
     document,
     onClose: closeEditor,
   });
+
+  // ─── Быстрая смена цвета (PBT-084): правый клик на элементе дорожки ───
+  const [colorMenu, setColorMenu] = useState<TaskColorMenuState | null>(null);
+  const colorMenuTask = colorMenu === null
+    ? undefined
+    : plan?.tasks.find((task) => task.id === colorMenu.taskId);
+  const applyQuickColor = useCallback(
+    (color: string | undefined) => {
+      const target = colorMenu?.taskId;
+      setColorMenu(null);
+      if (target === undefined) return;
+      commitPlan((latest) => {
+        const parsed = parsePlanContent(latest.content);
+        if (!parsed.ok) return undefined;
+        const result = updateTask(parsed.plan, target, { color });
+        return result.ok ? result.plan : undefined;
+      });
+    },
+    [colorMenu, commitPlan],
+  );
+  const onChartContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const node = event.target instanceof Element
+        ? event.target.closest('[data-rt-task]')
+        : null;
+      const id = node?.getAttribute('data-rt-task') ?? '';
+      if (!id || !plan?.tasks.some((task) => task.id === id)) return;
+      event.preventDefault();
+      setColorMenu({ x: event.clientX, y: event.clientY, taskId: id });
+    },
+    [plan],
+  );
 
   // ─── Жесты drag/resize (PBT-048, ADR-5: «факт → правила → применение») ──
   // Бета эмитит только onItemDrag (каждый кадр, после клика-выделения).
@@ -804,7 +838,15 @@ export default function ResourceTimelineWidget({
           В плане нет ресурсов: добавьте их в настройках плана.
         </p>
       ) : (
-        <div className="resource-timeline__chart" data-rt-chart>
+        <div className="resource-timeline__chart" data-rt-chart onContextMenu={onChartContextMenu}>
+          {colorMenu && colorMenuTask !== undefined && (
+            <TaskColorMenu
+              state={colorMenu}
+              value={colorMenuTask.color}
+              onPick={applyQuickColor}
+              onClose={() => setColorMenu(null)}
+            />
+          )}
           {dayLayer}
           {/* Новый документ создаёт новую канву; обновления документа
               проходят через items/groups без ремоунта (PBT-080). */}

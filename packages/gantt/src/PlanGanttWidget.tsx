@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -56,10 +56,12 @@ import {
   planToGanttLinks,
   planToGanttTasks,
 } from './svar-adapter';
-import { moveTask, setTaskDates } from './plan-commands';
+import { moveTask, setTaskDates, updateTask } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import type { GroupFormIssue } from './group-editor';
+import { ganttBarColorRules } from './task-colors';
+import { TaskColorMenu, type TaskColorMenuState } from './task-color-picker';
 import TaskEditorDialog from './TaskEditorDialog';
 import type { TaskFormSession } from './task-form-draft';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
@@ -1317,6 +1319,45 @@ export default function PlanGanttWidget({
     () => (source ? planToGanttLinks(source.plan) : []),
     [source],
   );
+  // PBT-084: правила окраски полос ручным цветом — только задачи с
+  // валидным цветом и безопасным для селектора идентификатором.
+  const colorRules = useMemo(
+    () => (source ? ganttBarColorRules(source.plan.tasks, ':') : ''),
+    [source],
+  );
+  // Быстрая смена цвета (правый клик на полосе задачи, PBT-084).
+  const [colorMenu, setColorMenu] = useState<TaskColorMenuState | null>(null);
+  const colorMenuTask = colorMenu === null || source === null
+    ? undefined
+    : source.plan.tasks.find((task) => task.id === colorMenu.taskId);
+  const applyQuickColor = useCallback(
+    (color: string | undefined) => {
+      const target = colorMenu?.taskId;
+      setColorMenu(null);
+      if (target === undefined) return;
+      commitPlan((latest) => {
+        const parsed = parsePlanContent(latest.content);
+        if (!parsed.ok) return undefined;
+        const result = updateTask(parsed.plan, target, { color });
+        return result.ok ? result.plan : undefined;
+      });
+    },
+    [colorMenu, commitPlan],
+  );
+  const onChartContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const node = event.target instanceof Element
+        ? event.target.closest('[data-task-id]')
+        : null;
+      const raw = node?.getAttribute('data-task-id') ?? '';
+      // SVAR выводит идентификаторы с префиксом «:» (контракт 2.8.0).
+      const id = raw.startsWith(':') ? raw.slice(1) : raw;
+      if (!id || !source?.plan.tasks.some((task) => task.id === id)) return;
+      event.preventDefault();
+      setColorMenu({ x: event.clientX, y: event.clientY, taskId: id });
+    },
+    [source],
+  );
   // Проблемы плана (PBT-046): производное документа, без записей.
   const issues = usePlanIssues(plan ?? createPlanContent());
   useEffect(() => {
@@ -1798,7 +1839,16 @@ export default function PlanGanttWidget({
               Ничего не найдено по фильтру. Задачи документа не изменены.
             </p>
           ) : null}
-          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
+          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick} onContextMenu={onChartContextMenu}>
+            {colorRules ? <style dangerouslySetInnerHTML={{ __html: colorRules }} /> : null}
+            {colorMenu && colorMenuTask !== undefined && (
+              <TaskColorMenu
+                state={colorMenu}
+                value={colorMenuTask.color}
+                onPick={applyQuickColor}
+                onClose={() => setColorMenu(null)}
+              />
+            )}
             <WillowDark fonts={false}>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения

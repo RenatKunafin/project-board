@@ -105,6 +105,41 @@ describe('parsePlanContent — корректные документы', () => {
     };
     expect(parsePlanContent(plan).ok).toBe(true);
   });
+
+  it('известный идентификатор палитры принимается (PBT-084)', () => {
+    const plan = validPlan();
+    const colored = {
+      ...plan,
+      tasks: plan.tasks.map((task) =>
+        task.id === 't-a' ? { ...task, color: 'sapphire' } : task,
+      ),
+    };
+    const result = parsePlanContent(colored);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.tasks[0].color).toBe('sapphire');
+      expect('color' in result.plan.tasks[1]).toBe(false);
+    }
+  });
+
+  it('неизвестный цвет даёт диагностику с путём (PBT-084)', () => {
+    const plan = validPlan();
+    const broken = {
+      ...plan,
+      tasks: plan.tasks.map((task) =>
+        task.id === 't-a' ? { ...task, color: '#3186E9' } : task,
+      ),
+    };
+    const result = parsePlanContent(broken);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const issue = result.issues.find(
+        (entry) => entry.path === 'tasks[0].color',
+      );
+      expect(issue?.code).toBe('invalid-structure');
+      expect(issue?.message).toContain('палитры');
+    }
+  });
 });
 
 describe('parsePlanContent — повреждённые документы', () => {

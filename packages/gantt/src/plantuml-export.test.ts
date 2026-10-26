@@ -141,6 +141,20 @@ describe('serializePlanToPlantUml — контрольный план', () => {
     // Праздник вне горизонта не попал, пустой план не пуст — заметки быть не должно.
     expect(list).not.toContain('empty-plan');
   });
+
+  it('ручной цвет приоритетнее этапа и пишется hex (PBT-084)', () => {
+    const plan = controlPlan();
+    const manual = serializePlanToPlantUml({
+      ...plan,
+      tasks: plan.tasks.map((task, index) =>
+        index === 0 ? { ...task, color: 'sapphire' } : task,
+      ),
+    });
+    expect(manual.text).toContain('[T1] is colored in #3186e9/#3186e9');
+    expect(manual.text).not.toContain('[T1] is colored in LightSkyBlue');
+    // Задачи без ручного цвета — прежняя палитра этапов.
+    expect(manual.text).toContain('[T2] is colored in MediumPurple/MediumPurple');
+  });
 });
 
 describe('кодирование и края', () => {

@@ -111,6 +111,53 @@ describe('createTask', () => {
       'unknown-work-type',
     );
   });
+
+  it('цвет палитры сохраняется, неизвестный — отклоняется (PBT-084)', () => {
+    const plan = buildPlan();
+    const ok = createTask(plan, {
+      title: 'ИФТ',
+      start: '2026-10-26',
+      end: '2026-10-28',
+      color: 'ochre',
+    });
+    expect(expectOk(ok).tasks[2].color).toBe('ochre');
+    expectError(
+      createTask(plan, { title: 'X', start: '2026-10-12', end: '2026-10-12', color: 'navy' }),
+      'invalid-color',
+    );
+  });
+});
+
+describe('цвет задачи в операциях (PBT-084)', () => {
+  it('изменение цвета и явный сброс; отсутствие поля не меняет цвет', () => {
+    const plan = buildPlan();
+    const colored = {
+      ...plan,
+      tasks: plan.tasks.map((task) =>
+        task.id === 't-a' ? { ...task, color: 'plum' } : task,
+      ),
+    };
+    const changed = expectOk(updateTask(colored, 't-a', { color: 'steel' }));
+    expect(changed.tasks[0].color).toBe('steel');
+    const untouched = expectOk(updateTask(colored, 't-a', { title: 'Другое' }));
+    expect(untouched.tasks[0].color).toBe('plum');
+    const reset = expectOk(updateTask(colored, 't-a', { color: undefined }));
+    expect('color' in reset.tasks[0]).toBe(false);
+    expectError(updateTask(colored, 't-a', { color: 'navy' }), 'invalid-color');
+  });
+
+  it('даты, перенос и длительность сохраняют цвет задачи', () => {
+    const colored = {
+      ...buildPlan(),
+      tasks: [
+        { ...buildPlan().tasks[0], color: 'jade' },
+        buildPlan().tasks[1],
+      ],
+    } as PlanContent;
+    expect(expectOk(setTaskDates(colored, 't-a', { start: '2026-10-13', end: '2026-10-14' })).tasks[0].color).toBe('jade');
+    expect(expectOk(moveTask(colored, 't-a', '2026-10-20')).tasks[0].color).toBe('jade');
+    expect(expectOk(setTaskDuration(colored, 't-a', 3)).tasks[0].color).toBe('jade');
+  });
 });
 
 describe('updateCalendar', () => {

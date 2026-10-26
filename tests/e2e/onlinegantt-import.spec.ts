@@ -64,9 +64,15 @@ test('рабочий файл: предпросмотр со сводкой и �
   await expect(preview.locator('[data-onlinegantt-summary]')).toContainText(
     'Без исполнителя 16',
   );
+  // PBT-084: цвет записей больше не порождает dropped-task-fields —
+  // совпадения переносятся, вне палитры получают «Авто»; в этом файле
+  // прогресса нет — предупреждение не появляется, только настройки.
   await expect(
     preview.locator('[data-onlinegantt-warnings]'),
-  ).toContainText('dropped-task-fields');
+  ).toContainText('skipped-settings');
+  await expect(
+    preview.locator('[data-onlinegantt-warnings]'),
+  ).not.toContainText('dropped-task-fields');
 
   // DoD-4: задачи без исполнителя помечены как ручные решения, не удаляются.
   await expect(
