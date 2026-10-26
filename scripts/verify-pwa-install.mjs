@@ -27,15 +27,17 @@ try {
   await writeFile(`${output}/pwa-install-preflight.json`, JSON.stringify({ url, browser: context.browser().version(), manifest, installability }, null, 2) + '\n');
   manifestId = manifest.manifest.id;
   expect(manifestId).toBe(manifest.manifest.startUrl);
-  await cdp.send('PWA.install', { manifestId, installUrlOrBundleUrl: url });
+  // Установка HTTPS-приложения может закрыть исходную вкладку.
+  // PWA-команды отправляем через сессию браузера, переживающую её закрытие.
+  browserCdp = await context.browser().newBrowserCDPSession();
+  await browserCdp.send('PWA.install', { manifestId, installUrlOrBundleUrl: url });
   installed = true;
   // CDP устанавливает без диалога браузера: явно выбираем то же
   // пользовательское «Открывать в отдельном окне», что и при ручной установке.
-  await cdp.send('PWA.changeAppUserSettings', { manifestId, displayMode: 'standalone' });
-  await page.close();
+  await browserCdp.send('PWA.changeAppUserSettings', { manifestId, displayMode: 'standalone' });
+  for (const openPage of context.pages()) await openPage.close();
   // Закрыты все окна приложения. Новое запускается из установленной записи.
   // CDP-сессия страницы уже закрыта; browser session остаётся доступной.
-  browserCdp = await context.browser().newBrowserCDPSession();
   await context.setOffline(true);
   const opened = context.waitForEvent('page');
   const launch = await browserCdp.send('PWA.launch', { manifestId });
