@@ -28,6 +28,8 @@ declare global {
   interface Window {
     __projectBoard?: {
       activeSubscriptionCount: () => number;
+      /** Быстрое создание документа типа виджета для контрольных данных e2e (PBT-090). */
+      createDocument: (widgetTypeId: string, title: string) => { id: string } | null;
       /** Запись содержимого документа для контрольных данных e2e (PBT-037). */
       writeDocumentContent: (documentId: string, content: unknown) => void;
       /** Чтение документа (ревизия/содержимое) для проверок e2e (PBT-039). */
@@ -56,6 +58,21 @@ window.addEventListener('pagehide', () => {
 // редактирования — записи идут через общий контракт сервиса.
 window.__projectBoard = {
   activeSubscriptionCount: () => documentService.activeSubscriptionCount(),
+  // Тестовый мост (e2e): быстрое создание документа выбранного типа
+  // без прохождения каталога; productId/данные не затрагивает.
+  createDocument: (widgetTypeId: string, title: string) => {
+    const support = widgetTypes.find((type) => type.id === widgetTypeId)?.documentSupport;
+    if (!support) {
+      return null;
+    }
+    return documentService.create({
+      moduleId: support.moduleId,
+      documentType: support.documentType,
+      schemaVersion: support.schemaVersion,
+      title,
+      content: support.createContent(),
+    });
+  },
   writeDocumentContent: (documentId, content) => {
     const document = documentService.get(documentId);
     if (document) {
