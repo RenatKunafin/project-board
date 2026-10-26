@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PlantUmlExportNote } from './plantuml-export';
 import './plantuml-export-dialog.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 interface PlantUmlExportDialogProps {
+  readonly owner: PlanDialogOwner;
   readonly text: string;
   readonly report: readonly PlantUmlExportNote[];
   readonly fileName: string;
@@ -16,6 +18,7 @@ interface PlantUmlExportDialogProps {
  * и инструкция публикации. Скачивание — родитель (Blob, офлайн).
  */
 export default function PlantUmlExportDialog({
+  owner,
   text,
   report,
   fileName,
@@ -29,13 +32,6 @@ export default function PlantUmlExportDialog({
     // Пользователь может начать с выделения текста — фокус не перебиваем.
     return undefined;
   }, []);
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-    }
-  };
 
   const copy = async () => {
     try {
@@ -53,102 +49,82 @@ export default function PlantUmlExportDialog({
   };
 
   return (
-    <div
-      className="plantuml-export__overlay"
-      onKeyDown={handleKeyDown}
-      role="presentation"
+    <PlanDialog
+      owner={owner}
+      title="Экспорт PlantUML"
+      description="Диаграмма для публикации: полный план без влияния фильтров."
+      closeLabel="Закрыть экспорт"
+      className="plantuml-export"
+      onClose={onClose}
     >
-      <section
-        className="plantuml-export"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Экспорт PlantUML"
-      >
-        <header className="plantuml-export__head">
-          <div>
-            <h3 className="plantuml-export__title">Экспорт PlantUML</h3>
-            <p className="plantuml-export__description">
-              Диаграмма для публикации: полный план без влияния фильтров.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="plantuml-export__close"
-            aria-label="Закрыть экспорт"
-            onClick={onClose}
+      <div className="plantuml-export__body plan-dialog__body">
+        <div className="plantuml-export__section">
+          <h4 className="plantuml-export__section-title">Текст диаграммы</h4>
+          <div
+            ref={textRef}
+            className="plantuml-export__text"
+            data-plantuml-text
+            role="textbox"
+            aria-readonly="true"
+            tabIndex={0}
           >
-            ×
-          </button>
-        </header>
-        <div className="plantuml-export__body">
-          <div className="plantuml-export__section">
-            <h4 className="plantuml-export__section-title">Текст диаграммы</h4>
-            <div
-              ref={textRef}
-              className="plantuml-export__text"
-              data-plantuml-text
-              role="textbox"
-              aria-readonly="true"
-              tabIndex={0}
-            >
-              {text}
-            </div>
+            {text}
           </div>
-          <div className="plantuml-export__section">
-            <h4 className="plantuml-export__section-title">
-              Ограничения ({report.length})
-            </h4>
-            <div className="plantuml-export__scroll" data-plantuml-report>
-              {report.length === 0 ? (
-                <p className="plantuml-export__hint">
-                  Все данные плана перенесены в диаграмму без потерь.
-                </p>
-              ) : (
-                <ul className="plantuml-export__list">
-                  {report.map((note, index) => (
-                    <li key={`note-${index}`}>{note.message}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-          <p className="plantuml-export__hint">
-            Текст самодостаточен для любого инструмента PlantUML. Для
-            Confluence вставьте его в PlantUML-макрос вашей инсталляции —
-            поддержку и настройки определяет конкретный плагин.
-          </p>
-          <p className="plantuml-export__file" data-plantuml-file>
-            Файл: {fileName}
-          </p>
         </div>
-        <footer className="plantuml-export__foot">
-          <button
-            type="button"
-            className="plantuml-export__button"
-            data-plantuml-copy
-            onClick={() => {
-              void copy();
-            }}
-          >
-            {copied ? 'Скопировано' : 'Скопировать'}
-          </button>
-          <button
-            type="button"
-            className="plantuml-export__button plantuml-export__button--primary"
-            data-plantuml-download
-            onClick={onDownload}
-          >
-            Скачать .puml
-          </button>
-          <button
-            type="button"
-            className="plantuml-export__button"
-            onClick={onClose}
-          >
-            Закрыть
-          </button>
-        </footer>
-      </section>
-    </div>
+        <div className="plantuml-export__section">
+          <h4 className="plantuml-export__section-title">
+            Ограничения ({report.length})
+          </h4>
+          <div className="plantuml-export__scroll" data-plantuml-report>
+            {report.length === 0 ? (
+              <p className="plantuml-export__hint">
+                Все данные плана перенесены в диаграмму без потерь.
+              </p>
+            ) : (
+              <ul className="plantuml-export__list">
+                {report.map((note, index) => (
+                  <li key={`note-${index}`}>{note.message}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        <p className="plantuml-export__hint">
+          Текст самодостаточен для любого инструмента PlantUML. Для
+          Confluence вставьте его в PlantUML-макрос вашей инсталляции —
+          поддержку и настройки определяет конкретный плагин.
+        </p>
+        <p className="plantuml-export__file" data-plantuml-file>
+          Файл: {fileName}
+        </p>
+      </div>
+      <footer className="plantuml-export__foot">
+        <button
+          type="button"
+          className="plantuml-export__button"
+          data-plantuml-copy
+          onClick={() => {
+            void copy();
+          }}
+        >
+          {copied ? 'Скопировано' : 'Скопировать'}
+        </button>
+        <button
+          type="button"
+          className="plantuml-export__button plantuml-export__button--primary"
+          data-plantuml-download
+          onClick={onDownload}
+        >
+          Скачать .puml
+        </button>
+        <button
+          type="button"
+          className="plantuml-export__button"
+          onClick={onClose}
+        >
+          Закрыть
+        </button>
+      </footer>
+    </PlanDialog>
   );
 }

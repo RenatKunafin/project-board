@@ -1,51 +1,6 @@
 /* Предпросмотр экспорта PlantUML (PBT-056). Только токены :root
    (хекс-коды запрещены до PBT-066). Каркас — по образцу диалогов. */
 
-.plan-gantt .plantuml-export__overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--overlay);
-}
-
-.plan-gantt .plantuml-export {
-  display: flex;
-  flex-direction: column;
-  width: min(576px, calc(100% - 32px));
-  max-height: calc(100% - 32px);
-  background: var(--surface);
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: var(--shadow-float);
-}
-
-.plan-gantt .plantuml-export__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.plan-gantt .plantuml-export__title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.plan-gantt .plantuml-export__close {
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  color: inherit;
-}
-
 .plan-gantt .plantuml-export__body {
   display: flex;
   flex-direction: column;

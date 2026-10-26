@@ -1,52 +1,6 @@
 /* Преобразование задачи в отпуск (PBT-054). Только токены :root
    (хекс-коды запрещены до PBT-066). Каркас — по образцу диалогов. */
 
-.plan-gantt .absence-convert__overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--overlay);
-}
-
-.plan-gantt .absence-convert {
-  display: flex;
-  flex-direction: column;
-  width: min(576px, calc(100% - 32px));
-  max-height: calc(100% - 32px);
-  overflow: auto;
-  background: var(--surface);
-  color: var(--foreground);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: var(--shadow-float);
-}
-
-.plan-gantt .absence-convert__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.plan-gantt .absence-convert__title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.plan-gantt .absence-convert__close {
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  color: inherit;
-}
-
 .plan-gantt .absence-convert__body {
   display: flex;
   flex-direction: column;
