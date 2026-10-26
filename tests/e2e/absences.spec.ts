@@ -47,6 +47,7 @@ async function openCatalog(page: Page, paneTitle: string) {
   await pane.locator('[data-catalogs]').click();
   const dialog = pane.getByRole('dialog', { name: 'Настройки плана' });
   await expect(dialog).toBeVisible();
+  await dialog.locator('[data-settings-section="absences"]').click();
   return dialog;
 }
 
@@ -73,12 +74,13 @@ test('отпуск создаётся, изменяется и удаляетс�
     ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
     { id: documentId, value: planContent },
   );
-  const dialog = await openCatalog(page, 'Отпуска');
+  let dialog = await openCatalog(page, 'Отпуска');
 
   // Создание отпуска QA 13–15 (внутри задачи 12–16).
   await addAbsence(dialog, 'QA', '2026-10-13', '2026-10-15');
-  await expect(dialog.getByText('QA: 2026-10-13 — 2026-10-15')).toBeVisible();
+  await expect(dialog.locator('[data-absence-row]').filter({ hasText: '13.10.2026 — 15.10.2026' })).toBeVisible();
 
+  await dialog.locator('[data-catalog-save]').click();
   let content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content,
     documentId,
@@ -94,18 +96,22 @@ test('отпуск создаётся, изменяется и удаляетс�
   expect(content.tasks[0].start).toBe('2026-10-12');
   expect(content.tasks[0].end).toBe('2026-10-16');
 
+  dialog = await openCatalog(page, 'Отпуска');
   // Изменение дат периода.
   await dialog.getByRole('button', { name: 'Изменить период' }).click();
   await dialog.locator('[data-absence-edit="start"]').fill('2026-10-14');
   await dialog.getByRole('button', { name: 'Сохранить период' }).click();
   await expect(
-    dialog.getByText('QA: 2026-10-14 — 2026-10-15'),
+    dialog.locator('[data-absence-row]').filter({ hasText: '14.10.2026 — 15.10.2026' }),
   ).toBeVisible();
 
+  await dialog.locator('[data-catalog-save]').click();
+  dialog = await openCatalog(page, 'Отпуска');
   // Удаление.
-  await dialog.getByRole('button', { name: 'Удалить период' }).click();
-  await expect(dialog.getByText('QA: 2026-10-14 — 2026-10-15')).toHaveCount(0);
+  await dialog.getByRole('button', { name: /^Удалить период/ }).click();
+  await expect(dialog.locator('[data-absence-row]').filter({ hasText: '14.10.2026 — 15.10.2026' })).toHaveCount(0);
 
+  await dialog.locator('[data-catalog-save]').click();
   content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content,
     documentId,
@@ -128,13 +134,14 @@ test('отпуск восстанавливается после reload, зад�
   );
   const dialog = await openCatalog(page, 'Релоад');
   await addAbsence(dialog, 'QA', '2026-10-13', '2026-10-15');
-  await expect(dialog.getByText('QA: 2026-10-13 — 2026-10-15')).toBeVisible();
+  await expect(dialog.locator('[data-absence-row]').filter({ hasText: '13.10.2026 — 15.10.2026' })).toBeVisible();
 
+  await dialog.locator('[data-catalog-save]').click();
   await page.waitForTimeout(1500);
   await page.reload();
   const dialog2 = await openCatalog(page, 'Релоад');
   await expect(
-    dialog2.getByText('QA: 2026-10-13 — 2026-10-15'),
+    dialog2.locator('[data-absence-row]').filter({ hasText: '13.10.2026 — 15.10.2026' }),
   ).toBeVisible();
   const content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.tasks?.[0],

@@ -249,6 +249,19 @@ describe('deleteWorkType — вариант A: чистка ссылок', () =>
   });
 });
 
+it.each(['resource', 'workType'] as const)('удаление %s сохраняет группу и расширения назначенной задачи', (kind) => {
+  const base = buildPlan();
+  const originalTask = { ...base.tasks[0], groupId: 'g', notes: 'Примечание импорта', extension: { source: 'native' } };
+  const plan = { ...base, groups: [{ id: 'g', title: 'Группа' }], tasks: [originalTask, ...base.tasks.slice(1)] };
+  const next = expectOk(kind === 'resource' ? deleteResource(plan, 'r-qa') : deleteWorkType(plan, 'wt-dev'));
+  const expected = { ...originalTask };
+  if (kind === 'resource') delete expected.assigneeIds;
+  else delete expected.workTypeIds;
+  expect(next.tasks[0]).toEqual(expected);
+  expect(plan.tasks[0]).toEqual(originalTask);
+  expect(parsePlanContent(next).ok).toBe(true);
+});
+
 describe('независимость планов', () => {
   it('переименование ресурса в одном плане не меняет второй план', () => {
     const planA = buildPlan();

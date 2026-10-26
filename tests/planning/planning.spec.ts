@@ -28,10 +28,11 @@ test('рабочий импорт → планирование → календ�
   await test.step('группа, справочник и назначенные задачи', async () => {
     await plan.locator('[data-catalogs]').click();
     const settings = page.getByRole('dialog', { name: 'Настройки плана' });
+    await settings.locator('[data-settings-section="workTypes"]').click();
     await settings.locator('[data-catalog-new="workType"]').fill('Сквозная работа');
     await settings.locator('[data-catalog-new-parallel]').uncheck();
     await settings.locator('[data-catalog-add="workType"]').click();
-    await settings.locator('[data-catalog-close]').click();
+    await settings.locator('[data-catalog-save]').click();
     await plan.locator('[data-add-group]').click();
     const group = page.getByRole('dialog');
     await group.locator('[data-group-field="title"]').fill('Сквозная группа');
@@ -83,9 +84,10 @@ test('рабочий импорт → планирование → календ�
   await test.step('праздник меняет длительность, сохраняя ручные границы и остальные задачи', async () => {
     await plan.locator('[data-catalogs]').click();
     const settings = page.getByRole('dialog', { name: 'Настройки плана' });
+    await settings.locator('[data-settings-section="calendar"]').click();
     await settings.locator('[data-calendar-holiday-from]').fill('2026-10-21');
     await settings.locator('[data-calendar-add-holiday]').click();
-    await settings.locator('[data-catalog-close]').click();
+    await settings.locator('[data-catalog-save]').click();
     const dialog = await editTask(page, plan, A);
     await expect(dialog.locator('[data-task-field="start"]')).toHaveValue('2026-10-19');
     await expect(dialog.locator('[data-task-field="duration"]')).toHaveValue('4');
