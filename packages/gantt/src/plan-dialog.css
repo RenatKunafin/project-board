@@ -18,7 +18,13 @@
   font: inherit;
 }
 
-:is(.plan-gantt, .resource-timeline) dialog.plan-dialog--wide { width: min(896px, calc(100vw - 32px)); }
+/* PBT-089 (замечание владельца о стабильности габаритов): широкие
+   диалоги — фиксированная высота, не зависящая от содержимого; тело
+   диалога прокручивается само, в большинстве случаев прокрутки нет. */
+:is(.plan-gantt, .resource-timeline) dialog.plan-dialog--wide {
+  width: min(896px, calc(100vw - 32px));
+  height: min(720px, 86dvh);
+}
 :is(.plan-gantt, .resource-timeline) dialog.plan-dialog:not([open]) { display: none; }
 :is(.plan-gantt, .resource-timeline) .plan-dialog::backdrop { background: var(--overlay); }
 

@@ -180,8 +180,7 @@ function chartScroll(page: Page, pane: Locator): Promise<{ left: number; top: nu
   });
 }
 
-test('узкое окно: команды доступны на минимальной ширине окна', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 778 });
+test('узкое окно: команды доступны на минимальной ширине окна', async ({ page }) => {  await page.setViewportSize({ width: 1280, height: 778 });
   await page.goto('/');
   const { pane } = await createDocumentWindow(page, 'План', 'Меню узко');
   // Первое окно создаётся максимизированным (PBT-083) — вернуть размер
@@ -220,4 +219,50 @@ test('узкое окно: команды доступны на минималь
   expect(menuBox!.x).toBeGreaterThanOrEqual(0);
   expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(1280);
   await page.keyboard.press('Escape');
+});
+
+test('габариты широких диалогов постоянны: проблемы и настройки', async ({ page }) => {
+  await page.setViewportSize({ width: 1856, height: 1269 });
+  await page.goto('/');
+  const created = await createDocumentWindow(page, 'План', 'Стабильные диалоги');
+  const { pane, documentId } = created;
+  await page.evaluate(({ id }) => window.__projectBoard.writeDocumentContent(id, {
+    calendar: { workingDays: [1, 2, 3, 4, 5], holidays: [], workingExceptions: [] },
+    resources: [{ id: 'r0', title: 'Специалист' }],
+    workTypes: [{ id: 'w0', title: 'Разработка', allowsParallel: false }],
+    groups: [],
+    tasks: [
+      { id: 'a', title: 'Первая работа', start: '2026-10-12', end: '2026-10-16', assigneeIds: ['r0'], workTypeIds: ['w0'] },
+      { id: 'b', title: 'Вторая работа', start: '2026-10-14', end: '2026-10-16', assigneeIds: ['r0'], workTypeIds: ['w0'] },
+    ],
+    dependencies: [{ id: 'd1', fromTaskId: 'a', toTaskId: 'b', lagDays: 0 }],
+    unavailability: [],
+  }), { id: documentId });
+
+  // Проблемы: высота постоянна при полном списке, пустом фильтре и пустом плане.
+  await pane.locator('[data-issues]').click();
+  const issues = page.getByRole('dialog', { name: 'Проблемы плана' });
+  await expect(issues).toBeVisible();
+  const full = await issues.boundingBox();
+  await issues.locator('[data-issue-filter="unavailability"]').click();
+  await expect(issues.locator('[data-issues-empty="filtered"]')).toBeVisible();
+  const emptied = await issues.boundingBox();
+  expect(emptied!.height).toBe(full!.height);
+  await issues.locator('[data-issues-close]').click();
+
+  // Настройки плана: высота постоянна при переключении разделов.
+  await pane.locator('[data-catalogs]').click();
+  const settings = page.getByRole('dialog', { name: /Настройки плана/ });
+  await expect(settings).toBeVisible();
+  const settingsFull = await settings.boundingBox();
+  const nav = settings.getByRole('button', { name: /Ресурсы|Типы работ/ }).first();
+  const alt = settings.getByRole('button', { name: /Календарь|Ресурсы/ }).first();
+  await nav.click();
+  await page.waitForTimeout(200);
+  const switched = await settings.boundingBox();
+  expect(switched!.height).toBe(settingsFull!.height);
+  await alt.click();
+  await page.waitForTimeout(200);
+  expect((await settings.boundingBox())!.height).toBe(settingsFull!.height);
+  await settings.locator('.plan-dialog__close').click();
 });
