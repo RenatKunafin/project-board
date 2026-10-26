@@ -177,8 +177,7 @@ test('экспорт PlantUML публикует ручной цвет hex-зн�
   const dialog = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   const text = await dialog.locator('[data-plantuml-text]').textContent();
   expect(text).toContain('[T1] is colored in #3186e9/#3186e9');
-  // Задача без ручного цвета — прежнее поведение (без явного цвета этапа,
-  // маркеров этапов в названиях нет).
+  // Задача без ручного цвета — без явного цвета (эвристика этапов удалена).
   expect(text).not.toContain('[T2] is colored in');
 });
 
