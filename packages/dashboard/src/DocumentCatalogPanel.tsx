@@ -210,6 +210,13 @@ export function DocumentCatalogPanel({
               ) : deletingId === document.id ? (
                 <span className="doc-catalog__confirm">
                   Удалить «{document.title}»?
+                  {/* PBT-090: подтверждение объясняет последствия для
+                      открытых представлений документа. */}
+                  {openWindowCount(document.id) > 0
+                    ? ` Документ открыт в ${openWindowCount(document.id)} ${
+                        openWindowCount(document.id) === 1 ? 'окне' : 'окнах'
+                      } — все его окна перейдут в состояние недоступного документа.`
+                    : ''}
                   <button
                     type="button"
                     className="doc-catalog__action doc-catalog__action--danger"

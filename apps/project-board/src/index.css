@@ -833,9 +833,9 @@ body {
 }
 
 .dropdown-panel {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  /* PBT-090: позиция задаётся инлайн (fixed по якорю с clamp) —
+     DropdownPanel; высота ограничена, длинное содержимое скроллится. */
+  position: fixed;
   min-width: 280px;
   max-height: min(480px, 70vh);
   overflow-y: auto;
