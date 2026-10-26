@@ -193,41 +193,7 @@
   gap: 6px;
 }
 
-/* Список проблем плана PBT-046. */
-
-:is(.plan-gantt, .resource-timeline) .issues__row {
-  border-left: 3px solid var(--destructive);
-  padding-left: 8px;
-  align-items: flex-start;
-}
-
-:is(.plan-gantt, .resource-timeline) .issues__kind {
-  font-weight: 600;
-}
-
-:is(.plan-gantt, .resource-timeline) .issues__action {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
-  padding: 6px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-:is(.plan-gantt, .resource-timeline) .issues__action:hover {
-  background: var(--surface-raised);
-}
-
-:is(.plan-gantt, .resource-timeline) .issues__action:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
+/* Список проблем плана — стили PBT-088 в plan-issues.css. */
 
 :is(.plan-gantt, .resource-timeline) .issues__show {
   color: var(--primary);

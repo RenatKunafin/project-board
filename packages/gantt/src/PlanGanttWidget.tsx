@@ -1966,11 +1966,16 @@ export default function PlanGanttWidget({
           onClose={closeCatalog}
         />
       )}
-      {issuesOpen && (
+      {issuesOpen && plan !== undefined && (
         <PlanIssuesDialog
           owner={dialogOwner}
+          plan={plan}
           issues={issues}
           onShowTask={showTask}
+          onEditTask={(taskId) => {
+            setIssuesOpen(false);
+            openEditor({ mode: 'edit', taskId });
+          }}
           onClose={() => setIssuesOpen(false)}
         />
       )}

@@ -1,0 +1,147 @@
+/* PBT-088: список проблем — группы, фильтры, поиск, структурированная
+   строка. Семантические токены приложения; цвет — по типу проблемы. */
+
+.plan-issues__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.plan-issues__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-issues__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plan-issues__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 8px);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.plan-issues__filter:hover {
+  color: var(--foreground);
+}
+
+.plan-issues__filter--active,
+.plan-issues__filter[aria-pressed='true'] {
+  border-color: color-mix(in oklch, var(--foreground) 40%, transparent);
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.plan-issues__count {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.plan-issues__search {
+  margin: 0;
+}
+
+.plan-issues__scroll {
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 10px;
+}
+
+.plan-issues__group {
+  margin-bottom: 16px;
+}
+
+.plan-issues__group:last-child {
+  margin-bottom: 0;
+}
+
+.plan-issues__group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.plan-issues__group-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.issues__row--parallel-work .plan-issues__group-title::before,
+.plan-issues__group[aria-label='Конфликт работ'] .plan-issues__group-title::before {
+  background: var(--destructive);
+}
+
+.plan-issues__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.plan-issues__entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-issues__entry:last-child {
+  border-bottom: none;
+}
+
+.plan-issues__info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.plan-issues__task {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.plan-issues__message {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+
+.plan-issues__meta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+
+.plan-issues__meta:empty {
+  display: none;
+}
+
+.plan-issues__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
