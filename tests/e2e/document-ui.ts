@@ -22,6 +22,14 @@ function windowForInstance(page: Page, id: string): Locator {
   return page.locator('.widget-window').filter({ has: page.locator(`[data-instance="${id}"], [data-widget-instance="${id}"]`) });
 }
 
+/** PBT-089: вторичные команды плана — в меню «⋯» тулбара. */
+export async function openPlanMenu(page: Page, pane: Locator): Promise<Locator> {
+  await pane.locator('[data-plan-menu]').click();
+  const menu = page.getByRole('menu', { name: 'Меню плана' });
+  await menu.waitFor({ state: 'visible' });
+  return menu;
+}
+
 export async function openDocumentWindow(page: Page, type: string, title: string) {
   const previous = (await storedWorkspace(page)).widgetInstances.map(row => row.id);
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();

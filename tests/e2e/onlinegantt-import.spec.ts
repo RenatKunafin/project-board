@@ -29,7 +29,8 @@ async function createPlan(page: Page, title: string): Promise<void> {
 
 async function importGantt(page: Page, paneName: string): Promise<void> {
   const pane = page.getByRole('group', { name: paneName }).first();
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane
     .locator('[data-import-plan-input]')
     .setInputFiles(FIXTURE_PATH);
@@ -170,7 +171,8 @@ test('критическая ошибка даёт диагностику без
   await createPlan(page, 'Целевой');
 
   const pane = page.getByRole('group', { name: 'План · Целевой' }).first();
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane.locator('[data-import-plan-input]').setInputFiles({
     name: 'broken.gantt',
     mimeType: 'application/json',
@@ -208,7 +210,8 @@ test('повторный импорт создаёт два независимы
   await expect(firstPane).toBeVisible();
 
   // Второй импорт того же файла: ещё один документ, окно — на последнем.
-  await firstPane.getByRole('button', { name: 'Импорт плана' }).click();
+  await firstPane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await firstPane
     .locator('[data-import-plan-input]')
     .setInputFiles(FIXTURE_PATH);

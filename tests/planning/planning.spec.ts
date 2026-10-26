@@ -134,7 +134,8 @@ test('рабочий импорт → планирование → календ�
   expect(exported.value.content.tasks.find(task => task.title === `${A} правка`)).toMatchObject({ start: '2026-10-26', end: '2026-10-29' });
   expect(exported.value.content.tasks.find(task => task.title === B)).toMatchObject({ start: '2026-10-20', end: '2026-10-22' });
   expect(exported.value.format).toBe('project-board-plan');
-  await plan.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const plantuml = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   const text = await plantuml.locator('[data-plantuml-text]').textContent();
   expect(text).toContain('@startgantt');
