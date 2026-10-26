@@ -15,7 +15,7 @@ import '@svar-ui/react-gantt/style.css';
 // Иконки SVAR локально (PBT-073, design D2): WillowDark ниже подключается
 // с fonts={false}, внешний запрос к cdn.svar.dev не выполняется (офлайн-PWA).
 import './vendor/wx-icons/wx-icons.css';
-import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
+import { DocumentConflictError, type ManagedDocument, type WidgetProps } from '@project-board/widget-sdk';
 import {
   createPlanContent,
   parsePlanContent,
@@ -57,27 +57,12 @@ import {
   planToGanttTasks,
 } from './svar-adapter';
 import { moveTask, setTaskDates } from './plan-commands';
-import type { PlanCommandError, PlanCommandResult } from './plan-commands';
-import {
-  createResource,
-  createWorkType,
-  deleteResource,
-  deleteWorkType,
-  updateResource,
-  updateWorkType,
-} from './plan-catalogs';
-import {
-  createUnavailability,
-  deleteUnavailability,
-  updateUnavailability,
-} from './plan-assignments';
-import { updateCalendar } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import type { GroupFormIssue } from './group-editor';
 import TaskEditorDialog from './TaskEditorDialog';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
-import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
+import ResourceCatalogDialog, { type SettingsSaveError } from './ResourceCatalogDialog';
 import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
 import { useTaskForm, type TaskEditorState } from './use-task-form';
 import {
@@ -550,74 +535,22 @@ export default function PlanGanttWidget({
     closeGroupEditor();
   }, [groupEditor, commitPlan, closeGroupEditor]);
 
-  // Команды справочников (PBT-041): делегирование функциям ядра
-  // plan-catalogs; ошибка ядра возвращается диалогу (показ по месту).
-  const applyCatalogCommand = useCallback(
-    (command: CatalogCommand): PlanCommandError | undefined => {
-      let error: PlanCommandError | undefined;
-      commitPlan((latest) => {
-        const validationNow = parsePlanContent(latest.content);
-        if (!validationNow.ok) {
-          return undefined;
-        }
-        const base = validationNow.plan;
-        const result = ((): PlanCommandResult => {
-          switch (command.type) {
-            case 'createResource':
-              return createResource(base, { title: command.title });
-            case 'renameResource':
-              return updateResource(base, command.resourceId, {
-                title: command.title,
-              });
-            case 'deleteResource':
-              return deleteResource(base, command.resourceId);
-            case 'createWorkType':
-              return createWorkType(base, {
-                title: command.title,
-                allowsParallel: command.allowsParallel,
-              });
-            case 'renameWorkType':
-              return updateWorkType(base, command.workTypeId, {
-                title: command.title,
-              });
-            case 'toggleWorkTypeParallel':
-              return updateWorkType(base, command.workTypeId, {
-                allowsParallel: command.allowsParallel,
-              });
-            case 'deleteWorkType':
-              return deleteWorkType(base, command.workTypeId);
-            case 'createUnavailability':
-              return createUnavailability(base, {
-                resourceId: command.resourceId,
-                start: command.start,
-                end: command.end,
-              });
-            case 'updateUnavailability':
-              return updateUnavailability(base, command.unavailabilityId, {
-                resourceId: command.resourceId,
-                start: command.start,
-                end: command.end,
-              });
-            case 'deleteUnavailability':
-              return deleteUnavailability(base, command.unavailabilityId);
-            case 'updateCalendar':
-              return updateCalendar(
-                base,
-                command.workingDays,
-                command.holidays,
-                command.workingExceptions,
-              );
-          }
-        })();
-        if (!result.ok) {
-          error = result.error;
-          return undefined;
-        }
-        return result.plan;
-      });
-      return error;
+  // Общий черновик настроек фиксируется одной записью исходной редакции.
+  const savePlanSettings = useCallback(
+    (nextPlan: PlanContent, expectedRevision: number): SettingsSaveError | undefined => {
+      if (!documentId || !documentService) return { kind: 'missing', message: 'Документ недоступен. Настройки не сохранены.' };
+      const current = documentService.get(documentId);
+      if (!current) return { kind: 'missing', message: 'Документ удалён. Настройки не сохранены.' };
+      if (current.revision !== expectedRevision) return { kind: 'conflict', message: 'План изменён в другом окне. Перечитайте актуальную версию.' };
+      if (!parsePlanContent(nextPlan).ok) return { kind: 'invalid', message: 'Настройки содержат некорректные данные. Исправьте ввод перед сохранением.' };
+      try {
+        documentService.update(documentId, expectedRevision, nextPlan);
+      } catch (error) {
+        return { kind: error instanceof DocumentConflictError ? 'conflict' : 'write', message: error instanceof Error ? error.message : 'Не удалось сохранить настройки.' };
+      }
+      return undefined;
     },
-    [commitPlan],
+    [documentId, documentService],
   );
 
   // PBT-082: сначала закрыть список и обновить дерево/фильтры.
@@ -1961,7 +1894,8 @@ export default function PlanGanttWidget({
         <ResourceCatalogDialog
           owner={dialogOwner}
           plan={plan}
-          applyCommand={applyCatalogCommand}
+          revision={document.revision}
+          onSave={savePlanSettings}
           onClose={closeCatalog}
         />
       )}

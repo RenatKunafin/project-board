@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import type { PlanCommandError } from './plan-commands';
 import type { PlanContent, Weekday } from './plan-document';
 import { addCalendarDays } from './working-calendar';
@@ -13,8 +14,21 @@ const WEEKDAYS: readonly { value: Weekday; label: string }[] = [
   { value: 7, label: 'Вс' },
 ];
 
+export interface CalendarInputs {
+  readonly holidayFrom: string;
+  readonly holidayTo: string;
+  readonly exceptionFrom: string;
+  readonly exceptionTo: string;
+}
+
+export const EMPTY_CALENDAR_INPUTS: CalendarInputs = {
+  holidayFrom: '', holidayTo: '', exceptionFrom: '', exceptionTo: '',
+};
+
 interface PlanCalendarSectionProps {
   readonly calendar: PlanContent['calendar'];
+  readonly inputs: CalendarInputs;
+  readonly onInputsChange: (inputs: CalendarInputs) => void;
   /** Применяет полную замену календаря; возвращает ошибку ядра по месту. */
   readonly onApply: (
     workingDays: readonly number[],
@@ -31,11 +45,11 @@ interface PlanCalendarSectionProps {
 export default function PlanCalendarSection({
   calendar,
   onApply,
+  inputs,
+  onInputsChange,
 }: PlanCalendarSectionProps) {
-  const [holidayFrom, setHolidayFrom] = useState('');
-  const [holidayTo, setHolidayTo] = useState('');
-  const [exceptionFrom, setExceptionFrom] = useState('');
-  const [exceptionTo, setExceptionTo] = useState('');
+  const { holidayFrom, holidayTo, exceptionFrom, exceptionTo } = inputs;
+  const changeInput = (field: keyof CalendarInputs, value: string) => onInputsChange({ ...inputs, [field]: value });
   const [error, setError] = useState<string | null>(null);
 
   const apply = (
@@ -93,8 +107,7 @@ export default function PlanCalendarSection({
       (date) => !dates.includes(date),
     );
     if (apply(calendar.workingDays, holidays, exceptions)) {
-      setHolidayFrom('');
-      setHolidayTo('');
+      onInputsChange({ ...inputs, holidayFrom: '', holidayTo: '' });
     }
   };
 
@@ -113,14 +126,13 @@ export default function PlanCalendarSection({
     ].sort();
     const holidays = calendar.holidays.filter((date) => !dates.includes(date));
     if (apply(calendar.workingDays, holidays, exceptions)) {
-      setExceptionFrom('');
-      setExceptionTo('');
+      onInputsChange({ ...inputs, exceptionFrom: '', exceptionTo: '' });
     }
   };
 
   return (
-    <section aria-label="Календарь">
-      <h4 className="catalog__section-title">Календарь</h4>
+    <div className="plan-settings__calendar">
+      <h5 className="catalog__section-title">Рабочая неделя</h5>
       <div className="catalog__week" data-calendar-week>
         {WEEKDAYS.map((weekday) => (
           <label key={weekday.value} className="catalog__week-day">
@@ -137,14 +149,16 @@ export default function PlanCalendarSection({
         ))}
       </div>
       <div className="catalog__sub">
-        <span className="task-editor__label">Праздники</span>
+        <h5 className="catalog__section-title">Нерабочие даты</h5>
+        {calendar.holidays.length === 0 && <p className="task-editor__preview">Нерабочих дат нет.</p>}
         <ul className="catalog__list">
           {calendar.holidays.map((date) => (
             <li key={date} className="catalog__row">
               <span className="catalog__title">{date}</span>
               <button
                 type="button"
-                className="task-editor__button"
+                className="task-editor__button plan-settings__remove"
+                title={`Удалить ${date}`}
                 aria-label={`Удалить праздник ${date}`}
                 data-calendar-remove-holiday={date}
                 onClick={() =>
@@ -155,7 +169,7 @@ export default function PlanCalendarSection({
                   )
                 }
               >
-                Удалить
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -164,15 +178,17 @@ export default function PlanCalendarSection({
           <input
             type="date"
             value={holidayFrom}
+            aria-label="Нерабочие даты: с"
             data-calendar-holiday-from
-            onChange={(event) => setHolidayFrom(event.target.value)}
+            onChange={(event) => changeInput('holidayFrom', event.target.value)}
           />
           <input
             type="date"
             value={holidayTo}
+            aria-label="Нерабочие даты: по"
             data-calendar-holiday-to
             title="По (необязательно — диапазон)"
-            onChange={(event) => setHolidayTo(event.target.value)}
+            onChange={(event) => changeInput('holidayTo', event.target.value)}
           />
           <button
             type="button"
@@ -185,7 +201,7 @@ export default function PlanCalendarSection({
         </div>
       </div>
       <div className="catalog__sub">
-        <span className="task-editor__label">Рабочие исключения</span>
+        <h5 className="catalog__section-title">Рабочие исключения</h5>
         {calendar.workingExceptions.length === 0 && (
           <p className="task-editor__preview">Исключений нет.</p>
         )}
@@ -195,7 +211,8 @@ export default function PlanCalendarSection({
               <span className="catalog__title">{date}</span>
               <button
                 type="button"
-                className="task-editor__button"
+                className="task-editor__button plan-settings__remove"
+                title={`Удалить ${date}`}
                 aria-label={`Удалить исключение ${date}`}
                 data-calendar-remove-exception={date}
                 onClick={() =>
@@ -208,7 +225,7 @@ export default function PlanCalendarSection({
                   )
                 }
               >
-                Удалить
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -217,15 +234,17 @@ export default function PlanCalendarSection({
           <input
             type="date"
             value={exceptionFrom}
+            aria-label="Рабочие исключения: с"
             data-calendar-exception-from
-            onChange={(event) => setExceptionFrom(event.target.value)}
+            onChange={(event) => changeInput('exceptionFrom', event.target.value)}
           />
           <input
             type="date"
             value={exceptionTo}
+            aria-label="Рабочие исключения: по"
             data-calendar-exception-to
             title="По (необязательно — диапазон)"
-            onChange={(event) => setExceptionTo(event.target.value)}
+            onChange={(event) => changeInput('exceptionTo', event.target.value)}
           />
           <button
             type="button"
@@ -242,6 +261,6 @@ export default function PlanCalendarSection({
           {error}
         </p>
       )}
-    </section>
+    </div>
   );
 }

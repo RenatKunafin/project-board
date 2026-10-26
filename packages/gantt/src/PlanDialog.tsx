@@ -17,12 +17,13 @@ interface PlanDialogProps {
   readonly className: string;
   readonly wide?: boolean;
   readonly onClose: () => void;
+  readonly onBeforeClose?: () => boolean;
   readonly children: ReactNode;
 }
 
 /** Нативный верхний слой оставляет содержимое в дереве/границе ошибки виджета. */
 export default function PlanDialog({
-  owner, title, description, closeLabel, className, wide = false, onClose, children,
+  owner, title, description, closeLabel, className, wide = false, onClose, onBeforeClose, children,
 }: PlanDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openedFor = useRef(owner.id);
@@ -97,6 +98,7 @@ export default function PlanDialog({
   }, []);
 
   const requestClose = () => {
+    if (onBeforeClose && !onBeforeClose()) return;
     dialogRef.current?.close();
     closeRef.current();
   };

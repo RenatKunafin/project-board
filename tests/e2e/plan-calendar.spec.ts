@@ -39,6 +39,7 @@ async function openSettings(page: Page, paneTitle: string, index = 0) {
   await pane.locator('[data-catalogs]').click();
   const dialog = pane.getByRole('dialog', { name: 'Настройки плана' });
   await expect(dialog).toBeVisible();
+  await dialog.locator('[data-settings-section="calendar"]').click();
   return dialog;
 }
 
@@ -81,13 +82,14 @@ test('праздник 14.10 → длительность 4; исключени�
   await expect(second.locator('.plan-gantt__chart')).toBeVisible();
 
   // Праздник 14.10 через редактор.
-  const dialog = await openSettings(page, 'Календарь', 0);
+  let dialog = await openSettings(page, 'Календарь', 0);
   await dialog.locator('[data-calendar-holiday-from]').fill('2026-10-14');
   await dialog.locator('[data-calendar-add-holiday]').click();
   await expect(
     dialog.locator('[data-calendar-remove-holiday="2026-10-14"]'),
   ).toBeVisible();
 
+  await dialog.locator('[data-catalog-save]').click();
   // A5: даты прежние, длительность 4, подсветка праздника в обоих чартах.
   await expect(
     first.locator('.wx-row[data-id=":t-1"]'),
@@ -102,6 +104,7 @@ test('праздник 14.10 → длительность 4; исключени�
     second.locator('.plan-gantt__chart .gantt-holiday, .plan-gantt__chart [class*="holiday"]'),
   ).not.toHaveCount(0);
 
+  dialog = await openSettings(page, 'Календарь', 0);
   // Исключение 14.10 → длительность 5.
   await dialog.locator('[data-calendar-exception-from]').fill('2026-10-14');
   await dialog.locator('[data-calendar-add-exception]').click();
@@ -109,6 +112,7 @@ test('праздник 14.10 → длительность 4; исключени�
   await expect(
     dialog.locator('[data-calendar-remove-holiday="2026-10-14"]'),
   ).toHaveCount(0);
+  await dialog.locator('[data-catalog-save]').click();
   await expect(
     first.locator('.wx-row[data-id=":t-1"]'),
   ).toContainText('5');
@@ -150,7 +154,9 @@ test('пустой календарь отклоняется: снятие по�
     (id) => window.__projectBoard.readDocument(id)?.content?.calendar,
     documentId,
   );
-  expect(content.workingDays).toEqual([5]);
+  expect(content.workingDays).toEqual([1, 2, 3, 4, 5]);
+  await dialog.locator('[data-catalog-save]').click();
+  expect(await page.evaluate(id => window.__projectBoard.readDocument(id)?.content?.calendar.workingDays, documentId)).toEqual([5]);
 });
 
 test('диапазон праздников раскладывается на отдельные даты; независимость планов', async ({
@@ -180,6 +186,7 @@ test('диапазон праздников раскладывается на о
     ).toBeVisible();
   }
 
+  await dialogA.locator('[data-catalog-save]').click();
   const calendarA = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.calendar,
     planA,
