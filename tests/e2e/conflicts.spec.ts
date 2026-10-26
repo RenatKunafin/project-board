@@ -87,7 +87,7 @@ test('три типа проблем в списке: FS, конфликт ра�
   await pane.locator('[data-issues]').click();
   const dialog = pane.getByRole('dialog', { name: 'Проблемы плана' });
   await expect(dialog).toBeVisible();
-  const list = dialog.locator('[data-issues-list]');
+  const list = dialog.locator('.plan-issues__scroll');
   await expect(list).toContainText('Нарушение FS');
   await expect(list).toContainText('Задача B');
   await expect(list).toContainText('Конфликт работ');
