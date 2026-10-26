@@ -55,7 +55,7 @@ describe('генерация правил окраски полос', () => {
     expect(rules).toContain('[data-task-id="t-3"]');
     expect(rules).not.toContain('t-2');
     expect(rules).not.toContain('t/bad');
-    expect(rules).toContain('--wx-gantt-task-color:color-mix(in oklch,#3186E9 45%,var(--surface))');
+    expect(rules).toContain('--wx-gantt-task-color:color-mix(in oklch,#3186E9 80%,#000)');
     expect(rules).toContain('--wx-gantt-task-fill-color:#3186E9');
     expect(rules).toContain('--wx-gantt-task-border-color:#3186E9');
   });
@@ -71,9 +71,9 @@ describe('генерация правил окраски полос', () => {
 });
 
 describe('инлайн-стиль ресурсного вида', () => {
-  it('цвет палитры смешивается с поверхностью темы', () => {
+  it('цвет палитры смешивается с чёрным — оттенок сохраняется', () => {
     expect(resourceTimelineColorStyle('sapphire')).toEqual({
-      background: 'color-mix(in oklch, #3186E9 45%, var(--surface))',
+      background: 'color-mix(in oklch, #3186E9 80%, #000)',
       borderColor: '#3186E9',
     });
   });

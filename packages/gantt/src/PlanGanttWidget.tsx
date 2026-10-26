@@ -1321,11 +1321,16 @@ export default function PlanGanttWidget({
   );
   // PBT-084: правила окраски полос ручным цветом — только задачи с
   // валидным цветом и безопасным для селектора идентификатором.
+  // Считаются от актуального плана, минуя стабилизацию source (ownWrite):
+  // CSS-правило обновляется мгновенно, не перезаливая стор SVAR —
+  // быстрая смена цвета не пересобирает чарт (прокрутка и раскрытие
+  // групп сохраняются, дефекты живого осмотра 2026-10-26 №2–3).
   const colorRules = useMemo(
-    () => (source ? ganttBarColorRules(source.plan.tasks, ':') : ''),
-    [source],
+    () => ganttBarColorRules((filteredPlan ?? plan)?.tasks ?? [], ':'),
+    [filteredPlan, plan],
   );
-  // Быстрая смена цвета (правый клик на полосе задачи, PBT-084).
+  // Быстрая смена цвета (правый клик на полосе задачи, PBT-084):
+  // собственная запись с пометкой ревизии — чарт не пересобирается.
   const [colorMenu, setColorMenu] = useState<TaskColorMenuState | null>(null);
   const colorMenuTask = colorMenu === null || source === null
     ? undefined
@@ -1334,15 +1339,27 @@ export default function PlanGanttWidget({
     (color: string | undefined) => {
       const target = colorMenu?.taskId;
       setColorMenu(null);
-      if (target === undefined) return;
-      commitPlan((latest) => {
+      if (target === undefined || !documentId || !documentService) return;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const latest = documentService.get(documentId) ?? documentRef.current;
+        if (latest === undefined) return;
         const parsed = parsePlanContent(latest.content);
-        if (!parsed.ok) return undefined;
+        if (!parsed.ok) return;
         const result = updateTask(parsed.plan, target, { color });
-        return result.ok ? result.plan : undefined;
-      });
+        if (!result.ok) return;
+        if (result.plan === parsed.plan) return;
+        try {
+          const saved = documentService.update(documentId, latest.revision, result.plan);
+          // Своя запись не пересобирает чарт (D7 PBT-039): правило цвета
+          // обновится реактивно от актуального плана.
+          localRevisionRef.current = saved.revision;
+          return;
+        } catch {
+          // Конфликт ревизии — повторить по свежим данным.
+        }
+      }
     },
-    [colorMenu, commitPlan],
+    [colorMenu, documentId, documentService],
   );
   const onChartContextMenu = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {

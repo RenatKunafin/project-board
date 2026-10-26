@@ -50,8 +50,11 @@ const SAFE_ID = /^[A-Za-z0-9_-]+$/;
 
 /**
  * Правила окраски полос проектного Гантта (SVAR): подмешивание в
- * переменные темы — фон разбавляется поверхностью темы (адаптация
- * к светлой/тёмной), заливка и рамка — полный цвет палитры.
+ * переменные темы. Фон — затемнение до 80% в oklch: mix с поверхностью
+ * темы искажал оттенок тёплых цветов (живой осмотр 2026-10-26: тыква
+ * становилась фиолетовой — интерполяция hue к холодной surface 250°),
+ * mix с чёрным сохраняет оттенок и спокойную глубину тёмной темы;
+ * заливка и рамка — полный цвет палитры.
  * SVAR выводит идентификатор задачи в data-task-id с префиксом «:»
  * (контракт 2.8.0, как в референсе прототипа) — prefix добавляется
  * в селектор, но не в проверку безопасности самого идентификатора.
@@ -64,7 +67,7 @@ export function ganttBarColorRules(
     .filter((task) => isTaskColor(task.color) && SAFE_ID.test(task.id))
     .map(
       (task) =>
-        `[data-task-id="${prefix}${task.id}"]{--wx-gantt-task-color:color-mix(in oklch,${BY_ID.get(task.color!)!.hex} 45%,var(--surface));--wx-gantt-task-fill-color:${BY_ID.get(task.color!)!.hex};--wx-gantt-task-border-color:${BY_ID.get(task.color!)!.hex}}`,
+        `[data-task-id="${prefix}${task.id}"]{--wx-gantt-task-color:color-mix(in oklch,${BY_ID.get(task.color!)!.hex} 80%,#000);--wx-gantt-task-fill-color:${BY_ID.get(task.color!)!.hex};--wx-gantt-task-border-color:${BY_ID.get(task.color!)!.hex}}`,
     )
     .join('\n');
 }
@@ -77,7 +80,7 @@ export function resourceTimelineColorStyle(
   return color === undefined
     ? undefined
     : {
-        background: `color-mix(in oklch, ${color.hex} 45%, var(--surface))`,
+        background: `color-mix(in oklch, ${color.hex} 80%, #000)`,
         borderColor: color.hex,
       };
 }
