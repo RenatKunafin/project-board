@@ -100,7 +100,8 @@ test('экспортированный файл переносится в чис
 
   // Экспорт: скачивание с именем по шаблону и содержимым формата.
   const downloadPromise = page.waitForEvent('download');
-  await pane.getByRole('button', { name: 'Экспорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт плана' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(
     /^pb-plan-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json$/,
@@ -124,7 +125,8 @@ test('экспортированный файл переносится в чис
   const otherPane = otherPage
     .getByRole('group', { name: 'План · Чужой план' })
     .first();
-  await otherPane.getByRole('button', { name: 'Импорт плана' }).click();
+  await otherPane.locator('[data-plan-menu]').click();
+  await otherPage.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await otherPane
     .locator('[data-import-plan-input]')
     .setInputFiles(path as string);
@@ -163,7 +165,8 @@ test('битый файл даёт диагностику и не создаёт
   await page.goto('/');
   await createPlan(page, 'Ошибки');
   const pane = page.getByRole('group', { name: 'План · Ошибки' }).first();
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane.locator('[data-import-plan-input]').setInputFiles({
     name: 'broken.json',
     mimeType: 'application/json',
@@ -207,7 +210,8 @@ test('повторный импорт создаёт независимый пл
   };
 
   // Первый импорт; исходный план переименовывается, чтобы различить.
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane.locator('[data-import-plan-input]').setInputFiles(file);
   await expect(
     page.getByRole('group', { name: 'План · Повтор' }).first(),
@@ -225,7 +229,8 @@ test('повторный импорт создаёт независимый пл
   const secondPane = page
     .getByRole('group', { name: 'План · Повтор' })
     .first();
-  await secondPane.getByRole('button', { name: 'Импорт плана' }).click();
+  await secondPane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await secondPane.locator('[data-import-plan-input]').setInputFiles(file);
   await expect(
     page.getByRole('group', { name: 'План · Повтор' }).first(),
@@ -253,7 +258,8 @@ test('отмена выбора файла не меняет данные', asyn
   const pane = page.getByRole('group', { name: 'План · Отмена' }).first();
 
   const chooserPromise = page.waitForEvent('filechooser');
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   const chooser = await chooserPromise;
   // Диалог закрыт без выбора файла: change не срабатывает, состояние не меняется.
   await page.keyboard.press('Escape');

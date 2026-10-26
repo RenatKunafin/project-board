@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { createDocumentWindow, openDocumentWindow } from './document-ui';
+import { createDocumentWindow, openDocumentWindow, openPlanMenu } from './document-ui';
 
 const longPlan = {
   calendar: { workingDays: [1, 2, 3, 4, 5], holidays: [], workingExceptions: [] },
@@ -133,7 +133,6 @@ for (const viewport of [{ width: 1024, height: 778 }, { width: 1856, height: 126
       for (const [selector, name] of [
         ['[data-add-task]', 'Новая задача'], ['[data-add-group]', 'Новая группа'],
         ['[data-catalogs]', 'Настройки плана'], ['[data-issues]', 'Проблемы плана'],
-        ['[data-export-plantuml]', 'Экспорт PlantUML'],
       ]) {
         await pane.locator(selector).click();
         const dialog = pane.getByRole('dialog', { name, exact: true });
@@ -141,7 +140,15 @@ for (const viewport of [{ width: 1024, height: 778 }, { width: 1856, height: 126
         await dialog.locator('.plan-dialog__close').click();
         await expect(dialog).toHaveCount(0);
       }
-      await pane.locator('[data-import-plan]').click();
+      // PBT-089: вторичные команды — в меню «⋯».
+      const plantumlMenu = await openPlanMenu(page, pane);
+      await plantumlMenu.locator('[data-export-plantuml]').click();
+      const plantumlDialog = pane.getByRole('dialog', { name: 'Экспорт PlantUML', exact: true });
+      await frame(page, plantumlDialog);
+      await plantumlDialog.locator('.plan-dialog__close').click();
+      await expect(plantumlDialog).toHaveCount(0);
+      const importMenu = await openPlanMenu(page, pane);
+      await importMenu.locator('[data-import-plan]').click();
       await pane.locator('[data-import-plan-input]').setInputFiles('tests/fixtures/gantt/onlinegantt-20261016.reference.gantt');
       const preview = pane.getByRole('dialog', { name: 'Импорт плана из OnlineGantt', exact: true });
       await frame(page, preview);

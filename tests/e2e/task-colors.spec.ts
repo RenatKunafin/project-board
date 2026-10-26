@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { createDocumentWindow, openDocumentWindow } from './document-ui';
+import { createDocumentWindow, openDocumentWindow, openPlanMenu } from './document-ui';
 import { storedPlan } from '../planning/helpers';
 
 /**
@@ -173,7 +173,8 @@ test('экспорт PlantUML публикует ручной цвет hex-зн�
   };
   await page.evaluate(({ id, content }) => window.__projectBoard!.writeDocumentContent(id, content), { id: documentId, content: withColor });
 
-  await pane.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  const menu = await openPlanMenu(page, pane);
+  await menu.getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const dialog = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   const text = await dialog.locator('[data-plantuml-text]').textContent();
   expect(text).toContain('[T1] is colored in #3186e9/#3186e9');
@@ -194,7 +195,8 @@ test('импорт OnlineGantt переносит цвет при совпаде
     resources: [],
     advanced: {},
   });
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane.locator('[data-import-plan-input]').setInputFiles({
     name: 'colors.gantt',
     mimeType: 'application/json',

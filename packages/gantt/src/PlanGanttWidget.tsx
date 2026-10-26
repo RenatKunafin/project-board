@@ -63,6 +63,7 @@ import type { GroupFormIssue } from './group-editor';
 import { ganttBarColorRules } from './task-colors';
 import { TaskColorMenu, type TaskColorMenuState } from './task-color-picker';
 import TaskEditorDialog from './TaskEditorDialog';
+import PlanMoreMenu from './PlanMoreMenu';
 import type { TaskFormSession } from './task-form-draft';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type SettingsSaveError } from './ResourceCatalogDialog';
@@ -143,7 +144,26 @@ export default function PlanGanttWidget({
 
   // Служебный статус последнего действия виджета (PBT-073, design D5):
   // показывается в футере представления (role="status"); в покое — пусто.
+  // PBT-089: успешные статусы временные — автоочистка через 6 с, таймер
+  // сбрасывается новым сообщением и размонтированием; высота строк не
+  // меняется, ошибки переноса остаются в панели результата (role=alert).
   const [footerStatus, setFooterStatus] = useState('');
+  const footerStatusTimerRef = useRef<number | null>(null);
+  const showFooterStatus = useCallback((message: string) => {
+    setFooterStatus(message);
+    if (footerStatusTimerRef.current !== null) {
+      window.clearTimeout(footerStatusTimerRef.current);
+    }
+    footerStatusTimerRef.current = window.setTimeout(() => {
+      setFooterStatus('');
+      footerStatusTimerRef.current = null;
+    }, 6000);
+  }, []);
+  useEffect(() => () => {
+    if (footerStatusTimerRef.current !== null) {
+      window.clearTimeout(footerStatusTimerRef.current);
+    }
+  }, []);
 
   // Фильтры представления (PBT-049): тулбар-контролы; изменение —
   // React-state + updateSettings (производное, документ не меняется).
@@ -326,7 +346,7 @@ export default function PlanGanttWidget({
     anchor.download = planFileName(new Date());
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFooterStatus('План экспортирован');
+    showFooterStatus('План экспортирован');
   }, []);
 
   // Импорт: валидация до создания документа; успех — новый независимый
@@ -366,7 +386,7 @@ export default function PlanGanttWidget({
           content: result.payload.content,
         });
         setImportResult({ ok: true, title: created.title });
-        setFooterStatus(`План «${created.title}» импортирован`);
+        showFooterStatus(`План «${created.title}» импортирован`);
         switchDocument?.(created.id);
       });
     },
@@ -390,7 +410,7 @@ export default function PlanGanttWidget({
       });
       setOnlineganttPreview(undefined);
       setImportResult({ ok: true, title: created.title });
-      setFooterStatus(`План «${created.title}» импортирован`);
+      showFooterStatus(`План «${created.title}» импортирован`);
       switchDocument?.(created.id);
     },
     [documentService, onlineganttPreview, switchDocument],
@@ -472,7 +492,7 @@ export default function PlanGanttWidget({
     anchor.download = plantumlPreview.fileName;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFooterStatus('Файл PlantUML скачан');
+    showFooterStatus('Файл PlantUML скачан');
   }, [plantumlPreview]);
 
   // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
@@ -1680,40 +1700,6 @@ export default function PlanGanttWidget({
                 <FolderPlus aria-hidden="true" />
                 Группа
               </button>
-              <span
-                className="plan-gantt__toolbar-separator"
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-import-plan
-                aria-label="Импорт плана"
-                onClick={() => importInputRef.current?.click()}
-              >
-                <Upload aria-hidden="true" />
-                Импорт
-              </button>
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-export-plan
-                aria-label="Экспорт плана"
-                onClick={handleExportPlan}
-              >
-                <Download aria-hidden="true" />
-                Экспорт
-              </button>
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-export-plantuml
-                aria-label="Экспорт PlantUML"
-                onClick={openPlantumlExport}
-              >
-                <BarChart3 aria-hidden="true" />
-                PlantUML
-              </button>
               <button
                 type="button"
                 className="plan-gantt__button plan-gantt__button--icon"
@@ -1724,6 +1710,32 @@ export default function PlanGanttWidget({
               >
                 <Settings2 aria-hidden="true" />
               </button>
+              {/* PBT-089: вторичные файловые команды — в меню «⋯»
+                  (референс GanttPrototype); частные data-атрибуты
+                  сохраняются на пунктах меню. */}
+              <PlanMoreMenu
+                planTitle={document.title}
+                items={[
+                  {
+                    label: 'Импорт плана',
+                    icon: <Upload aria-hidden="true" />,
+                    dataAttr: 'data-import-plan',
+                    onSelect: () => importInputRef.current?.click(),
+                  },
+                  {
+                    label: 'Экспорт плана',
+                    icon: <Download aria-hidden="true" />,
+                    dataAttr: 'data-export-plan',
+                    onSelect: handleExportPlan,
+                  },
+                  {
+                    label: 'Экспорт PlantUML',
+                    icon: <BarChart3 aria-hidden="true" />,
+                    dataAttr: 'data-export-plantuml',
+                    onSelect: openPlantumlExport,
+                  },
+                ]}
+              />
               <button
                 type="button"
                 className={`plan-gantt__button plan-gantt__button--issues${

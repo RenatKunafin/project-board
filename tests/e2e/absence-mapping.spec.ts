@@ -35,7 +35,8 @@ async function importFixture(page: Page, sourceTitle: string): Promise<void> {
   const sourcePane = page
     .getByRole('group', { name: `План · ${sourceTitle}` })
     .first();
-  await sourcePane.getByRole('button', { name: 'Импорт плана' }).click();
+  await sourcePane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await sourcePane
     .locator('[data-import-plan-input]')
     .setInputFiles(FIXTURE_PATH);
