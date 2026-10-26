@@ -61,6 +61,7 @@ import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import type { GroupFormIssue } from './group-editor';
 import TaskEditorDialog from './TaskEditorDialog';
+import type { TaskFormSession } from './task-form-draft';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
 import ResourceCatalogDialog, { type SettingsSaveError } from './ResourceCatalogDialog';
 import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
@@ -219,6 +220,7 @@ export default function PlanGanttWidget({
   // Форма задачи (PBT-038): перерисовка чарта после записи происходит
   // по revision (remount key) — состояние формы хранить в документе не нужно.
   const [editor, setEditor] = useState<EditorState | undefined>(undefined);
+  const [absenceConvertOpen, setAbsenceConvertOpen] = useState<TaskFormSession | undefined>();
   const focusAnchorRef = useRef<HTMLElement | null>(null);
 
   // Форма группы (PBT-040) — тот же механизм фокуса возврата.
@@ -290,6 +292,7 @@ export default function PlanGanttWidget({
 
   const closeEditor = useCallback(() => {
     setEditor(undefined);
+    setAbsenceConvertOpen(undefined);
     focusAnchorRef.current?.focus();
     focusAnchorRef.current = null;
   }, []);
@@ -397,36 +400,32 @@ export default function PlanGanttWidget({
 
 
   // Форма задачи — общий хук с ресурсным видом (PBT-048): запись
-  // документа с ретраем ревизии, submit/удаление, команды зависимостей.
+  // снимок задачи с атомарной записью полей и зависимостей.
   const {
     commitPlan,
     submitTaskForm,
     deleteCurrentTask,
     convertCurrentTaskToAbsence,
-    applyDependencyCommand,
   } = useTaskForm({
     documentId,
     documentService,
     document,
-    plan,
-    editor,
     onClose: closeEditor,
   });
 
   // Преобразование задачи в отпуск (PBT-054): диалог поверх формы;
   // применение — атомарная замена ядра (use-task-form D3), после
   // успеха закрываются оба диалога, отмена трогает только диалог.
-  const [absenceConvertOpen, setAbsenceConvertOpen] = useState(false);
   const applyAbsenceConvert = useCallback(
     (input: AbsenceConvertInput): string | undefined => {
-      const failure = convertCurrentTaskToAbsence(input);
+      const failure = absenceConvertOpen ? convertCurrentTaskToAbsence(input, absenceConvertOpen) : 'Задача не выбрана.';
       if (failure !== undefined) {
         return failure;
       }
-      setAbsenceConvertOpen(false);
+      setAbsenceConvertOpen(undefined);
       return undefined;
     },
-    [convertCurrentTaskToAbsence],
+    [convertCurrentTaskToAbsence, absenceConvertOpen],
   );
 
   // Экспорт PlantUML (PBT-056): предпросмотр из полного документа —
@@ -1578,6 +1577,7 @@ export default function PlanGanttWidget({
     );
   }
 
+  const convertingTask = absenceConvertOpen?.plan.tasks.find(task => task.id === absenceConvertOpen.taskId);
   const editingTask =
     editor?.mode === 'edit'
       ? plan?.tasks.find((task) => task.id === editor.taskId)
@@ -1852,27 +1852,27 @@ export default function PlanGanttWidget({
         <TaskEditorDialog
           owner={dialogOwner}
           plan={plan}
+          revision={document.revision}
           mode={editor.mode}
           task={editingTask}
           onSubmit={submitTaskForm}
-          applyDependencyCommand={applyDependencyCommand}
           onDelete={deleteCurrentTask}
-          onConvertToAbsence={() => setAbsenceConvertOpen(true)}
+          onConvertToAbsence={setAbsenceConvertOpen}
           onClose={closeEditor}
         />
       )}
       {editor?.mode === 'edit' &&
         absenceConvertOpen &&
-        editingTask !== undefined &&
+        convertingTask !== undefined &&
         plan !== undefined && (
           <AbsenceConvertDialog
             owner={dialogOwner}
-            taskTitle={editingTask.title}
-            taskStart={editingTask.start}
-            taskEnd={editingTask.end}
+            taskTitle={convertingTask.title}
+            taskStart={convertingTask.start}
+            taskEnd={convertingTask.end}
             resources={plan.resources}
             onApply={applyAbsenceConvert}
-            onClose={() => setAbsenceConvertOpen(false)}
+            onClose={() => setAbsenceConvertOpen(undefined)}
           />
         )}
       {groupEditor !== undefined && plan !== undefined && (

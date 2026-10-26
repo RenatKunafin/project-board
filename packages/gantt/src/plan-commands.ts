@@ -284,18 +284,6 @@ function withoutField<K extends keyof PlanTask>(
   return copy;
 }
 
-function withoutGroup(task: PlanTask): PlanTask {
-  return {
-    id: task.id,
-    title: task.title,
-    start: task.start,
-    end: task.end,
-    ...(task.assigneeIds !== undefined
-      ? { assigneeIds: task.assigneeIds }
-      : {}),
-    ...(task.workTypeIds !== undefined ? { workTypeIds: task.workTypeIds } : {}),
-  };
-}
 
 export function updateTask(
   plan: PlanContent,
@@ -332,7 +320,7 @@ export function updateTask(
     nextTask =
       patch.groupId !== undefined
         ? { ...nextTask, groupId: patch.groupId }
-        : withoutGroup(nextTask);
+        : withoutField(nextTask, 'groupId');
   }
   return { ok: true, plan: replaceTask(plan, nextTask) };
 }

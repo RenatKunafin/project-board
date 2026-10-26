@@ -1,4 +1,4 @@
-.plan-gantt dialog.plan-dialog {
+:is(.plan-gantt, .resource-timeline) dialog.plan-dialog {
   position: fixed;
   inset: 0;
   margin: auto;
@@ -18,11 +18,11 @@
   font: inherit;
 }
 
-.plan-gantt dialog.plan-dialog--wide { width: min(896px, calc(100vw - 32px)); }
-.plan-gantt dialog.plan-dialog:not([open]) { display: none; }
-.plan-gantt .plan-dialog::backdrop { background: var(--overlay); }
+:is(.plan-gantt, .resource-timeline) dialog.plan-dialog--wide { width: min(896px, calc(100vw - 32px)); }
+:is(.plan-gantt, .resource-timeline) dialog.plan-dialog:not([open]) { display: none; }
+:is(.plan-gantt, .resource-timeline) .plan-dialog::backdrop { background: var(--overlay); }
 
-.plan-gantt .plan-dialog__head {
+:is(.plan-gantt, .resource-timeline) .plan-dialog__head {
   display: flex;
   flex: none;
   align-items: flex-start;
@@ -31,9 +31,9 @@
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
 }
-.plan-gantt .plan-dialog__head > div { min-width: 0; }
-.plan-gantt .plan-dialog__title { margin: 0; font-size: 17px; font-weight: 600; }
-.plan-gantt .plan-dialog__plan {
+:is(.plan-gantt, .resource-timeline) .plan-dialog__head > div { min-width: 0; }
+:is(.plan-gantt, .resource-timeline) .plan-dialog__title { margin: 0; font-size: 17px; font-weight: 600; }
+:is(.plan-gantt, .resource-timeline) .plan-dialog__plan {
   margin: 6px 0 0;
   color: var(--muted-foreground);
   font-size: 12px;
@@ -43,8 +43,8 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.plan-gantt .plan-dialog__description { margin: 6px 0 0; font-size: 13px; color: var(--muted-foreground); }
-.plan-gantt .plan-dialog__close {
+:is(.plan-gantt, .resource-timeline) .plan-dialog__description { margin: 6px 0 0; font-size: 13px; color: var(--muted-foreground); }
+:is(.plan-gantt, .resource-timeline) .plan-dialog__close {
   display: grid;
   place-items: center;
   flex: none;
@@ -57,11 +57,11 @@
   border-radius: 4px;
   cursor: pointer;
 }
-.plan-gantt .plan-dialog__close:hover { color: var(--foreground); background: var(--surface-raised); }
-.plan-gantt .plan-dialog > .plan-dialog__body {
+:is(.plan-gantt, .resource-timeline) .plan-dialog__close:hover { color: var(--foreground); background: var(--surface-raised); }
+:is(.plan-gantt, .resource-timeline) .plan-dialog > .plan-dialog__body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
-.plan-gantt .plan-dialog > footer { flex: none; flex-wrap: wrap; }
+:is(.plan-gantt, .resource-timeline) .plan-dialog > footer { flex: none; flex-wrap: wrap; }

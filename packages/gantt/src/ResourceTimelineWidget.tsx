@@ -218,13 +218,10 @@ export default function ResourceTimelineWidget({
   const {
     submitTaskForm,
     deleteCurrentTask,
-    applyDependencyCommand,
   } = useTaskForm({
     documentId,
     documentService,
     document,
-    plan,
-    editor,
     onClose: closeEditor,
   });
 
@@ -918,10 +915,10 @@ export default function ResourceTimelineWidget({
         <TaskEditorDialog
           owner={{ id: `${widgetInstanceId}:${documentId}`, title: document.title, visible }}
           plan={plan}
+          revision={document.revision}
           mode="edit"
           task={plan.tasks.find((task) => task.id === editor.taskId)}
           onSubmit={submitTaskForm}
-          applyDependencyCommand={applyDependencyCommand}
           onDelete={deleteCurrentTask}
           onClose={closeEditor}
         />

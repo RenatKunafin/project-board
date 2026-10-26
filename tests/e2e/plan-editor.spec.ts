@@ -121,6 +121,7 @@ test('невалидный ввод показывает ошибку у пол�
   // Документ не изменился: счётчик задач прежний.
   await expect(pane.locator('[data-task-count]')).toHaveText('Задач: 1');
 
+  page.once('dialog', event => void event.accept());
   await dialog.locator('[data-task-cancel]').click();
   await expect(dialog).not.toBeAttached();
   await expect(pane.locator('[data-task-count]')).toHaveText('Задач: 1');
@@ -148,6 +149,7 @@ test('отмена формы сохраняет исходные данные, 
   );
   await expect(dialog.locator('[data-task-field="duration"]')).toHaveValue('2');
   await dialog.locator('[data-task-field="title"]').fill('Испорчено');
+  page.once('dialog', event => void event.accept());
   await dialog.locator('[data-task-cancel]').click();
   await expect(dialog).not.toBeAttached();
   await expect(
