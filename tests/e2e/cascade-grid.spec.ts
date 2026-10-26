@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test, type Page } from '@playwright/test';
 
 const label = 'Экземпляр 3 · Список 2';
@@ -27,7 +28,7 @@ async function storedArea(page: Page): Promise<Area | null> {
 
 async function start(page: Page) {
   await page.setViewportSize({ width: 1024, height: 778 });
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Каскад', exact: true }).click();
   await expect(windowOf(page)).toBeVisible();
   await expect.poll(async () => (await geometry(page)).width).toBe(608);

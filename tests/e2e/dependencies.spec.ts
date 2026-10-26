@@ -78,6 +78,7 @@ test('два предшественника с лагами, изменение 
   await dialogC.locator('[data-dep-lag-input]').press('Enter');
   await expect(dialogC.locator('[data-dep-list]')).toContainText('лаг 4');
 
+  await dialogC.locator('[data-task-save]').click();
   const content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.dependencies,
     documentId,
@@ -99,8 +100,6 @@ test('два предшественника с лагами, изменение 
     '2026-10-19..2026-10-20',
   ]);
 
-  await dialogC.locator('[data-catalog-close]')?.count();
-  await dialogC.getByRole('button', { name: 'Закрыть форму' }).click();
   await expect(dialogC).not.toBeAttached();
 });
 
@@ -115,6 +114,7 @@ test('самоссылка, дубликат и цикл отклоняются 
     { id: documentId, value: planContent },
   );
 
+  page.on('dialog', event => void event.accept());
   const closeForm = (dialog: ReturnType<Page['getByRole']>) =>
     dialog.getByRole('button', { name: 'Закрыть форму' }).click();
 
@@ -122,6 +122,7 @@ test('самоссылка, дубликат и цикл отклоняются 
   const dialogA = await openForm(page, 'Циклы', 'Задача A');
   await dialogA.locator('[data-dep-new-from]').selectOption({ label: 'Задача A' });
   await dialogA.locator('[data-dep-add]').click();
+  await dialogA.locator('[data-task-save]').click();
   await expect(dialogA.locator('[data-dep-error]')).toContainText(
     'не может зависеть от самой себя',
   );
@@ -134,7 +135,7 @@ test('самоссылка, дубликат и цикл отклоняются 
   await dialogB.locator('[data-dep-new-lag]').fill('3');
   await dialogB.locator('[data-dep-add]').click();
   await expect(dialogB.locator('[data-dep-error]')).toContainText(
-    'уже существует с лагом 0',
+    'Предшественник уже выбран',
   );
   await closeForm(dialogB);
 
@@ -142,6 +143,7 @@ test('самоссылка, дубликат и цикл отклоняются 
   const dialogA2 = await openForm(page, 'Циклы', 'Задача A');
   await dialogA2.locator('[data-dep-new-from]').selectOption({ label: 'Задача C' });
   await dialogA2.locator('[data-dep-add]').click();
+  await dialogA2.locator('[data-task-save]').click();
   await expect(dialogA2.locator('[data-dep-error]')).toContainText('цикл');
 
   const content = await page.evaluate(
@@ -175,6 +177,7 @@ test('удаление связи убирает её из документа и
   await dialog.getByRole('button', { name: 'Удалить связь от Задача A' }).click();
   await expect(dialog.locator('[data-dep-list]')).not.toContainText('Задача A');
 
+  await dialog.locator('[data-task-save]').click();
   await page.waitForTimeout(1500);
   await page.reload();
   const content = await page.evaluate(

@@ -1,3 +1,4 @@
+import { createDocumentWindow } from './document-ui';
 import { expect, test } from '@playwright/test';
 import { storedWorkspace } from './workspace-helper';
 
@@ -6,6 +7,8 @@ test('каскад первый и выбран по умолчанию, сох�
   const modes = page.getByRole('group', { name: 'Режим размещения' });
   await expect(modes.getByRole('button')).toHaveText(['Каскад', 'Сетка']);
   await expect(modes.getByRole('button', { name: 'Каскад', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Пустой дашборд', { exact: true })).toBeVisible();
+  await createDocumentWindow(page, 'Чек-лист', 'Первое окно');
   await expect(page.locator('.cascade-layout')).toBeVisible();
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
   await expect(modes.getByRole('button', { name: 'Каскад', exact: true })).toHaveAttribute('aria-pressed', 'true');

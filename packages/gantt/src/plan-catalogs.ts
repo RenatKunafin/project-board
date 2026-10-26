@@ -40,29 +40,21 @@ function resolveTitle(rawTitle: string): TitleResolution {
 }
 
 function withoutAssignee(task: PlanTask, resourceId: string): PlanTask {
-  const assigneeIds = task.assigneeIds?.filter((id) => id !== resourceId);
+  const { assigneeIds: previous, ...rest } = task;
+  const assigneeIds = previous?.filter((id) => id !== resourceId);
   return {
-    id: task.id,
-    title: task.title,
-    start: task.start,
-    end: task.end,
+    ...rest,
     ...(assigneeIds !== undefined && assigneeIds.length > 0
       ? { assigneeIds }
       : {}),
-    ...(task.workTypeIds !== undefined ? { workTypeIds: task.workTypeIds } : {}),
   };
 }
 
 function withoutWorkType(task: PlanTask, workTypeId: string): PlanTask {
-  const workTypeIds = task.workTypeIds?.filter((id) => id !== workTypeId);
+  const { workTypeIds: previous, ...rest } = task;
+  const workTypeIds = previous?.filter((id) => id !== workTypeId);
   return {
-    id: task.id,
-    title: task.title,
-    start: task.start,
-    end: task.end,
-    ...(task.assigneeIds !== undefined
-      ? { assigneeIds: task.assigneeIds }
-      : {}),
+    ...rest,
     ...(workTypeIds !== undefined && workTypeIds.length > 0
       ? { workTypeIds }
       : {}),

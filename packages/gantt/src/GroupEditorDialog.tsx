@@ -6,6 +6,7 @@ import {
   type GroupFormIssue,
 } from './group-editor';
 import './task-editor.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 export interface GroupEditorSubmit {
   readonly title: string;
@@ -14,6 +15,7 @@ export interface GroupEditorSubmit {
 }
 
 interface GroupEditorDialogProps {
+  readonly owner: PlanDialogOwner;
   readonly plan: PlanContent;
   readonly mode: 'create' | 'edit';
   readonly group?: PlanGroup;
@@ -30,6 +32,7 @@ interface GroupEditorDialogProps {
  * Esc — отмена, Enter — подтверждение; фокус в первое поле.
  */
 export default function GroupEditorDialog({
+  owner,
   plan,
   mode,
   group,
@@ -66,13 +69,6 @@ export default function GroupEditorDialog({
     setIssue(undefined);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      onClose();
-    }
-  };
-
   const handleFieldKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -81,108 +77,85 @@ export default function GroupEditorDialog({
   };
 
   return (
-    <div
-      className="task-editor__overlay"
-      onKeyDown={handleKeyDown}
-      role="presentation"
+    <PlanDialog
+      owner={owner}
+      title={mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
+      description="Группы образуют вложенную структуру; сводная полоса считается по вложенным задачам."
+      closeLabel="Закрыть форму"
+      className="task-editor"
+      onClose={onClose}
     >
-      <section
-        className="task-editor"
-        role="dialog"
-        aria-modal="true"
-        aria-label={mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
-      >
-        <header className="task-editor__head">
-          <div>
-            <h3 className="task-editor__title">
-              {mode === 'create' ? 'Новая группа' : 'Редактирование группы'}
-            </h3>
-            <p className="task-editor__description">
-              Группы образуют вложенную структуру; сводная полоса считается по
-              вложенным задачам.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="task-editor__close"
-            aria-label="Закрыть форму"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        <div className="task-editor__body">
-          <label className="task-editor__field">
-            <span className="task-editor__label">Название</span>
-            <input
-              ref={titleRef}
-              type="text"
-              value={title}
-              data-group-field="title"
-              onKeyDown={handleFieldKeyDown}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-            {issue?.field === 'title' && (
-              <span className="task-editor__error" role="alert">
-                {issue.message}
-              </span>
-            )}
-          </label>
-          <label className="task-editor__field">
-            <span className="task-editor__label">Родительская группа</span>
-            <select
-              value={parentId}
-              data-group-field="parent"
-              onChange={(event) => setParentId(event.target.value)}
-            >
-              <option value="">Корень</option>
-              {parentOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.title}
-                </option>
-              ))}
-            </select>
-            {issue?.field === 'parent' && (
-              <span className="task-editor__error" role="alert">
-                {issue.message}
-              </span>
-            )}
-          </label>
-        </div>
-        <footer className="task-editor__foot">
-          {mode === 'edit' && onDelete !== undefined && (
-            <button
-              type="button"
-              className="task-editor__button task-editor__button--danger"
-              data-group-delete
-              onClick={() => {
-                if (window.confirm(`Удалить группу «${title}»?`)) {
-                  onDelete();
-                }
-              }}
-            >
-              Удалить
-            </button>
+      <div className="task-editor__body plan-dialog__body">
+        <label className="task-editor__field">
+          <span className="task-editor__label">Название</span>
+          <input
+            ref={titleRef}
+            type="text"
+            value={title}
+            data-group-field="title"
+            onKeyDown={handleFieldKeyDown}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+          {issue?.field === 'title' && (
+            <span className="task-editor__error" role="alert">
+              {issue.message}
+            </span>
           )}
-          <div className="task-editor__foot-spacer" />
+        </label>
+        <label className="task-editor__field">
+          <span className="task-editor__label">Родительская группа</span>
+          <select
+            value={parentId}
+            data-group-field="parent"
+            onChange={(event) => setParentId(event.target.value)}
+          >
+            <option value="">Корень</option>
+            {parentOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </select>
+          {issue?.field === 'parent' && (
+            <span className="task-editor__error" role="alert">
+              {issue.message}
+            </span>
+          )}
+        </label>
+      </div>
+      <footer className="task-editor__foot">
+        {mode === 'edit' && onDelete !== undefined && (
           <button
             type="button"
-            className="task-editor__button"
-            data-group-cancel
-            onClick={onClose}
+            className="task-editor__button task-editor__button--danger"
+            data-group-delete
+            onClick={() => {
+              if (window.confirm(`Удалить группу «${title}»?`)) {
+                onDelete();
+              }
+            }}
           >
-            Отмена
+            Удалить
           </button>
-          <button
-            type="button"
-            className="task-editor__button task-editor__button--primary"
-            data-group-save
-            onClick={submit}
-          >
-            Сохранить
-          </button>
-        </footer>
-      </section>
-    </div>
+        )}
+        <div className="task-editor__foot-spacer" />
+        <button
+          type="button"
+          className="task-editor__button"
+          data-group-cancel
+          onClick={onClose}
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          className="task-editor__button task-editor__button--primary"
+          data-group-save
+          onClick={submit}
+        >
+          Сохранить
+        </button>
+      </footer>
+    </PlanDialog>
   );
 }

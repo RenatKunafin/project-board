@@ -76,7 +76,8 @@ test('предпросмотр: текст диаграммы и огранич�
   await prepare(page);
   const pane = page.getByRole('group', { name: 'План · Публикация' }).first();
 
-  await pane.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const dialog = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   await expect(dialog).toBeVisible();
 
@@ -113,7 +114,8 @@ test('фильтр не влияет на экспорт и не меняетс�
   await pane.locator('[data-gantt-filter-query]').fill('АНЛ');
   await expect(pane.locator('[data-task-count]')).toHaveText('Задач: 3');
 
-  await pane.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const dialog = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   await expect(dialog).toBeVisible();
 
@@ -136,13 +138,15 @@ test('отмена не меняет документ; повторный экс
   await prepare(page);
   const pane = page.getByRole('group', { name: 'План · Публикация' }).first();
 
-  await pane.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const dialog = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   await expect(dialog).toBeVisible();
   const first = await dialog.locator('[data-plantuml-text]').textContent();
   await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click();
 
-  await pane.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const second = await dialog.locator('[data-plantuml-text]').textContent();
   expect(second).toBe(first);
   await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click();

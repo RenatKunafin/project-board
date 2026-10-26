@@ -1,3 +1,5 @@
+import { isTaskColor } from './task-colors';
+
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface PlanCalendar {
@@ -31,6 +33,8 @@ export interface PlanTask {
   readonly end: string;
   readonly assigneeIds?: readonly string[];
   readonly workTypeIds?: readonly string[];
+  /** Идентификатор палитры цветов проекта (PBT-084); отсутствие — «Авто». */
+  readonly color?: string;
 }
 
 export interface PlanDependency {
@@ -378,6 +382,15 @@ export function parsePlanContent(value: unknown): PlanValidation {
         workTypeIds: optionalStringArray(
           'Типы работ задаются массивом идентификаторов.',
         ),
+        color: (field, path, issueList) => {
+          if (!isTaskColor(field)) {
+            issueList.push({
+              code: 'invalid-structure',
+              path,
+              message: 'Цвет задачи — неизвестный идентификатор палитры.',
+            });
+          }
+        },
       },
     },
     issues,

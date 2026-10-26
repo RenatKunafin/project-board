@@ -2,7 +2,7 @@ import { createWorkingCalendar } from './working-calendar';
 import type { PlanContent } from './plan-document';
 
 /** Поля формы задачи — источник доменных ошибок по коду поля. */
-export type TaskFormField = 'title' | 'group' | 'start' | 'duration' | 'assignments';
+export type TaskFormField = 'title' | 'group' | 'start' | 'duration' | 'assignments' | 'dependencies' | 'document';
 
 export interface TaskFormIssue {
   readonly field: TaskFormField;
@@ -14,6 +14,8 @@ export interface TaskFormInput {
   readonly groupId?: string;
   readonly start: string;
   readonly durationDays: number;
+  /** Идентификатор палитры; `undefined` — «Авто» (сброс при редактировании). */
+  readonly color?: string;
 }
 
 export interface TaskDates {

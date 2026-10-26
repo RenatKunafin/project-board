@@ -28,10 +28,11 @@ test('рабочий импорт → планирование → календ�
   await test.step('группа, справочник и назначенные задачи', async () => {
     await plan.locator('[data-catalogs]').click();
     const settings = page.getByRole('dialog', { name: 'Настройки плана' });
+    await settings.locator('[data-settings-section="workTypes"]').click();
     await settings.locator('[data-catalog-new="workType"]').fill('Сквозная работа');
     await settings.locator('[data-catalog-new-parallel]').uncheck();
     await settings.locator('[data-catalog-add="workType"]').click();
-    await settings.locator('[data-catalog-close]').click();
+    await settings.locator('[data-catalog-save]').click();
     await plan.locator('[data-add-group]').click();
     const group = page.getByRole('dialog');
     await group.locator('[data-group-field="title"]').fill('Сквозная группа');
@@ -83,9 +84,10 @@ test('рабочий импорт → планирование → календ�
   await test.step('праздник меняет длительность, сохраняя ручные границы и остальные задачи', async () => {
     await plan.locator('[data-catalogs]').click();
     const settings = page.getByRole('dialog', { name: 'Настройки плана' });
+    await settings.locator('[data-settings-section="calendar"]').click();
     await settings.locator('[data-calendar-holiday-from]').fill('2026-10-21');
     await settings.locator('[data-calendar-add-holiday]').click();
-    await settings.locator('[data-catalog-close]').click();
+    await settings.locator('[data-catalog-save]').click();
     const dialog = await editTask(page, plan, A);
     await expect(dialog.locator('[data-task-field="start"]')).toHaveValue('2026-10-19');
     await expect(dialog.locator('[data-task-field="duration"]')).toHaveValue('4');
@@ -132,7 +134,8 @@ test('рабочий импорт → планирование → календ�
   expect(exported.value.content.tasks.find(task => task.title === `${A} правка`)).toMatchObject({ start: '2026-10-26', end: '2026-10-29' });
   expect(exported.value.content.tasks.find(task => task.title === B)).toMatchObject({ start: '2026-10-20', end: '2026-10-22' });
   expect(exported.value.format).toBe('project-board-plan');
-  await plan.getByRole('button', { name: 'Экспорт PlantUML' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
   const plantuml = page.getByRole('dialog', { name: 'Экспорт PlantUML' });
   const text = await plantuml.locator('[data-plantuml-text]').textContent();
   expect(text).toContain('@startgantt');
@@ -198,7 +201,7 @@ test('native импорт → оба режима и представления 
   await page.mouse.down();
   await page.mouse.move(head!.x + 110, head!.y + 58, { steps: 5 });
   await page.mouse.up();
-  await waitWorkspace(page, 5); // 3 стартовых окна + исходное и ресурсное.
+  await waitWorkspace(page, 2); // Исходное и ресурсное представления; стартовая вкладка пуста.
   await expect.poll(async () => (await storedPlan(page, id))?.content.tasks.length).toBe(5);
   await expect(page.getByRole('status', { name: 'Готовность к офлайн-работе' })).toHaveText('Готово к работе офлайн');
   const before = await exportNative(page, plan);
@@ -228,7 +231,7 @@ test('native импорт → оба режима и представления 
   const offline = await context.newPage();
   await offline.goto('/');
   await expect.poll(() => workspace(offline)).toEqual(beforeWorkspace);
-  await offline.getByRole('tab', { name: /Чек-листы/ }).getByText('Чек-листы', { exact: true }).click();
+  await offline.getByRole('tab', { name: /Дашборд/ }).getByText('Дашборд', { exact: true }).click();
   await expect(offline.getByRole('button', { name: 'Сетка', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await offline.getByRole('tab', { name: /Новая вкладка/ }).getByText('Новая вкладка', { exact: true }).click();
   await expect(offline.getByRole('button', { name: 'Каскад', exact: true })).toHaveAttribute('aria-pressed', 'true');

@@ -59,11 +59,7 @@ test('создание QA и QA2, переименование, удаление
     dialog.getByRole('button', { name: 'Удалить QA2' }),
   ).toBeVisible();
 
-  await dialog.getByRole('button', { name: 'Изменить QA', exact: true }).click();
-  await dialog.locator('[data-catalog-edit="resource"]').fill('QA1');
-  await dialog
-    .locator('[data-catalog-edit="resource"]')
-    .press('Enter');
+  await dialog.locator('[data-resource-title]').first().fill('QA1');
   await expect(
     dialog.getByRole('button', { name: 'Удалить QA1' }),
   ).toBeVisible();
@@ -73,7 +69,7 @@ test('создание QA и QA2, переименование, удаление
     dialog.getByRole('button', { name: 'Удалить QA2' }),
   ).toHaveCount(0);
 
-  await dialog.locator('[data-catalog-close]').click();
+  await dialog.locator('[data-catalog-save]').click();
   await page.waitForTimeout(1500);
   await page.reload();
   const dialog2 = await openCatalog(page, 'Справочники');
@@ -93,6 +89,8 @@ test('типы работ: создание с параллельностью, �
   );
   const dialog = await openCatalog(page, 'Типы');
 
+  await dialog.locator('[data-settings-section="workTypes"]').click();
+
   // «Разработка» — нельзя параллельно (умолчание).
   await dialog.locator('[data-catalog-new="workType"]').fill('Разработка');
   await dialog.locator('[data-catalog-add="workType"]').click();
@@ -109,6 +107,7 @@ test('типы работ: создание с параллельностью, �
   // Переключение флажком «Разработка» → можно параллельно.
   await dialog.locator('[data-catalog-parallel]').first().check();
 
+  await dialog.locator('[data-catalog-save]').click();
   const content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.workTypes,
     documentId,
@@ -118,10 +117,10 @@ test('типы работ: создание с параллельностью, �
     { id: expect.any(String), title: 'ПСИ', allowsParallel: true },
   ]);
 
-  await dialog.locator('[data-catalog-close]').click();
   await page.waitForTimeout(1500);
   await page.reload();
   const dialog2 = await openCatalog(page, 'Типы');
+  await dialog2.locator('[data-settings-section="workTypes"]').click();
   await expect(dialog2.locator('[data-catalog-parallel]').first()).toBeChecked();
   await expect(dialog2.locator('[data-catalog-parallel]').nth(1)).toBeChecked();
 });
@@ -159,6 +158,7 @@ test('удаление используемого исполнителя чис�
     dialog.getByRole('button', { name: 'Удалить QA' }),
   ).toHaveCount(0);
 
+  await dialog.locator('[data-catalog-save]').click();
   const content = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content,
     documentId,
@@ -187,18 +187,16 @@ test('независимость планов: переименование QA �
   const dialogA = await openCatalog(page, 'План А');
   await dialogA.locator('[data-catalog-new="resource"]').fill('QA');
   await dialogA.locator('[data-catalog-add="resource"]').click();
-  await dialogA.locator('[data-catalog-close]').click();
+  await dialogA.locator('[data-catalog-save]').click();
 
   const dialogB = await openCatalog(page, 'План Б');
   await dialogB.locator('[data-catalog-new="resource"]').fill('QA');
   await dialogB.locator('[data-catalog-add="resource"]').click();
-  await dialogB.locator('[data-catalog-close]').click();
+  await dialogB.locator('[data-catalog-save]').click();
 
   const dialogA2 = await openCatalog(page, 'План А');
-  await dialogA2.getByRole('button', { name: 'Изменить QA', exact: true }).click();
-  await dialogA2.locator('[data-catalog-edit="resource"]').fill('QA1');
-  await dialogA2.locator('[data-catalog-edit="resource"]').press('Enter');
-  await dialogA2.locator('[data-catalog-close]').click();
+  await dialogA2.locator('[data-resource-title]').first().fill('QA1');
+  await dialogA2.locator('[data-catalog-save]').click();
 
   const contentA = await page.evaluate(
     (id) => window.__projectBoard.readDocument(id)?.content?.resources,

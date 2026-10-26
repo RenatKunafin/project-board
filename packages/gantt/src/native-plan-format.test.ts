@@ -304,6 +304,33 @@ describe('round-trip', () => {
     expect(payload.content).toEqual(plan);
   });
 
+  it('ручной цвет сохраняется в round-trip, отсутствие — тоже (PBT-084)', () => {
+    const plan = fullPlan();
+    const colored = {
+      ...plan,
+      tasks: plan.tasks.map((task, index) =>
+        index === 0 ? { ...task, color: 'sapphire' } : task,
+      ),
+    };
+    const serialized = serializePlanFile({ title: 'План', content: colored });
+    const payload = expectAccepted(deserializePlanFile(serialized.json));
+    expect(payload.content.tasks[0].color).toBe('sapphire');
+    expect('color' in payload.content.tasks[1]).toBe(false);
+  });
+
+  it('неизвестный палитре идентификатор цвета нормализуется в «Авто» (PBT-084)', () => {
+    const plan = fullPlan();
+    const future = {
+      ...plan,
+      tasks: plan.tasks.map((task, index) =>
+        index === 0 ? { ...task, color: 'future-color' } : task,
+      ),
+    };
+    const payload = expectAccepted(deserializePlanFile(envelopeWith(future)));
+    expect('color' in payload.content.tasks[0]).toBe(false);
+    expect(payload.content.tasks[0].title).toBe(plan.tasks[0].title);
+  });
+
   it('дополнительное поле сущности проходит round-trip без потерь', () => {
     const serialized = serializePlanFile({ title: 'План', content: fullPlan() });
     const parsed = JSON.parse(serialized.json) as {

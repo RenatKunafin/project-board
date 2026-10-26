@@ -68,8 +68,8 @@ for (const zoom of ['days', 'weeks']) {
     const before = await page.evaluate(id => window.__projectBoard!.readDocument(id), id);
     await pane.locator('[data-issues]').click();
     const action = pane.locator('[data-issue-show]');
-    if (zoom === 'days') await action.locator('.catalog__title').click();
-    else { await action.focus(); await page.keyboard.press('Enter'); }
+    if (zoom === 'days') await action.first().click();
+    else { await action.first().focus(); await page.keyboard.press('Enter'); }
     await expectTarget(pane);
     // Resize/zoom имеют ограниченное окно восстановления до 2 секунд.
     await page.waitForTimeout(2300);

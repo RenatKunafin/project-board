@@ -55,8 +55,8 @@ export function DocumentCatalogPanel({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const visible = sortDocumentsByRecency(filterDocuments(documents, filter));
-  const isEmptyCatalog = documents.length === 0;
-  const isFilterEmpty = filter.kind === 'type' && visible.length === 0;
+  const isEmptyCatalog = !loadError && documents.length === 0;
+  const isFilterEmpty = !loadError && filter.kind === 'type' && visible.length === 0;
 
   const submitCreate = (): void => {
     const info = typeInfos.find(
@@ -210,6 +210,13 @@ export function DocumentCatalogPanel({
               ) : deletingId === document.id ? (
                 <span className="doc-catalog__confirm">
                   Удалить «{document.title}»?
+                  {/* PBT-090: подтверждение объясняет последствия для
+                      открытых представлений документа. */}
+                  {openWindowCount(document.id) > 0
+                    ? ` Документ открыт в ${openWindowCount(document.id)} ${
+                        openWindowCount(document.id) === 1 ? 'окне' : 'окнах'
+                      } — все его окна перейдут в состояние недоступного документа.`
+                    : ''}
                   <button
                     type="button"
                     className="doc-catalog__action doc-catalog__action--danger"

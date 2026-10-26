@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import {
   AlertTriangle,
   BarChart3,
@@ -15,7 +15,7 @@ import '@svar-ui/react-gantt/style.css';
 // Иконки SVAR локально (PBT-073, design D2): WillowDark ниже подключается
 // с fonts={false}, внешний запрос к cdn.svar.dev не выполняется (офлайн-PWA).
 import './vendor/wx-icons/wx-icons.css';
-import type { ManagedDocument, WidgetProps } from '@project-board/widget-sdk';
+import { DocumentConflictError, type ManagedDocument, type WidgetProps } from '@project-board/widget-sdk';
 import {
   createPlanContent,
   parsePlanContent,
@@ -56,28 +56,17 @@ import {
   planToGanttLinks,
   planToGanttTasks,
 } from './svar-adapter';
-import { moveTask, setTaskDates } from './plan-commands';
-import type { PlanCommandError, PlanCommandResult } from './plan-commands';
-import {
-  createResource,
-  createWorkType,
-  deleteResource,
-  deleteWorkType,
-  updateResource,
-  updateWorkType,
-} from './plan-catalogs';
-import {
-  createUnavailability,
-  deleteUnavailability,
-  updateUnavailability,
-} from './plan-assignments';
-import { updateCalendar } from './plan-commands';
+import { moveTask, setTaskDates, updateTask } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
 import type { GroupFormIssue } from './group-editor';
+import { ganttBarColorRules } from './task-colors';
+import { TaskColorMenu, type TaskColorMenuState } from './task-color-picker';
 import TaskEditorDialog from './TaskEditorDialog';
+import PlanMoreMenu from './PlanMoreMenu';
+import type { TaskFormSession } from './task-form-draft';
 import GroupEditorDialog, { type GroupEditorSubmit } from './GroupEditorDialog';
-import ResourceCatalogDialog, { type CatalogCommand } from './ResourceCatalogDialog';
+import ResourceCatalogDialog, { type SettingsSaveError } from './ResourceCatalogDialog';
 import PlanIssuesDialog, { usePlanIssues } from './PlanIssuesDialog';
 import { useTaskForm, type TaskEditorState } from './use-task-form';
 import {
@@ -155,7 +144,26 @@ export default function PlanGanttWidget({
 
   // Служебный статус последнего действия виджета (PBT-073, design D5):
   // показывается в футере представления (role="status"); в покое — пусто.
+  // PBT-089: успешные статусы временные — автоочистка через 6 с, таймер
+  // сбрасывается новым сообщением и размонтированием; высота строк не
+  // меняется, ошибки переноса остаются в панели результата (role=alert).
   const [footerStatus, setFooterStatus] = useState('');
+  const footerStatusTimerRef = useRef<number | null>(null);
+  const showFooterStatus = useCallback((message: string) => {
+    setFooterStatus(message);
+    if (footerStatusTimerRef.current !== null) {
+      window.clearTimeout(footerStatusTimerRef.current);
+    }
+    footerStatusTimerRef.current = window.setTimeout(() => {
+      setFooterStatus('');
+      footerStatusTimerRef.current = null;
+    }, 6000);
+  }, []);
+  useEffect(() => () => {
+    if (footerStatusTimerRef.current !== null) {
+      window.clearTimeout(footerStatusTimerRef.current);
+    }
+  }, []);
 
   // Фильтры представления (PBT-049): тулбар-контролы; изменение —
   // React-state + updateSettings (производное, документ не меняется).
@@ -234,6 +242,7 @@ export default function PlanGanttWidget({
   // Форма задачи (PBT-038): перерисовка чарта после записи происходит
   // по revision (remount key) — состояние формы хранить в документе не нужно.
   const [editor, setEditor] = useState<EditorState | undefined>(undefined);
+  const [absenceConvertOpen, setAbsenceConvertOpen] = useState<TaskFormSession | undefined>();
   const focusAnchorRef = useRef<HTMLElement | null>(null);
 
   // Форма группы (PBT-040) — тот же механизм фокуса возврата.
@@ -305,6 +314,7 @@ export default function PlanGanttWidget({
 
   const closeEditor = useCallback(() => {
     setEditor(undefined);
+    setAbsenceConvertOpen(undefined);
     focusAnchorRef.current?.focus();
     focusAnchorRef.current = null;
   }, []);
@@ -336,7 +346,7 @@ export default function PlanGanttWidget({
     anchor.download = planFileName(new Date());
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFooterStatus('План экспортирован');
+    showFooterStatus('План экспортирован');
   }, []);
 
   // Импорт: валидация до создания документа; успех — новый независимый
@@ -376,7 +386,7 @@ export default function PlanGanttWidget({
           content: result.payload.content,
         });
         setImportResult({ ok: true, title: created.title });
-        setFooterStatus(`План «${created.title}» импортирован`);
+        showFooterStatus(`План «${created.title}» импортирован`);
         switchDocument?.(created.id);
       });
     },
@@ -400,7 +410,7 @@ export default function PlanGanttWidget({
       });
       setOnlineganttPreview(undefined);
       setImportResult({ ok: true, title: created.title });
-      setFooterStatus(`План «${created.title}» импортирован`);
+      showFooterStatus(`План «${created.title}» импортирован`);
       switchDocument?.(created.id);
     },
     [documentService, onlineganttPreview, switchDocument],
@@ -412,36 +422,32 @@ export default function PlanGanttWidget({
 
 
   // Форма задачи — общий хук с ресурсным видом (PBT-048): запись
-  // документа с ретраем ревизии, submit/удаление, команды зависимостей.
+  // снимок задачи с атомарной записью полей и зависимостей.
   const {
     commitPlan,
     submitTaskForm,
     deleteCurrentTask,
     convertCurrentTaskToAbsence,
-    applyDependencyCommand,
   } = useTaskForm({
     documentId,
     documentService,
     document,
-    plan,
-    editor,
     onClose: closeEditor,
   });
 
   // Преобразование задачи в отпуск (PBT-054): диалог поверх формы;
   // применение — атомарная замена ядра (use-task-form D3), после
   // успеха закрываются оба диалога, отмена трогает только диалог.
-  const [absenceConvertOpen, setAbsenceConvertOpen] = useState(false);
   const applyAbsenceConvert = useCallback(
     (input: AbsenceConvertInput): string | undefined => {
-      const failure = convertCurrentTaskToAbsence(input);
+      const failure = absenceConvertOpen ? convertCurrentTaskToAbsence(input, absenceConvertOpen) : 'Задача не выбрана.';
       if (failure !== undefined) {
         return failure;
       }
-      setAbsenceConvertOpen(false);
+      setAbsenceConvertOpen(undefined);
       return undefined;
     },
-    [convertCurrentTaskToAbsence],
+    [convertCurrentTaskToAbsence, absenceConvertOpen],
   );
 
   // Экспорт PlantUML (PBT-056): предпросмотр из полного документа —
@@ -486,7 +492,7 @@ export default function PlanGanttWidget({
     anchor.download = plantumlPreview.fileName;
     anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setFooterStatus('Файл PlantUML скачан');
+    showFooterStatus('Файл PlantUML скачан');
   }, [plantumlPreview]);
 
   // Форма группы (PBT-040): createGroup/updateGroup/deleteGroup ядра.
@@ -550,74 +556,22 @@ export default function PlanGanttWidget({
     closeGroupEditor();
   }, [groupEditor, commitPlan, closeGroupEditor]);
 
-  // Команды справочников (PBT-041): делегирование функциям ядра
-  // plan-catalogs; ошибка ядра возвращается диалогу (показ по месту).
-  const applyCatalogCommand = useCallback(
-    (command: CatalogCommand): PlanCommandError | undefined => {
-      let error: PlanCommandError | undefined;
-      commitPlan((latest) => {
-        const validationNow = parsePlanContent(latest.content);
-        if (!validationNow.ok) {
-          return undefined;
-        }
-        const base = validationNow.plan;
-        const result = ((): PlanCommandResult => {
-          switch (command.type) {
-            case 'createResource':
-              return createResource(base, { title: command.title });
-            case 'renameResource':
-              return updateResource(base, command.resourceId, {
-                title: command.title,
-              });
-            case 'deleteResource':
-              return deleteResource(base, command.resourceId);
-            case 'createWorkType':
-              return createWorkType(base, {
-                title: command.title,
-                allowsParallel: command.allowsParallel,
-              });
-            case 'renameWorkType':
-              return updateWorkType(base, command.workTypeId, {
-                title: command.title,
-              });
-            case 'toggleWorkTypeParallel':
-              return updateWorkType(base, command.workTypeId, {
-                allowsParallel: command.allowsParallel,
-              });
-            case 'deleteWorkType':
-              return deleteWorkType(base, command.workTypeId);
-            case 'createUnavailability':
-              return createUnavailability(base, {
-                resourceId: command.resourceId,
-                start: command.start,
-                end: command.end,
-              });
-            case 'updateUnavailability':
-              return updateUnavailability(base, command.unavailabilityId, {
-                resourceId: command.resourceId,
-                start: command.start,
-                end: command.end,
-              });
-            case 'deleteUnavailability':
-              return deleteUnavailability(base, command.unavailabilityId);
-            case 'updateCalendar':
-              return updateCalendar(
-                base,
-                command.workingDays,
-                command.holidays,
-                command.workingExceptions,
-              );
-          }
-        })();
-        if (!result.ok) {
-          error = result.error;
-          return undefined;
-        }
-        return result.plan;
-      });
-      return error;
+  // Общий черновик настроек фиксируется одной записью исходной редакции.
+  const savePlanSettings = useCallback(
+    (nextPlan: PlanContent, expectedRevision: number): SettingsSaveError | undefined => {
+      if (!documentId || !documentService) return { kind: 'missing', message: 'Документ недоступен. Настройки не сохранены.' };
+      const current = documentService.get(documentId);
+      if (!current) return { kind: 'missing', message: 'Документ удалён. Настройки не сохранены.' };
+      if (current.revision !== expectedRevision) return { kind: 'conflict', message: 'План изменён в другом окне. Перечитайте актуальную версию.' };
+      if (!parsePlanContent(nextPlan).ok) return { kind: 'invalid', message: 'Настройки содержат некорректные данные. Исправьте ввод перед сохранением.' };
+      try {
+        documentService.update(documentId, expectedRevision, nextPlan);
+      } catch (error) {
+        return { kind: error instanceof DocumentConflictError ? 'conflict' : 'write', message: error instanceof Error ? error.message : 'Не удалось сохранить настройки.' };
+      }
+      return undefined;
     },
-    [commitPlan],
+    [documentId, documentService],
   );
 
   // PBT-082: сначала закрыть список и обновить дерево/фильтры.
@@ -1385,6 +1339,62 @@ export default function PlanGanttWidget({
     () => (source ? planToGanttLinks(source.plan) : []),
     [source],
   );
+  // PBT-084: правила окраски полос ручным цветом — только задачи с
+  // валидным цветом и безопасным для селектора идентификатором.
+  // Считаются от актуального плана, минуя стабилизацию source (ownWrite):
+  // CSS-правило обновляется мгновенно, не перезаливая стор SVAR —
+  // быстрая смена цвета не пересобирает чарт (прокрутка и раскрытие
+  // групп сохраняются, дефекты живого осмотра 2026-10-26 №2–3).
+  const colorRules = useMemo(
+    () => ganttBarColorRules((filteredPlan ?? plan)?.tasks ?? [], ':'),
+    [filteredPlan, plan],
+  );
+  // Быстрая смена цвета (правый клик на полосе задачи, PBT-084):
+  // собственная запись с пометкой ревизии — чарт не пересобирается.
+  const [colorMenu, setColorMenu] = useState<TaskColorMenuState | null>(null);
+  const colorMenuTask = colorMenu === null || source === null
+    ? undefined
+    : source.plan.tasks.find((task) => task.id === colorMenu.taskId);
+  const applyQuickColor = useCallback(
+    (color: string | undefined) => {
+      const target = colorMenu?.taskId;
+      setColorMenu(null);
+      if (target === undefined || !documentId || !documentService) return;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const latest = documentService.get(documentId) ?? documentRef.current;
+        if (latest === undefined) return;
+        const parsed = parsePlanContent(latest.content);
+        if (!parsed.ok) return;
+        const result = updateTask(parsed.plan, target, { color });
+        if (!result.ok) return;
+        if (result.plan === parsed.plan) return;
+        try {
+          const saved = documentService.update(documentId, latest.revision, result.plan);
+          // Своя запись не пересобирает чарт (D7 PBT-039): правило цвета
+          // обновится реактивно от актуального плана.
+          localRevisionRef.current = saved.revision;
+          return;
+        } catch {
+          // Конфликт ревизии — повторить по свежим данным.
+        }
+      }
+    },
+    [colorMenu, documentId, documentService],
+  );
+  const onChartContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const node = event.target instanceof Element
+        ? event.target.closest('[data-task-id]')
+        : null;
+      const raw = node?.getAttribute('data-task-id') ?? '';
+      // SVAR выводит идентификаторы с префиксом «:» (контракт 2.8.0).
+      const id = raw.startsWith(':') ? raw.slice(1) : raw;
+      if (!id || !source?.plan.tasks.some((task) => task.id === id)) return;
+      event.preventDefault();
+      setColorMenu({ x: event.clientX, y: event.clientY, taskId: id });
+    },
+    [source],
+  );
   // Проблемы плана (PBT-046): производное документа, без записей.
   const issues = usePlanIssues(plan ?? createPlanContent());
   useEffect(() => {
@@ -1645,10 +1655,13 @@ export default function PlanGanttWidget({
     );
   }
 
+  const convertingTask = absenceConvertOpen?.plan.tasks.find(task => task.id === absenceConvertOpen.taskId);
   const editingTask =
     editor?.mode === 'edit'
       ? plan?.tasks.find((task) => task.id === editor.taskId)
       : undefined;
+
+  const dialogOwner = { id: `${widgetInstanceId}:${documentId}`, title: document.title, visible };
 
   return (
     <section
@@ -1662,7 +1675,12 @@ export default function PlanGanttWidget({
         </p>
       ) : (
         <div className="plan-gantt__inner">
-          <div className="plan-gantt__toolbar">
+          <div
+            className="plan-gantt__toolbar"
+            onClickCapture={(event) => {
+              if (event.target instanceof Element) event.target.closest('button')?.focus({ preventScroll: true });
+            }}
+          >
             <div className="plan-gantt__toolbar-row">
               <button
                 type="button"
@@ -1682,40 +1700,6 @@ export default function PlanGanttWidget({
                 <FolderPlus aria-hidden="true" />
                 Группа
               </button>
-              <span
-                className="plan-gantt__toolbar-separator"
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-import-plan
-                aria-label="Импорт плана"
-                onClick={() => importInputRef.current?.click()}
-              >
-                <Upload aria-hidden="true" />
-                Импорт
-              </button>
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-export-plan
-                aria-label="Экспорт плана"
-                onClick={handleExportPlan}
-              >
-                <Download aria-hidden="true" />
-                Экспорт
-              </button>
-              <button
-                type="button"
-                className="plan-gantt__button"
-                data-export-plantuml
-                aria-label="Экспорт PlantUML"
-                onClick={openPlantumlExport}
-              >
-                <BarChart3 aria-hidden="true" />
-                PlantUML
-              </button>
               <button
                 type="button"
                 className="plan-gantt__button plan-gantt__button--icon"
@@ -1726,6 +1710,32 @@ export default function PlanGanttWidget({
               >
                 <Settings2 aria-hidden="true" />
               </button>
+              {/* PBT-089: вторичные файловые команды — в меню «⋯»
+                  (референс GanttPrototype); частные data-атрибуты
+                  сохраняются на пунктах меню. */}
+              <PlanMoreMenu
+                planTitle={document.title}
+                items={[
+                  {
+                    label: 'Импорт плана',
+                    icon: <Upload aria-hidden="true" />,
+                    dataAttr: 'data-import-plan',
+                    onSelect: () => importInputRef.current?.click(),
+                  },
+                  {
+                    label: 'Экспорт плана',
+                    icon: <Download aria-hidden="true" />,
+                    dataAttr: 'data-export-plan',
+                    onSelect: handleExportPlan,
+                  },
+                  {
+                    label: 'Экспорт PlantUML',
+                    icon: <BarChart3 aria-hidden="true" />,
+                    dataAttr: 'data-export-plantuml',
+                    onSelect: openPlantumlExport,
+                  },
+                ]}
+              />
               <button
                 type="button"
                 className={`plan-gantt__button plan-gantt__button--issues${
@@ -1858,7 +1868,16 @@ export default function PlanGanttWidget({
               Ничего не найдено по фильтру. Задачи документа не изменены.
             </p>
           ) : null}
-          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick}>
+          <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick} onContextMenu={onChartContextMenu}>
+            {colorRules ? <style dangerouslySetInnerHTML={{ __html: colorRules }} /> : null}
+            {colorMenu && colorMenuTask !== undefined && (
+              <TaskColorMenu
+                state={colorMenu}
+                value={colorMenuTask.color}
+                onPick={applyQuickColor}
+                onClose={() => setColorMenu(null)}
+              />
+            )}
             <WillowDark fonts={false}>
               {/* Ключ по ревизии: SVAR не синхронизирует стор с новыми
                   props после init (спайк PBT-014) — внешние изменения
@@ -1906,77 +1925,90 @@ export default function PlanGanttWidget({
               {footerStatus}
             </span>
           </footer>
-          {editor !== undefined && plan !== undefined && (
-            <TaskEditorDialog
-              plan={plan}
-              mode={editor.mode}
-              task={editingTask}
-              onSubmit={submitTaskForm}
-              applyDependencyCommand={applyDependencyCommand}
-              onDelete={deleteCurrentTask}
-              onConvertToAbsence={() => setAbsenceConvertOpen(true)}
-              onClose={closeEditor}
-            />
-          )}
-          {editor?.mode === 'edit' &&
-            absenceConvertOpen &&
-            editingTask !== undefined &&
-            plan !== undefined && (
-              <AbsenceConvertDialog
-                taskTitle={editingTask.title}
-                taskStart={editingTask.start}
-                taskEnd={editingTask.end}
-                resources={plan.resources}
-                onApply={applyAbsenceConvert}
-                onClose={() => setAbsenceConvertOpen(false)}
-              />
-            )}
-          {groupEditor !== undefined && plan !== undefined && (
-            <GroupEditorDialog
-              plan={plan}
-              mode={groupEditor.mode === 'group-create' ? 'create' : 'edit'}
-              group={
-                groupEditor.mode === 'group-edit'
-                  ? plan.groups.find((group) => group.id === groupEditor.groupId)
-                  : undefined
-              }
-              onSubmit={submitGroupForm}
-              onDelete={deleteCurrentGroup}
-              onClose={closeGroupEditor}
-            />
-          )}
-          {catalogOpen && plan !== undefined && (
-            <ResourceCatalogDialog
-              plan={plan}
-              applyCommand={applyCatalogCommand}
-              onClose={closeCatalog}
-            />
-          )}
-          {issuesOpen && (
-            <PlanIssuesDialog
-              issues={issues}
-              onShowTask={showTask}
-              onClose={() => setIssuesOpen(false)}
-            />
-          )}
-          {plantumlPreview !== undefined && (
-            <PlantUmlExportDialog
-              text={plantumlPreview.text}
-              report={plantumlPreview.report}
-              fileName={plantumlPreview.fileName}
-              onDownload={downloadPlantuml}
-              onClose={() => setPlantumlPreview(undefined)}
-            />
-          )}
-          {onlineganttPreview !== undefined && (
-            <OnlineGanttImportDialog
-              fileName={onlineganttPreview.fileName}
-              payload={onlineganttPreview.payload}
-              onApply={applyOnlineGanttImport}
-              onCancel={cancelOnlineGanttImport}
-            />
-          )}
         </div>
+      )}
+      {editor !== undefined && plan !== undefined && (
+        <TaskEditorDialog
+          owner={dialogOwner}
+          plan={plan}
+          revision={document.revision}
+          mode={editor.mode}
+          task={editingTask}
+          onSubmit={submitTaskForm}
+          onDelete={deleteCurrentTask}
+          onConvertToAbsence={setAbsenceConvertOpen}
+          onClose={closeEditor}
+        />
+      )}
+      {editor?.mode === 'edit' &&
+        absenceConvertOpen &&
+        convertingTask !== undefined &&
+        plan !== undefined && (
+          <AbsenceConvertDialog
+            owner={dialogOwner}
+            taskTitle={convertingTask.title}
+            taskStart={convertingTask.start}
+            taskEnd={convertingTask.end}
+            resources={plan.resources}
+            onApply={applyAbsenceConvert}
+            onClose={() => setAbsenceConvertOpen(undefined)}
+          />
+        )}
+      {groupEditor !== undefined && plan !== undefined && (
+        <GroupEditorDialog
+          owner={dialogOwner}
+          plan={plan}
+          mode={groupEditor.mode === 'group-create' ? 'create' : 'edit'}
+          group={
+            groupEditor.mode === 'group-edit'
+              ? plan.groups.find((group) => group.id === groupEditor.groupId)
+              : undefined
+          }
+          onSubmit={submitGroupForm}
+          onDelete={deleteCurrentGroup}
+          onClose={closeGroupEditor}
+        />
+      )}
+      {catalogOpen && plan !== undefined && (
+        <ResourceCatalogDialog
+          owner={dialogOwner}
+          plan={plan}
+          revision={document.revision}
+          onSave={savePlanSettings}
+          onClose={closeCatalog}
+        />
+      )}
+      {issuesOpen && plan !== undefined && (
+        <PlanIssuesDialog
+          owner={dialogOwner}
+          plan={plan}
+          issues={issues}
+          onShowTask={showTask}
+          onEditTask={(taskId) => {
+            setIssuesOpen(false);
+            openEditor({ mode: 'edit', taskId });
+          }}
+          onClose={() => setIssuesOpen(false)}
+        />
+      )}
+      {plantumlPreview !== undefined && (
+        <PlantUmlExportDialog
+          owner={dialogOwner}
+          text={plantumlPreview.text}
+          report={plantumlPreview.report}
+          fileName={plantumlPreview.fileName}
+          onDownload={downloadPlantuml}
+          onClose={() => setPlantumlPreview(undefined)}
+        />
+      )}
+      {onlineganttPreview !== undefined && (
+        <OnlineGanttImportDialog
+          owner={dialogOwner}
+          fileName={onlineganttPreview.fileName}
+          payload={onlineganttPreview.payload}
+          onApply={applyOnlineGanttImport}
+          onCancel={cancelOnlineGanttImport}
+        />
       )}
     </section>
   );

@@ -68,17 +68,21 @@ test('назначение и календарь обновляют ресурс
 
   await project.locator('[data-catalogs]').click();
   const settings = project.getByRole('dialog', { name: 'Настройки плана' });
+  await settings.locator('[data-settings-section="calendar"]').click();
   await settings.locator('[data-calendar-holiday-from]').fill('2026-10-14');
   await settings.locator('[data-calendar-add-holiday]').click();
+  await settings.locator('[data-catalog-save]').click();
   for (const pane of [first, second]) {
     await expect(pane.locator('.rt-day-col[data-day="2026-10-14"]')).toHaveClass(/rt-day--holiday/);
   }
+  await project.locator('[data-catalogs]').click();
+  await settings.locator('[data-settings-section="calendar"]').click();
   await settings.locator('[data-calendar-exception-from]').fill('2026-10-14');
   await settings.locator('[data-calendar-add-exception]').click();
+  await settings.locator('[data-catalog-save]').click();
   for (const pane of [first, second]) await expect(pane.locator('.rt-day-col[data-day="2026-10-14"]')).toHaveCount(0);
-  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
-  await page.getByRole('tab').filter({ hasText: 'Чек-листы' }).locator('.tab__title').click();
+  await page.getByRole('tab').filter({ hasText: 'Дашборд' }).locator('.tab__title').click();
   await expect(second.locator('[data-rt-task]')).toHaveCount(2);
   await expect(second.locator('[data-rt-filter-resource]')).toHaveValue('r-2');
   await page.waitForTimeout(1200); // Дебаунсы документа, workspace и настроек перед reload.
@@ -110,7 +114,9 @@ test('назначение и календарь обновляют ресурс
   // выбранный диапазон дат сохраняется независимо от числа пикселей.
   await expect(second.locator('[data-rt-visible-range]')).toHaveText(selectedRange!);
   await project.locator('[data-catalogs]').click();
+  await settings.locator('[data-settings-section="calendar"]').click();
   await settings.locator('[data-calendar-holiday-from]').fill('2026-09-02');
   await settings.locator('[data-calendar-add-holiday]').click();
+  await settings.locator('[data-catalog-save]').click();
   await expect(first.locator('.rt-day-col[data-day="2026-09-02"]')).toHaveClass(/rt-day--holiday/);
 });

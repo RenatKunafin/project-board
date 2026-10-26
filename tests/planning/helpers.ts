@@ -38,9 +38,15 @@ export async function createPlan(page: Page, initialMode?: string) {
   return pane;
 }
 
+/** PBT-089: вторичные команды плана — пункты меню «⋯» тулбара. */
+async function planMenuCommand(page: Page, pane: Locator, attr: string): Promise<void> {
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).locator(attr).click();
+}
+
 export async function importFile(page: Page, pane: Locator, path: string, title: string) {
   const previousId = await documentId(pane);
-  await pane.getByRole('button', { name: 'Импорт плана', exact: true }).click();
+  await planMenuCommand(page, pane, '[data-import-plan]');
   await pane.locator('[data-import-plan-input]').setInputFiles(path);
   if (path.endsWith('.gantt')) {
     const preview = page.getByRole('dialog', { name: 'Импорт плана из OnlineGantt' });
@@ -107,7 +113,7 @@ export async function existingView(page: Page, title: string, type = 'Ресур
 
 export async function exportNative(page: Page, pane: Locator) {
   const pending = page.waitForEvent('download');
-  await pane.getByRole('button', { name: 'Экспорт плана', exact: true }).click();
+  await planMenuCommand(page, pane, '[data-export-plan]');
   const download = await pending;
   const path = test.info().outputPath(download.suggestedFilename());
   await download.saveAs(path);

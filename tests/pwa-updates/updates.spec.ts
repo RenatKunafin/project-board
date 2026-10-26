@@ -1,9 +1,11 @@
+import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';
+import { createDocumentWindow } from '../e2e/document-ui';
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
 import { readdir } from 'node:fs/promises';
 
 const notification = (page: Page) => page.getByRole('status', { name: 'Обновление приложения', exact: true });
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Обновление Project Board' });
-const list = (page: Page) => page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
+const list = (page: Page) => page.getByRole('group', { name: /^(Экземпляр 1|Чек-лист) · Список 1$/ });
 
 async function publish(request: APIRequestContext, version: string) {
   expect((await request.post(`/__version?value=${version}`)).ok()).toBe(true);
@@ -43,6 +45,7 @@ test.beforeEach(async ({ request }) => publish(request, 'A'));
 
 test('A → B сохраняет свежую правку, workspace/settings, мигрирует документ и запускается офлайн', async ({ page, context, request }) => {
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   const fixture = await createWidget(page, 'Контроль обновления', 'Документ версии 1');
@@ -97,6 +100,7 @@ test('A → B сохраняет свежую правку, workspace/settings, 
 test('первая активация, обнаружение, Позже и отмена не перезагружают страницу', async ({ page, request }) => {
   await page.addInitScript(() => sessionStorage.setItem('loads', String(Number(sessionStorage.getItem('loads') ?? 0) + 1)));
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('loads'))).toBe('1');
@@ -114,6 +118,7 @@ test('первая активация, обнаружение, Позже и о�
 for (const table of ['documents', 'tabs', 'settings']) {
   test(`сбой ${table} блокирует обновление; повтор сохраняет сессию`, async ({ page, request }) => {
     await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     await ready(page);
     await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
@@ -143,6 +148,7 @@ for (const table of ['documents', 'tabs', 'settings']) {
 
 test('другое окно блокирует активацию, его закрытие позволяет повторить', async ({ page, context, request }) => {
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
@@ -162,6 +168,7 @@ test('другое окно блокирует активацию, его зак
 
 test('таймаут in-flight записи не вызывает поздний reload; после её завершения можно повторить', async ({ page, request }) => {
   await page.goto('/');
+  await createDocumentWindow(page, 'Чек-лист', 'Список 1');
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await ready(page);
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
@@ -206,6 +213,14 @@ test('первый переход с настоящего PBT-028 происхо
   await list(page).getByPlaceholder('Новая задача…').fill('Сохранено в PBT-028');
   await list(page).getByRole('button', { name: 'Добавить', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
+  // Старая сборка не умеет flush перед обновлением. Подтверждаем запись
+  // документа И раскладки: прежний новый bootstrap маскировал её отсутствие,
+  // заново открывая демоокна вместо восстановления сохранённого снимка.
+  await persistedDocument(page, 'Список 1', { items: [{ text: 'Сохранено в PBT-028' }] });
+  await expect.poll(async () => {
+    const state = await storedWorkspace(page);
+    return state.tabs.length === 1 && state.tabs[0].mode === 'grid' && state.widgetInstances.length === 3;
+  }).toBe(true);
   const previousWorkers = context.serviceWorkers();
   await publish(request, 'B');
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())!.update());

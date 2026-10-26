@@ -15,6 +15,8 @@ export * from './native-plan-format';
 export * from './onlinegantt-parser';
 export * from './plantuml-export';
 export * from './plan-commands';
+export * from './task-colors';
+export * from './plan-issues';
 export * from './plan-hierarchy';
 export * from './plan-catalogs';
 export * from './plan-assignments';

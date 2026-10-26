@@ -1,12 +1,19 @@
 import { type PlanContent, type PlanTask } from './plan-document';
 import { addCalendarDays, createWorkingCalendar } from './working-calendar';
+import { taskColor } from './task-colors';
 
 /**
  * Генерация PlantUML Gantt для публикации плана (PBT-055).
  * Вид — по целевому примеру владельца (.context/examples/
- * plant-uml-example.plantuml): алиасы, requires/starts, палитра этапов,
- * отпуска разделом, выходные заливкой, language ru.
+ * plant-uml-example.plantuml): алиасы, requires/starts, отпуска
+ * разделом, выходные заливкой, language ru.
  * Целевая версия рендера — PlantUML 1.2026.9beta4 (design D6).
+ *
+ * Цвет публикации (PBT-084): единственный источник — ручной цвет
+ * задачи, переносится hex-значением палитры. Эвристика этапов по
+ * маркерам названия removed по решению владельца 2026-10-26
+ * («маппинг не должен существовать»); задачи без ручного цвета
+ * публикуются без явного цвета.
  */
 
 export interface PlantUmlExportNote {
@@ -14,8 +21,7 @@ export interface PlantUmlExportNote {
   readonly message: string;
 }
 
-/** Имя файла экспорта (прецедент planFileName PBT-050; дефисы ради Windows). */
-export function plantumlFileName(now: Date): string {
+/** Имя файла экспорта (прецедент planFileName PBT-050; дефисы ради Windows). */export function plantumlFileName(now: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0');
   const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const time = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
@@ -31,26 +37,6 @@ interface PlantUmlExportPrivateResult {
   readonly text: string;
   readonly report: PlantUmlExportNote[];
 }
-
-/**
- * Палитра этапов целевого примера (design D3): маркер в названии → цвет.
- *
- * TODO (техдолг, владелец 2026-10-16 «слишком специфично, требует доработки»):
- * эвристика по маркерам названия временная. Направление доработки — цвет
- * из типа работы справочника плана (модельная связь вместо разбора названий);
- * требует наполнения workTypes у планов (после импорта — вручную).
- */
-const STAGE_COLORS: readonly (readonly [string, string])[] = [
-  ['АНЛ', 'LightSkyBlue'],
-  ['ANL', 'LightSkyBlue'],
-  ['DEV', 'MediumPurple'],
-  ['ИФТ', 'Orange'],
-  ['IFT', 'Orange'],
-  ['ПСИ', 'Tomato'],
-  ['PSI', 'Tomato'],
-  ['ТРЖ', 'LightGreen'],
-  ['TRJ', 'LightGreen'],
-];
 
 const VACATION_COLOR = 'DarkGreen';
 
@@ -74,14 +60,9 @@ export function encodePlantUmlTitle(title: string): string {
     .trim();
 }
 
-function stageColor(title: string): string | undefined {
-  const upper = title.toUpperCase();
-  for (const [marker, color] of STAGE_COLORS) {
-    if (upper.includes(marker.toUpperCase())) {
-      return color;
-    }
-  }
-  return undefined;
+/** Ручной цвет задачи → hex палитры для публикации (PBT-084). */
+function manualColorHex(task: PlanTask): string | undefined {
+  return taskColor(task.color)?.hex.toLowerCase();
 }
 
 /** Дата целевого формата: 2026/07/10 (по образцу примера владельца). */
@@ -239,18 +220,6 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
   }
 
   lines.push('');
-  lines.push("' ============================================================");
-  lines.push("' Цветовая схема по этапам:");
-  const legendColors = new Set<string>();
-  for (const [marker, color] of STAGE_COLORS) {
-    if (!legendColors.has(color)) {
-      legendColors.add(color);
-      lines.push(`'   ${marker} → ${color}`);
-    }
-  }
-  lines.push(`'   Отпуск → ${VACATION_COLOR}`);
-  lines.push("' ============================================================");
-  lines.push('');
 
   const aliasByTaskId = new Map<string, string>();
   plan.tasks.forEach((task, index) => {
@@ -259,7 +228,15 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
 
   const emitTask = (task: PlanTask, alias: string): void => {
     const workingDaysCount = calendar.workingDaysBetween(task.start, task.end);
-    const block = taskRequiresBlock(alias, task.title, task.start, workingDaysCount, stageColor(task.title));
+    // PBT-084: публикация красит только ручным цветом (hex палитры);
+    // без ручного цвета — без явного цвета (решение владельца 2026-10-26).
+    const block = taskRequiresBlock(
+      alias,
+      task.title,
+      task.start,
+      workingDaysCount,
+      manualColorHex(task),
+    );
     lines.push(...block);
     lines.push('');
     if (

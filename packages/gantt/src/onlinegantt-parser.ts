@@ -7,6 +7,7 @@ import {
   type Weekday,
 } from './plan-document';
 import { addCalendarDays, createWorkingCalendar } from './working-calendar';
+import { taskColorIdByHex } from './task-colors';
 
 /**
  * Разбор файлов OnlineGantt `.gantt` в содержимое плана (PBT-052).
@@ -513,9 +514,6 @@ function walkEntries(
       }
     }
 
-    if (entry.color !== undefined && entry.color !== '') {
-      state.colorCount += 1;
-    }
     if (entry.Progress !== undefined && entry.Progress !== 0) {
       state.progressCount += 1;
     }
@@ -535,6 +533,12 @@ function walkEntries(
       duration: entry.Duration,
     });
     state.taskIds.add(key);
+    // PBT-084: hex записи, точно совпавший со значением палитры (регистр
+    // нормализуется), переносится идентификатором; иначе — «Авто» (без поля).
+    const color =
+      typeof entry.color === 'string' && entry.color !== ''
+        ? taskColorIdByHex(entry.color)
+        : undefined;
     state.tasks.push({
       id,
       title,
@@ -544,6 +548,7 @@ function walkEntries(
       ...(assigneeIds === undefined ? {} : { assigneeIds }),
       ...(assigneeUnits === undefined ? {} : { assigneeUnits }),
       ...(notes === undefined ? {} : { notes }),
+      ...(color === undefined ? {} : { color }),
     });
   });
 }
@@ -556,9 +561,7 @@ interface TreeState {
   readonly seenIds: Set<string>;
   readonly predecessors: PredecessorRef[];
   readonly durations: DurationRef[];
-  colorCount: number;
-  progressCount: number;
-}
+  progressCount: number;}
 
 function parseDependencies(
   predecessors: readonly PredecessorRef[],
@@ -753,9 +756,7 @@ export function parseOnlineGanttFile(
     seenIds: new Set(),
     predecessors: [],
     durations: [],
-    colorCount: 0,
-    progressCount: 0,
-  };
+    progressCount: 0,  };
   walkEntries(value.data, undefined, 'data', toDate, resources.ids, state, sink);
 
   const dependencies = parseDependencies(
@@ -788,19 +789,12 @@ export function parseOnlineGanttFile(
     }
   }
 
-  if (state.colorCount > 0 || state.progressCount > 0) {
-    const parts: string[] = [];
-    if (state.colorCount > 0) {
-      parts.push(`color (${state.colorCount})`);
-    }
-    if (state.progressCount > 0) {
-      parts.push(`Progress (${state.progressCount})`);
-    }
+  if (state.progressCount > 0) {
     warn(
       sink,
       'dropped-task-fields',
       'data',
-      `Поля записей не переносятся в план: ${parts.join(', ')}.`,
+      `Прогресс записей (${state.progressCount}) не переносится в план; цвет записи вне палитры получает автоматическое значение.`,
     );
   }
   reportSkippedSettings(advanced, sink);

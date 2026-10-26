@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test } from '@playwright/test';
 
 async function subscriptionCount(page: import('@playwright/test').Page): Promise<number> {
@@ -9,7 +10,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
     page,
   }) => {
     test.setTimeout(120_000);
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     // Дождаться монтирования среза: подписки появляются в эффектах.
     await expect(page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true })).toBeVisible();
@@ -47,7 +48,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
   });
 
   test('черновик переживает переключение вкладок', async ({ page }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     const pane1 = page.getByRole('group', { name: 'Экземпляр 1 · Список 1', exact: true });
     await pane1.getByPlaceholder('Новая задача…').fill('Живой черновик');
@@ -62,7 +63,7 @@ test.describe('жизненный цикл скрытых виджетов (PBT-
   });
 
   test('скрытая вкладка показывает актуальный документ при возврате', async ({ page }) => {
-    await page.goto('/');
+    await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
     const tablist = page.getByRole('tablist', { name: 'Вкладки рабочего пространства' });
 

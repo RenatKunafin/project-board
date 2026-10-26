@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test } from '@playwright/test';
 
 // Спека PBT-072: каркас дашборда — топ-бар с индикатором сохранения,
@@ -8,7 +9,7 @@ import { expect, test } from '@playwright/test';
 test('топ-бар показывает название и индикатор сохранения', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   const topbar = page.locator('.app-topbar');
 
@@ -60,7 +61,7 @@ test('каталог виджетов показывает карточки с �
 test('каталог документов показывает счётчик открытых окон', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
 
   await page.getByRole('button', { name: 'Каталог документов' }).click();
@@ -77,8 +78,9 @@ test('пустая вкладка показывает состояние с к�
   await page.getByRole('button', { name: 'Сетка', exact: true }).click();
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).click();
 
-  await expect(page.getByText('Пустой дашборд')).toBeVisible();
-  await page.getByRole('button', { name: 'Добавить виджет на вкладку' }).click();
+  const active = page.locator('.tab-surface:not([hidden])');
+  await expect(active.getByText('Пустой дашборд')).toBeVisible();
+  await active.getByRole('button', { name: 'Добавить виджет на вкладку' }).click();
 
   await expect(
     page.getByRole('dialog', { name: 'Каталог виджетов' }),

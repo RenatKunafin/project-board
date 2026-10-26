@@ -102,19 +102,19 @@ describe('эталон 1: плоский рабочий пример diagramm.ga
     }
   });
 
-  it('отчёт без предупреждений о данных — только настройки и color', () => {
+  it('отчёт без предупреждений о данных — только настройки (цвет вне палитры — Авто)', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // Допустимые категории: неперенесённые настройки и поля (41 запись с color).
-      // Предупреждений о датах, ссылках, дублях и назначениях быть не должно.
+      // PBT-084: 41 запись с color вне палитры получают «Авто» без
+      // предупреждения; прогресса в эталоне нет — dropped-task-fields
+      // не появляется. Предупреждений о датах, ссылках и назначениях нет.
       const codes = new Set(
         result.payload.report.warnings.map((warning) => warning.code),
       );
-      expect([...codes].sort()).toEqual(['dropped-task-fields', 'skipped-settings']);
-      const colorWarning = result.payload.report.warnings.find(
-        (warning) => warning.code === 'dropped-task-fields',
-      );
-      expect(colorWarning!.message).toContain('color (41)');
+      expect([...codes].sort()).toEqual(['skipped-settings']);
+      expect(
+        result.payload.content.tasks.every((task) => task.color === undefined),
+      ).toBe(true);
     }
   });
 });

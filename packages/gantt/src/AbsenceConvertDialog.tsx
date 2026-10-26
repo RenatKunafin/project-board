@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PlanResource } from './plan-document';
 import './absence-convert.css';
+import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 
 export interface AbsenceConvertInput {
   readonly resourceId: string;
@@ -9,6 +10,7 @@ export interface AbsenceConvertInput {
 }
 
 interface AbsenceConvertDialogProps {
+  readonly owner: PlanDialogOwner;
   readonly taskTitle: string;
   readonly taskStart: string;
   readonly taskEnd: string;
@@ -25,6 +27,7 @@ interface AbsenceConvertDialogProps {
  * Отмена/Esc ничего не меняют.
  */
 export default function AbsenceConvertDialog({
+  owner,
   taskTitle,
   taskStart,
   taskEnd,
@@ -42,14 +45,6 @@ export default function AbsenceConvertDialog({
     selectRef.current?.focus();
   }, []);
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      // Внутренний диалог гасит Esc, чтобы не закрыть форму задачи под ним.
-      event.stopPropagation();
-      onClose();
-    }
-  };
-
   const submit = () => {
     if (resourceId === '') {
       setError('Выберите ресурс.');
@@ -64,120 +59,100 @@ export default function AbsenceConvertDialog({
   const hasResources = resources.length > 0;
 
   return (
-    <div
-      className="absence-convert__overlay"
-      onKeyDown={handleKeyDown}
-      role="presentation"
+    <PlanDialog
+      owner={owner}
+      title="Преобразование в отпуск"
+      description="Период недоступности ресурса вместо задачи."
+      closeLabel="Закрыть преобразование"
+      className="absence-convert"
+      onClose={onClose}
     >
-      <section
-        className="absence-convert"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Преобразование в отпуск"
-      >
-        <header className="absence-convert__head">
-          <div>
-            <h3 className="absence-convert__title">Преобразование в отпуск</h3>
-            <p className="absence-convert__description">
-              Период недоступности ресурса вместо задачи.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="absence-convert__close"
-            aria-label="Закрыть преобразование"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </header>
-        <div className="absence-convert__body">
-          <p className="absence-convert__note">
-            Задача «{taskTitle}» будет удалена вместе с назначениями и
-            зависимостями. Будет создан один период недоступности выбранного
-            ресурса.
-          </p>
-          {hasResources ? (
-            <>
+      <div className="absence-convert__body plan-dialog__body">
+        <p className="absence-convert__note">
+          Задача «{taskTitle}» будет удалена вместе с назначениями и
+          зависимостями. Будет создан один период недоступности выбранного
+          ресурса.
+        </p>
+        {hasResources ? (
+          <>
+            <label className="absence-convert__field">
+              <span className="absence-convert__label">Ресурс</span>
+              <select
+                ref={selectRef}
+                value={resourceId}
+                data-absence-resource
+                onChange={(event) => {
+                  setResourceId(event.target.value);
+                  setError(null);
+                }}
+              >
+                <option value="">Выберите ресурс</option>
+                {resources.map((resource) => (
+                  <option key={resource.id} value={resource.id}>
+                    {resource.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="absence-convert__row">
               <label className="absence-convert__field">
-                <span className="absence-convert__label">Ресурс</span>
-                <select
-                  ref={selectRef}
-                  value={resourceId}
-                  data-absence-resource
+                <span className="absence-convert__label">Начало</span>
+                <input
+                  type="date"
+                  value={start}
+                  data-absence-start
                   onChange={(event) => {
-                    setResourceId(event.target.value);
+                    setStart(event.target.value);
                     setError(null);
                   }}
-                >
-                  <option value="">Выберите ресурс</option>
-                  {resources.map((resource) => (
-                    <option key={resource.id} value={resource.id}>
-                      {resource.title}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
-              <div className="absence-convert__row">
-                <label className="absence-convert__field">
-                  <span className="absence-convert__label">Начало</span>
-                  <input
-                    type="date"
-                    value={start}
-                    data-absence-start
-                    onChange={(event) => {
-                      setStart(event.target.value);
-                      setError(null);
-                    }}
-                  />
-                </label>
-                <label className="absence-convert__field">
-                  <span className="absence-convert__label">Окончание</span>
-                  <input
-                    type="date"
-                    value={end}
-                    data-absence-end
-                    onChange={(event) => {
-                      setEnd(event.target.value);
-                      setError(null);
-                    }}
-                  />
-                </label>
-              </div>
-            </>
-          ) : (
-            <p className="absence-convert__note" data-absence-empty>
-              В плане нет ресурсов — создайте их в «Настройках плана», затем
-              вернитесь к преобразованию.
-            </p>
-          )}
-          {error !== null && (
-            <p className="absence-convert__error" role="alert" data-absence-error>
-              {error}
-            </p>
-          )}
-        </div>
-        <footer className="absence-convert__foot">
+              <label className="absence-convert__field">
+                <span className="absence-convert__label">Окончание</span>
+                <input
+                  type="date"
+                  value={end}
+                  data-absence-end
+                  onChange={(event) => {
+                    setEnd(event.target.value);
+                    setError(null);
+                  }}
+                />
+              </label>
+            </div>
+          </>
+        ) : (
+          <p className="absence-convert__note" data-absence-empty>
+            В плане нет ресурсов — создайте их в «Настройках плана», затем
+            вернитесь к преобразованию.
+          </p>
+        )}
+        {error !== null && (
+          <p className="absence-convert__error" role="alert" data-absence-error>
+            {error}
+          </p>
+        )}
+      </div>
+      <footer className="absence-convert__foot">
+        <button
+          type="button"
+          className="absence-convert__button"
+          data-absence-cancel
+          onClick={onClose}
+        >
+          Отмена
+        </button>
+        {hasResources && (
           <button
             type="button"
-            className="absence-convert__button"
-            data-absence-cancel
-            onClick={onClose}
+            className="absence-convert__button absence-convert__button--primary"
+            data-absence-apply
+            onClick={submit}
           >
-            Отмена
+            Преобразовать
           </button>
-          {hasResources && (
-            <button
-              type="button"
-              className="absence-convert__button absence-convert__button--primary"
-              data-absence-apply
-              onClick={submit}
-            >
-              Преобразовать
-            </button>
-          )}
-        </footer>
-      </section>
-    </div>
+        )}
+      </footer>
+    </PlanDialog>
   );
 }

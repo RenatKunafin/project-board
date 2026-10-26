@@ -1,3 +1,4 @@
+import { restoreChecklistWorkspace } from './saved-workspace';
 import { expect, test, type Page } from '@playwright/test';
 
 async function cascadeWindowBox(page: Page, label: string) {
@@ -26,7 +27,7 @@ async function switchToCascade(page: Page): Promise<void> {
 test('каскад: окна перекрываются, активация нижнего поднимает поверх', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const labels = [
@@ -68,7 +69,7 @@ test('каскад: окна перекрываются, активация ни
 test('каскад: перенос фиксируется после отпускания, заголовок остаётся достижимым', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const label = 'Экземпляр 1 · Список 1';
@@ -106,7 +107,7 @@ test('каскад: перенос фиксируется после отпус�
 });
 
 test('каскад: resize за уголок соблюдает минимум типа', async ({ page }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const label = 'Экземпляр 3 · Список 2';
@@ -140,7 +141,7 @@ test('каскад: resize за уголок соблюдает минимум �
 test('каскад: поле ввода не двигает окно; возврат в сетку работает', async ({
   page,
 }) => {
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const label = 'Экземпляр 1 · Список 1';
@@ -171,7 +172,7 @@ test('каскад: resize расширяет канвас, окно досту�
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const label = 'Экземпляр 1 · Список 1';
@@ -228,7 +229,7 @@ test('каскад: сжатие экрана и восстановление с
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 800 });
-  await page.goto('/');
+  await restoreChecklistWorkspace(page);
   await switchToCascade(page);
 
   const label = 'Экземпляр 1 · Список 1';

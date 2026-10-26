@@ -29,7 +29,8 @@ async function createPlan(page: Page, title: string): Promise<void> {
 
 async function importGantt(page: Page, paneName: string): Promise<void> {
   const pane = page.getByRole('group', { name: paneName }).first();
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane
     .locator('[data-import-plan-input]')
     .setInputFiles(FIXTURE_PATH);
@@ -64,9 +65,15 @@ test('рабочий файл: предпросмотр со сводкой и �
   await expect(preview.locator('[data-onlinegantt-summary]')).toContainText(
     'Без исполнителя 16',
   );
+  // PBT-084: цвет записей больше не порождает dropped-task-fields —
+  // совпадения переносятся, вне палитры получают «Авто»; в этом файле
+  // прогресса нет — предупреждение не появляется, только настройки.
   await expect(
     preview.locator('[data-onlinegantt-warnings]'),
-  ).toContainText('dropped-task-fields');
+  ).toContainText('skipped-settings');
+  await expect(
+    preview.locator('[data-onlinegantt-warnings]'),
+  ).not.toContainText('dropped-task-fields');
 
   // DoD-4: задачи без исполнителя помечены как ручные решения, не удаляются.
   await expect(
@@ -164,7 +171,8 @@ test('критическая ошибка даёт диагностику без
   await createPlan(page, 'Целевой');
 
   const pane = page.getByRole('group', { name: 'План · Целевой' }).first();
-  await pane.getByRole('button', { name: 'Импорт плана' }).click();
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await pane.locator('[data-import-plan-input]').setInputFiles({
     name: 'broken.gantt',
     mimeType: 'application/json',
@@ -202,7 +210,8 @@ test('повторный импорт создаёт два независимы
   await expect(firstPane).toBeVisible();
 
   // Второй импорт того же файла: ещё один документ, окно — на последнем.
-  await firstPane.getByRole('button', { name: 'Импорт плана' }).click();
+  await firstPane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).getByRole('menuitem', { name: 'Импорт плана' }).click();
   await firstPane
     .locator('[data-import-plan-input]')
     .setInputFiles(FIXTURE_PATH);
