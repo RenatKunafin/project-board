@@ -101,6 +101,7 @@ for (const viewport of [{ width: 1024, height: 778 }, { width: 1856, height: 126
     await dialog.locator('[data-task-save]').focus();
     await page.keyboard.press('Tab');
     expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+    page.once('dialog', event => void event.accept());
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
     await expect(pane.locator('[data-add-task]')).toBeFocused();
@@ -148,12 +149,13 @@ for (const viewport of [{ width: 1024, height: 778 }, { width: 1856, height: 126
       await pane.locator('.plan-gantt__chart').getByText('Целевая задача', { exact: true }).first().dblclick();
       const editor = pane.getByRole('dialog', { name: 'Редактирование задачи', exact: true });
       await editor.locator('[data-task-field="title"]').fill('Черновик задачи');
+      page.once('dialog', event => void event.accept());
       await editor.locator('[data-task-to-absence]').click();
       const absence = pane.getByRole('dialog', { name: 'Преобразование в отпуск', exact: true });
       await frame(page, absence);
       await page.keyboard.press('Escape');
       await expect(absence).toHaveCount(0);
-      await expect(editor.locator('[data-task-field="title"]')).toHaveValue('Черновик задачи');
+      await expect(editor.locator('[data-task-field="title"]')).toHaveValue('Целевая задача');
       await expect(editor.locator('[data-task-to-absence]')).toBeFocused();
       await page.keyboard.press('Escape');
       await expect(editor).toHaveCount(0);
@@ -203,6 +205,7 @@ test('диалог работает за пределами DOM оболочки
     await frame(page, dialog);
     expect(await dialog.evaluate(el => el.closest('.widget-window'))).toBeNull();
     await dialog.locator('[data-task-field="title"]').fill('Самостоятельная форма');
+    page.once('dialog', event => void event.accept());
     await dialog.locator('.plan-dialog__close').click();
     await expect(dialog).toHaveCount(0);
   } finally {
@@ -224,6 +227,7 @@ test('ресурсное представление использует ту ж
   await frame(page, dialog);
   await expect(dialog.locator('[data-task-field="title"]')).toHaveValue('Целевая задача');
   await dialog.locator('[data-task-field="title"]').fill('Отмена в ресурсах');
+  page.once('dialog', event => void event.accept());
   await dialog.locator('[data-task-cancel]').click();
   await expect(dialog).toHaveCount(0);
 });

@@ -2,7 +2,7 @@ import { createWorkingCalendar } from './working-calendar';
 import type { PlanContent } from './plan-document';
 
 /** Поля формы задачи — источник доменных ошибок по коду поля. */
-export type TaskFormField = 'title' | 'group' | 'start' | 'duration' | 'assignments';
+export type TaskFormField = 'title' | 'group' | 'start' | 'duration' | 'assignments' | 'dependencies' | 'document';
 
 export interface TaskFormIssue {
   readonly field: TaskFormField;
