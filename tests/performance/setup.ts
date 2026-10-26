@@ -27,7 +27,9 @@ export async function newPlan(page: Page, data: Awaited<ReturnType<typeof benchm
 }
 
 async function importData(page: Page, pane: ReturnType<Page['locator']>, data: Awaited<ReturnType<typeof benchmarkData>>[number]) {
-  await pane.locator('[data-import-plan]').click();
+  // PBT-089: импорт — пункт меню «⋯» тулбара.
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menu', { name: 'Меню плана' }).locator('[data-import-plan]').click();
   await pane.locator('[data-import-plan-input]').setInputFiles({ name: 'benchmark.json', mimeType: 'application/json', buffer: Buffer.from(data.json) });
   const imported = page.getByRole('group', { name: `План · ${data.title}`, exact: true });
   await expect(imported.locator('[data-task-count]')).toHaveText(`Задач: ${data.content.tasks.length}`);
