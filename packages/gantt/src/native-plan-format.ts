@@ -4,6 +4,7 @@ import {
   type PlanContent,
   type PlanIssue,
 } from './plan-document';
+import { isTaskColor } from './task-colors';
 
 export const PLAN_FILE_FORMAT = 'project-board-plan';
 export const PLAN_FILE_FORMAT_VERSION = 1;
@@ -47,6 +48,31 @@ export function serializePlanFile(payload: PlanFilePayload): {
     content: payload.content,
   };
   return { ok: true, json: JSON.stringify(envelope, null, 2) };
+}
+
+/** Нормализация цвета задач импортируемого файла: неизвестные — «Авто». */
+function normalizeImportedTaskColors(content: unknown): unknown {
+  if (!Array.isArray((content as { tasks?: unknown })?.tasks)) {
+    return content;
+  }
+  let changed = false;
+  const tasks = (content as { tasks: unknown[] }).tasks.map((task) => {
+    if (
+      typeof task === 'object' &&
+      task !== null &&
+      'color' in task &&
+      !isTaskColor((task as { color?: unknown }).color)
+    ) {
+      changed = true;
+      const copy = { ...task } as Record<string, unknown>;
+      delete copy.color;
+      return copy;
+    }
+    return task;
+  });
+  return changed
+    ? { ...(content as Record<string, unknown>), tasks }
+    : content;
 }
 
 export function planFileName(now: Date): string {
@@ -175,7 +201,11 @@ export function deserializePlanFile(text: string): PlanFileDeserialize {
     ]);
   }
 
-  const validation = parsePlanContent(content);
+  // PBT-084: неизвестный палитре идентификатор цвета нормализуется
+  // в «Авто» до валидации (решение владельца: цвет не блокирует
+  // импорт остального содержания); прочие проверки без смягчения.
+  const normalizedContent = normalizeImportedTaskColors(content);
+  const validation = parsePlanContent(normalizedContent);
   if (!validation.ok) {
     return reject([
       {

@@ -14,6 +14,8 @@ export interface TaskFormInput {
   readonly groupId?: string;
   readonly start: string;
   readonly durationDays: number;
+  /** Идентификатор палитры; `undefined` — «Авто» (сброс при редактировании). */
+  readonly color?: string;
 }
 
 export interface TaskDates {

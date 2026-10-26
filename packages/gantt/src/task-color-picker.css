@@ -1,0 +1,86 @@
+/* PBT-084: выбор цвета задачи — кружки палитры и меню быстрой смены.
+   Цвета-литералы — только hex-значения палитры документа (task-colors.ts),
+   остальное — семантические токены приложения. */
+
+.task-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-colors__auto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.task-colors__auto:hover {
+  color: var(--foreground);
+}
+
+.task-colors__auto--active {
+  border-color: color-mix(in oklch, var(--foreground) 40%, transparent);
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.task-colors__auto-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--primary) 60%, var(--surface));
+}
+
+.task-colors__swatch {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.task-colors__swatch:hover {
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground) 40%, transparent);
+}
+
+.task-colors__swatch--active {
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--foreground) 70%, transparent);
+}
+
+.task-colors__check {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.6));
+}
+
+.task-color-menu {
+  position: fixed;
+  z-index: 1000;
+  width: 264px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 8px);
+  background: var(--popover);
+  color: var(--popover-foreground, var(--foreground));
+  box-shadow: var(--shadow-float);
+}
+
+.task-color-menu__caption {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}

@@ -97,18 +97,19 @@ describe('serializePlanToPlantUml — контрольный план', () => {
     expect(text).toContain('2026/10/17 is open');
   });
 
-  it('группы полным путём, включая пустую; задачи со своими алиасами', () => {
+  it('группы полным путём, включая пустую; задачи без ручного цвета — без явного цвета', () => {
     expect(text).toContain('-- ОКАД --');
     expect(text).toContain('-- ОКАД / iOS --');
     expect(text).toContain('-- Будущее --');
     expect(text).toContain('-- Отпуска --');
     expect(text).toContain('[АНЛ-ЕФС (ОКАД)] as [T1] requires 5 days');
     expect(text).toContain('[T1] starts 2026/10/12');
-    expect(text).toContain('[T1] is colored in LightSkyBlue/LightSkyBlue');
+    // PBT-084: эвристика этапов удалена — публикация красит только ручным цветом.
+    expect(text).not.toContain('is colored in LightSkyBlue');
     expect(text).toContain('[DEV-ЕФС (ОКАД)] as [T2] requires 10 days');
-    expect(text).toContain('[T2] is colored in MediumPurple/MediumPurple');
+    expect(text).not.toContain('is colored in MediumPurple');
     expect(text).toContain('[ИФТ-iOS (ОКАД)] as [T3] requires 5 days');
-    expect(text).toContain('[T3] is colored in Orange/Orange');
+    expect(text).not.toContain('is colored in Orange');
   });
 
   it('отпуск — тёмно-зелёная задача раздела отпусков', () => {
@@ -140,6 +141,20 @@ describe('serializePlanToPlantUml — контрольный план', () => {
     expect(list).toContain('unit');
     // Праздник вне горизонта не попал, пустой план не пуст — заметки быть не должно.
     expect(list).not.toContain('empty-plan');
+  });
+
+  it('ручной цвет публикуется hex, без ручного цвета — без явного цвета (PBT-084)', () => {
+    const plan = controlPlan();
+    const manual = serializePlanToPlantUml({
+      ...plan,
+      tasks: plan.tasks.map((task, index) =>
+        index === 0 ? { ...task, color: 'sapphire' } : task,
+      ),
+    });
+    expect(manual.text).toContain('[T1] is colored in #3186e9/#3186e9');
+    // Прочие задачи (с прежними маркерами этапов в названиях) — без цвета.
+    expect(manual.text).not.toContain('[T2] is colored in');
+    expect(manual.text).not.toContain('[T3] is colored in');
   });
 });
 

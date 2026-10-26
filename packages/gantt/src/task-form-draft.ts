@@ -47,11 +47,17 @@ export function prepareTaskForm(session: TaskFormSession, input: TaskEditorSubmi
     title: input.title, ...(input.groupId === undefined ? {} : { groupId: input.groupId }),
     ...(input.assigneeIds.length ? { assigneeIds: input.assigneeIds } : {}),
     ...(input.workTypeIds.length ? { workTypeIds: input.workTypeIds } : {}),
+    ...(input.color ? { color: input.color } : {}),
   } : {
     ...(input.title === original.title ? {} : { title: input.title }),
     ...(input.groupId === original.groupId ? {} : { groupId: input.groupId }),
     ...(sameIds(input.assigneeIds, original.assigneeIds) ? {} : { assigneeIds: input.assigneeIds }),
     ...(sameIds(input.workTypeIds, original.workTypeIds) ? {} : { workTypeIds: input.workTypeIds }),
+    // Отсутствие поля в черновике не меняет цвет; явный undefined
+    // в переданном черновике — сброс в «Авто» (контракт UpdateTaskPatch).
+    ...('color' in input && input.color !== original.color
+      ? { color: input.color }
+      : {}),
   };
   const changed = original === undefined ? createTask(plan, { ...fields, title: input.title, ...dates }) : updateTask(plan, original.id, fields);
   if (!changed.ok) return fail('assignments', changed.error.message);

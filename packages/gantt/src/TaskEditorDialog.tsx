@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PlanContent, PlanTask } from './plan-document';
 import { buildTaskDates, type TaskFormIssue } from './task-editor';
 import { taskDuration, type TaskEditorSubmit, type TaskFormSession } from './task-form-draft';
+import { TaskColorSwatches } from './task-color-picker';
 import PlanDialog, { type PlanDialogOwner } from './PlanDialog';
 import './task-editor.css';
 
@@ -38,6 +39,7 @@ function TaskEditorForm({ owner, mode, onSubmit, onDelete, onConvertToAbsence, o
   const initialDuration = task ? String(taskDuration(task, plan)) : '1';
   const initial = {
     title: task?.title ?? '', groupId: task?.groupId ?? '', start: task?.start ?? '', duration: initialDuration,
+    color: task?.color,
     assigneeIds: [...(task?.assigneeIds ?? [])], workTypeIds: [...(task?.workTypeIds ?? [])],
     predecessors: plan.dependencies.filter(dep => dep.toTaskId === session.taskId)
       .map(dep => ({ fromTaskId: dep.fromTaskId, lagDays: dep.lagDays })),
@@ -96,6 +98,7 @@ function TaskEditorForm({ owner, mode, onSubmit, onDelete, onConvertToAbsence, o
     const result = onSubmit({
       title: draft.title, ...(draft.groupId ? { groupId: draft.groupId } : {}),
       start: draft.start, durationDays: draft.duration.trim() ? Number(draft.duration) : NaN,
+      color: draft.color,
       assigneeIds: draft.assigneeIds, workTypeIds: draft.workTypeIds, predecessors: draft.predecessors,
     }, session);
     setIssue(result);
@@ -125,6 +128,10 @@ function TaskEditorForm({ owner, mode, onSubmit, onDelete, onConvertToAbsence, o
             <option value="">Без группы</option>{plan.groups.map(group => <option key={group.id} value={group.id}>{group.title}</option>)}
           </select>{error('group')}
         </label>
+        <fieldset className="task-editor__field task-editor__color">
+          <legend className="task-editor__label">Цвет</legend>
+          <TaskColorSwatches value={draft.color} onPick={color => patch({ color })} />
+        </fieldset>
       </section>
       <section className="task-editor__section" aria-label="Сроки">
         <h4>Сроки</h4>

@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLProps } from 'react';
 import type { PlanContent } from './plan-document';
 import { addCalendarDays } from './working-calendar';
 import type { ResourceConflict } from './plan-conflicts';
+import { resourceTimelineColorStyle } from './task-colors';
 
 /**
  * Локальный контракт данных RCT (минимальный, без протекания типов
@@ -134,6 +135,9 @@ export function planToTimelineItems(
         continue;
       }
       const conflict = marks?.taskIds.has(task.id) ?? false;
+      // PBT-084: ручной цвет — только для бесконфликтного элемента;
+      // конфликт остаётся собственным маркером.
+      const colorStyle = conflict ? undefined : resourceTimelineColorStyle(task.color);
       items.push({
         id: `${task.id}:${resourceId}`,
         group: resourceId,
@@ -146,7 +150,13 @@ export function planToTimelineItems(
           ? { className: 'rtl-item--conflict' }
           : {}),
         itemProps: {
-          style: conflict ? conflictTaskStyle : taskStyle,
+          // PBT-084: ручной цвет — только для бесконфликтного элемента;
+          // конфликт остаётся собственным маркером (destructive-подсветка).
+          style: conflict
+            ? conflictTaskStyle
+            : colorStyle === undefined
+              ? taskStyle
+              : { ...taskStyle, ...colorStyle },
           'data-rt-task': task.id,
         } as HTMLProps<HTMLDivElement>,
       });

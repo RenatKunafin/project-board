@@ -46,6 +46,7 @@ import {
   createWorkingCalendar,
   type WorkingCalendar,
 } from './working-calendar';
+import { isTaskColor } from './task-colors';
 
 export type PlanCommandErrorCode =
   | 'unknown-task'
@@ -58,6 +59,7 @@ export type PlanCommandErrorCode =
   | 'invalid-duration'
   | 'invalid-title'
   | 'invalid-lag'
+  | 'invalid-color'
   | 'invalid-calendar'
   | 'circular-group'
   | 'circular-dependency'
@@ -79,6 +81,8 @@ export interface CreateTaskInput {
   readonly groupId?: string;
   readonly assigneeIds?: readonly string[];
   readonly workTypeIds?: readonly string[];
+  /** Идентификатор палитры цветов (PBT-084); отсутствует — «Авто». */
+  readonly color?: string;
 }
 
 export interface UpdateTaskPatch {
@@ -87,6 +91,8 @@ export interface UpdateTaskPatch {
   readonly groupId?: string;
   readonly assigneeIds?: readonly string[];
   readonly workTypeIds?: readonly string[];
+  /** Явный `undefined` сбрасывает цвет в «Авто»; отсутствующее свойство не меняет поле. */
+  readonly color?: string;
 }
 
 export type PlanCommand =
@@ -259,6 +265,9 @@ export function createTask(
   if (referenceError !== undefined) {
     return { ok: false, error: referenceError };
   }
+  if (input.color !== undefined && !isTaskColor(input.color)) {
+    return fail('invalid-color', 'Цвет задачи — неизвестный идентификатор палитры.');
+  }
   const task: PlanTask = {
     id: crypto.randomUUID(),
     title: input.title,
@@ -271,6 +280,7 @@ export function createTask(
     ...(input.workTypeIds === undefined
       ? {}
       : { workTypeIds: [...input.workTypeIds] }),
+    ...(input.color === undefined ? {} : { color: input.color }),
   };
   return { ok: true, plan: { ...plan, tasks: [...plan.tasks, task] } };
 }
@@ -321,6 +331,15 @@ export function updateTask(
       patch.groupId !== undefined
         ? { ...nextTask, groupId: patch.groupId }
         : withoutField(nextTask, 'groupId');
+  }
+  if ('color' in patch) {
+    if (patch.color !== undefined && !isTaskColor(patch.color)) {
+      return fail('invalid-color', 'Цвет задачи — неизвестный идентификатор палитры.');
+    }
+    nextTask =
+      patch.color !== undefined
+        ? { ...nextTask, color: patch.color }
+        : withoutField(nextTask, 'color');
   }
   return { ok: true, plan: replaceTask(plan, nextTask) };
 }

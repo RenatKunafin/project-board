@@ -74,6 +74,21 @@ describe('единый результат формы задачи', () => {
     expect(result.ok && result.plan.dependencies).toEqual([plan.dependencies[1]]);
     expect(prepareTaskForm({ ...session, taskId: 'missing' }, input)).toMatchObject({ ok: false, issue: { field: 'document' } });
   });
+  it('цвет меняется и сбрасывается формой без изменения дат (PBT-084)', () => {
+    const colored: PlanContent = {
+      ...plan,
+      tasks: plan.tasks.map((task) => (task.id === 'b' ? { ...task, color: 'coral' } : task)),
+    };
+    const coloredSession = { ...session, plan: colored };
+    const picked = prepareTaskForm(coloredSession, { ...input, color: 'plum' });
+    expect(picked.ok && picked.plan.tasks[1]).toEqual({ ...colored.tasks[1], color: 'plum' });
+    const reset = prepareTaskForm(coloredSession, { ...input, color: undefined });
+    expect(reset.ok && 'color' in reset.plan.tasks[1]).toBe(false);
+    const untouched = prepareTaskForm(coloredSession, input);
+    expect(untouched.ok && untouched.plan).toBe(colored);
+    const created = prepareTaskForm({ plan: colored, revision: 5 }, { ...input, durationDays: 1, color: 'steel', predecessors: [] });
+    expect(created.ok && created.plan.tasks[3].color).toBe('steel');
+  });
 });
 
 describe('запись снимка формы', () => {
