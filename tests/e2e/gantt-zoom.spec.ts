@@ -95,23 +95,23 @@ async function createPlan(
   return documentId as string;
 }
 
-/** Признак формата подписи нижней строки шкалы: дд.мм (days) или
+/** Признак формата подписи нижней строки шкалы: число месяца (days) или
  * диапазон недели «12.10–18.10» (weeks). Шкала виртуализирована —
  * конкретная клетка может отсутствовать в DOM, поэтому формат
  * проверяется паттерном по видимым подписям (PBT-076: «Недели» —
  * недельные колонки с подписями-диапазонами дд.мм). */
 async function scaleRowFormat(
   page: import('@playwright/test').Page,
-): Promise<'dayMonth' | 'weekRange' | 'unknown'> {
+): Promise<'dayNumber' | 'weekRange' | 'unknown'> {
   const text = await page.evaluate(() => {
     const scale = document.querySelector('.plan-gantt__chart .wx-scale');
-    return scale ? (scale.textContent || '') : '';
+    return scale ? (scale as HTMLElement).innerText : '';
   });
   if (/\d{2}\.\d{2}\s*[–-]\s*\d{2}\.\d{2}/.test(text)) {
     return 'weekRange';
   }
-  if (/\d{2}\.\d{2}/.test(text)) {
-    return 'dayMonth';
+  if (!/\d{1,2}\.\d{2}/.test(text) && /\b(?:[1-9]|[12]\d|3[01])\b/.test(text)) {
+    return 'dayNumber';
   }
   return 'unknown';
 }
@@ -155,12 +155,12 @@ test('зум «Дни/Недели»: недельные колонки и дн�
   // («12–18 окт»), а не дневные подписи.
   expect(await scaleRowFormat(page)).toBe('weekRange');
 
-  // «Дни»: клетка дня 48px, подписи дня — дд.мм.
+  // «Дни»: клетка дня 24px, подписи дня — только число месяца.
   await pane.locator('[data-zoom-days]').click();
   await expect(chart.getByText('Задача A').first()).toBeVisible();
   await page.waitForTimeout(600);
-  expect(Math.abs((await barWidth()) / 5 - 48)).toBeLessThanOrEqual(2);
-  expect(await scaleRowFormat(page)).toBe('dayMonth');
+  expect(Math.abs((await barWidth()) / 5 - 24)).toBeLessThanOrEqual(2);
+  expect(await scaleRowFormat(page)).toBe('dayNumber');
 
   // «Недели»: недельные колонки возвращаются.
   await pane.locator('[data-zoom-weeks]').click();
@@ -183,7 +183,7 @@ test('зум «Дни/Недели»: недельные колонки и дн�
   );
   const restoredBar = restoredChart.locator('.wx-bar[data-id=":t-a"]');
   expect(
-    Math.abs((await restoredBar.boundingBox())!.width / 5 - 48),
+    Math.abs((await restoredBar.boundingBox())!.width / 5 - 24),
   ).toBeLessThanOrEqual(2);
 });
 
@@ -268,14 +268,14 @@ test('смена зума сохраняет позицию взгляда (ко
   const before = await chartScrollLeft(page);
   expect(before).toBeGreaterThan(500);
 
-  // «Дни» (48px/день): позиция дня стабильна — left растёт ×3.
+  // «Дни» (24px/день): позиция дня стабильна — left растёт ×1,5.
   await pane.locator('[data-zoom-days]').click();
   await expect(
     pane.locator('.plan-gantt__chart').getByText('Стартовая задача').first(),
   ).toBeVisible();
   await page.waitForTimeout(900);
   const inDays = await chartScrollLeft(page);
-  expect(Math.abs(inDays - before * 3)).toBeLessThanOrEqual(48);
+  expect(Math.abs(inDays - before * 1.5)).toBeLessThanOrEqual(24);
 
   // Обратно в «Недели»: возврат к исходной позиции (± день).
   await pane.locator('[data-zoom-weeks]').click();
