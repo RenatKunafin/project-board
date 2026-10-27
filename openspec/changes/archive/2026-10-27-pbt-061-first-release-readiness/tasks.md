@@ -11,9 +11,9 @@
 
 - [x] 3.1 Сверка полноты матрицы с `openspec/specs` (количество требований).
 - [x] 3.2 Итоговый живой проход по опубликованной v1.0.1 с рабочим примером владельца (импорт `.gantt`, сценарии инструкции, офлайн); результаты в отчёте, скриншоты в test-results.
-- [ ] 3.3 Действующие наборы зелёные: verify:repository, lint, typecheck, unit, build, test:browser, `openspec validate --all --strict`.
+- [x] 3.3 Действующие наборы зелёные: verify:repository, lint, typecheck, unit, build, test:browser, `openspec validate --all --strict`.
 
 ## 4. Завершение
 
 - [x] 4.1 PR в develop; приёмка владельцем релизного сценария и матрицы.
-- [ ] 4.2 После принятия PR архивировать change (без продуктовых дельт), дождаться CI, merge; отметить Done по факту.
+- [x] 4.2 После принятия PR архивировать change (без продуктовых дельт), дождаться CI, merge; отметить Done по факту.
