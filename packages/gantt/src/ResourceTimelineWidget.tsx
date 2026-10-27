@@ -190,6 +190,94 @@ export default function ResourceTimelineWidget({
     return unsubscribe;
   }, [documentId, documentService]);
 
+  // Панорамирование шкалы остаётся за RCT. Трекер нужен только для
+  // курсора: после горизонтального движения по пустому фону показывает
+  // закрытую руку до отпускания, не вмешиваясь в scroll offset или задачи.
+  useEffect(() => {
+    type BackgroundPan = {
+      root: HTMLElement;
+      startX: number;
+      startY: number;
+      active: boolean;
+    };
+    let gesture: BackgroundPan | null = null;
+
+    const clearGesture = () => {
+      gesture?.root.classList.remove('resource-timeline--panning');
+      gesture = null;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const scroll = target.closest<HTMLElement>('.rct-scroll');
+      const root = scroll?.closest<HTMLElement>('.resource-timeline');
+      if (
+        scroll === null || scroll === undefined || root === null ||
+        root === undefined || root.dataset.widgetInstance !== widgetInstanceId ||
+        target.closest('.rct-item, .rct-sidebar, .rct-header-root, button, input, select, textarea, a, [role="button"]')
+      ) return;
+      clearGesture();
+      gesture = {
+        root,
+        startX: event.clientX,
+        startY: event.clientY,
+        active: false,
+      };
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const current = gesture;
+      if (current === null) return;
+      if (event.buttons === 0) {
+        clearGesture();
+        return;
+      }
+      const deltaX = event.clientX - current.startX;
+      const deltaY = event.clientY - current.startY;
+      if (current.active) return;
+      if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) return;
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+        clearGesture();
+        return;
+      }
+      current.active = true;
+      current.root.classList.add('resource-timeline--panning');
+    };
+
+    const onPointerUp = () => clearGesture();
+    const onPointerLeave = (event: PointerEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const scroll = event.target.closest('.rct-scroll');
+      const root = scroll?.closest<HTMLElement>('.resource-timeline');
+      const relatedTarget = event.relatedTarget;
+      if (
+        root?.dataset.widgetInstance === widgetInstanceId &&
+        !(relatedTarget instanceof Node && scroll?.contains(relatedTarget))
+      ) clearGesture();
+    };
+    const cancel = () => clearGesture();
+
+    window.document.addEventListener('pointerdown', onPointerDown, true);
+    window.document.addEventListener('pointermove', onPointerMove, true);
+    window.document.addEventListener('pointerup', onPointerUp, true);
+    window.document.addEventListener('pointercancel', onPointerUp, true);
+    window.document.addEventListener('pointerleave', onPointerLeave, true);
+    window.document.addEventListener('visibilitychange', cancel);
+    window.addEventListener('blur', cancel);
+    return () => {
+      cancel();
+      window.document.removeEventListener('pointerdown', onPointerDown, true);
+      window.document.removeEventListener('pointermove', onPointerMove, true);
+      window.document.removeEventListener('pointerup', onPointerUp, true);
+      window.document.removeEventListener('pointercancel', onPointerUp, true);
+      window.document.removeEventListener('pointerleave', onPointerLeave, true);
+      window.document.removeEventListener('visibilitychange', cancel);
+      window.removeEventListener('blur', cancel);
+    };
+  }, [widgetInstanceId]);
+
   const validation = useMemo(
     () => (document ? parsePlanContent(document.content) : undefined),
     [document],
@@ -838,7 +926,7 @@ export default function ResourceTimelineWidget({
           В плане нет ресурсов: добавьте их в настройках плана.
         </p>
       ) : (
-        <div className="resource-timeline__chart" data-rt-chart onContextMenu={onChartContextMenu}>
+      <div className="resource-timeline__chart" data-rt-chart onContextMenu={onChartContextMenu}>
           {colorMenu && colorMenuTask !== undefined && (
             <TaskColorMenu
               state={colorMenu}
@@ -935,13 +1023,6 @@ export default function ResourceTimelineWidget({
                 aria-hidden="true"
               />
               Конфликты
-            </span>
-            <span
-              className="resource-timeline__legend-range"
-              data-rt-visible-range
-            >
-              {timelineDayIso(effectiveVisible.start)} —{' '}
-              {timelineDayIso(effectiveVisible.end)}
             </span>
           </div>
         )}

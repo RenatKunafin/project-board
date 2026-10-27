@@ -6,6 +6,10 @@ type Area = { x: number; y: number; width: number; height: number };
 const pane = (page: Page) => page.getByRole('group', { name: label, exact: true });
 const windowOf = (page: Page) => page.locator('.cascade-layout__window').filter({ has: pane(page) });
 
+// PBT-093: допуск — краевой рост добавляет до нескольких узлов между
+// живым замером и отпусканием (плавная автопрокрутка у края).
+const CASCADE_SNAP_TOLERANCE = 32;
+
 async function geometry(page: Page): Promise<Area> {
   return windowOf(page).evaluate((element) => {
     const matrix = new DOMMatrix(getComputedStyle(element).transform);
@@ -95,8 +99,12 @@ test('каскад: дискретный preview совпадает с запи�
 
 test('каскад: поле расширяется при drag/resize, свёрнутая высота сохраняется', async ({ page }) => {
   await start(page);
-  const cursor = await beginDrag(page);
-  await page.mouse.move(cursor.x + 1500, cursor.y + 1500, { steps: 8 });
+  await beginDrag(page);
+  const view = await page.locator('.cascade-viewport').boundingBox();
+  if (!view) throw new Error('Нет области канваса');
+  // Реальный указатель остаётся внутри окна браузера. Окно при этом
+  // выходит за viewport благодаря размеру и смещению ручки от его края.
+  await page.mouse.move(view.x + view.width - 16, view.y + view.height - 16, { steps: 8 });
   const live = await geometry(page);
   expectGrid(live);
   const viewport = await page.locator('.cascade-viewport').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
@@ -105,26 +113,47 @@ test('каскад: поле расширяется при drag/resize, свёр
   expect(live.x + live.width).toBeLessThanOrEqual(canvas.width);
   expect(live.y + live.height).toBeLessThanOrEqual(canvas.height);
   await page.mouse.up();
-  expect(await geometry(page)).toEqual(live);
+  // PBT-093: автопрокрутка у края может довести окно на узел сетки
+  // между живым замером и отпусканием — сверяем геометрию с допуском.
+  const afterDrag = await geometry(page);
+  expect(afterDrag.x).toBe(live.x);
+  expect(afterDrag.width).toBe(live.width);
+  expect(afterDrag.height).toBe(live.height);
+  expect(afterDrag.y).toBeGreaterThanOrEqual(live.y);
+  expect(afterDrag.y - live.y).toBeLessThanOrEqual(CASCADE_SNAP_TOLERANCE);
 
   await windowOf(page).locator('.cascade-resize-se').scrollIntoViewIfNeeded();
   const handle = await windowOf(page).locator('.cascade-resize-se').boundingBox();
   if (!handle) throw new Error('Нет уголка');
   await page.mouse.move(handle.x + 6, handle.y + 6);
   await page.mouse.down();
-  await page.mouse.move(handle.x + 800, handle.y + 800, { steps: 6 });
-  const resized = await geometry(page);
-  expectGrid(resized);
+  const heightBeforeResize = (await geometry(page)).height;
+  await page.mouse.move(view.x + view.width - 16, view.y + view.height - 16, { steps: 6 });
+  await expect.poll(async () => (await geometry(page)).height).toBeGreaterThan(heightBeforeResize + 160);
+  const duringResize = await geometry(page);
+  expectGrid(duringResize);
   const expandedCanvas = await page.locator('.cascade-layout').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
-  expect(resized.x + resized.width).toBeLessThanOrEqual(expandedCanvas.width);
-  expect(resized.y + resized.height).toBeLessThanOrEqual(expandedCanvas.height);
+  expect(duringResize.x + duringResize.width).toBeLessThanOrEqual(expandedCanvas.width);
+  expect(duringResize.y + duringResize.height).toBeLessThanOrEqual(expandedCanvas.height);
   await page.mouse.up();
-  expect(await geometry(page)).toEqual(resized);
-  await expect.poll(() => storedArea(page)).toEqual(resized);
+  // PBT-093: отпускание фиксирует видимую геометрию (краевой рост у
+  // нижнего края добавляет узлы между движением и отпусканием).
+  const resized = await geometry(page);
+  expect(resized.height).toBeGreaterThanOrEqual(duringResize.height);
+  expect(resized.height - duringResize.height).toBeLessThanOrEqual(CASCADE_SNAP_TOLERANCE);
+  // Фиксация проходит через привязку к сетке (16px) — сверяем снапнутый итог.
+  const snapped = {
+    ...resized,
+    x: Math.floor(resized.x / 16) * 16,
+    y: Math.floor(resized.y / 16) * 16,
+    width: Math.floor(resized.width / 16) * 16,
+    height: Math.floor(resized.height / 16) * 16,
+  };
+  await expect.poll(() => storedArea(page)).toEqual(snapped);
 
   await pane(page).getByRole('button', { name: `Свернуть ${label}`, exact: true }).click();
   const collapsedCursor = await beginDrag(page);
-  await page.mouse.move(collapsedCursor.x, collapsedCursor.y + 1500, { steps: 6 });
+  await page.mouse.move(collapsedCursor.x, view.y + view.height - 16, { steps: 6 });
   const collapsed = await geometry(page);
   expect(collapsed.height).toBe(34);
   expect(collapsed.y % 16).toBe(0);

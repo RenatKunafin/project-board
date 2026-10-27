@@ -30,10 +30,17 @@
 
 .resource-timeline__chart {
   flex: 1;
-  min-height: 200px;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   font-size: 12px;
   background: var(--surface);
+}
+
+.resource-timeline .rct-header-root {
+  position: sticky;
+  top: 0;
+  z-index: 90;
 }
 
 /* ─── Тулбар (PBT-049; оформление по прототипу — PBT-074) ────────────────
@@ -256,12 +263,13 @@
    из инлайн-стилей беты (pointer/move) и приоритетнее. */
 .resource-timeline .rct-scroll,
 .resource-timeline .rct-canvas {
-  cursor: grab;
+  cursor: grab !important;
 }
 
-.resource-timeline .rct-scroll:active,
-.resource-timeline .rct-canvas:active {
-  cursor: grabbing;
+.resource-timeline--panning .rct-scroll,
+.resource-timeline--panning .rct-scroll * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 
 /* Дефолтная кремовая краска субботы/воскресенья снимается: подсветка
@@ -357,11 +365,6 @@
 .resource-timeline__swatch--conflict {
   background: var(--color-rt-conflict-bg);
   border: 1px solid var(--destructive);
-}
-
-.resource-timeline__legend-range {
-  margin-left: auto;
-  font-family: var(--font-mono);
 }
 
 .resource-timeline__footer {

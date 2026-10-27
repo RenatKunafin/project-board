@@ -56,6 +56,6 @@ openspec validate --all --strict
 
 ## Документация
 
-[Новый виджет](docs/widget-development.md) · [SDK](packages/widget-sdk/src/index.ts) · [Документы SDK](packages/widget-sdk/src/documents.ts) · [PWA](docs/pwa.md) · [Публикация](docs/deployment.md) · [Формат плана](packages/gantt/NATIVE-PLAN-FORMAT.md) · [Каталог документации](docs/README.md).
+[Руководство пользователя](docs/user-guide.md) · [Резервные копии](docs/workspace-backup-format.md) · [Матрица готовности MVP](docs/research/PBT-061.md) · [Новый виджет](docs/widget-development.md) · [SDK](packages/widget-sdk/src/index.ts) · [Документы SDK](packages/widget-sdk/src/documents.ts) · [PWA](docs/pwa.md) · [Публикация](docs/deployment.md) · [Формат плана](packages/gantt/NATIVE-PLAN-FORMAT.md) · [Каталог документации](docs/README.md).
 
 Для агентов: [AGENTS.md](AGENTS.md), [общие инструкции и подключения](docs/agents.md). В документации нет журнала стадий; историю изменений можно смотреть в git/PR и архиве OpenSpec. Локальная `.context/` владельца не нужна для запуска приложения или прохождения руководства.

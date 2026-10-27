@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Gantt, WillowDark } from '@svar-ui/react-gantt';
 import type { IApi, IColumnConfig, IScaleConfig } from '@svar-ui/react-gantt';
+import { syncGanttTableScroll } from './gantt-table-scroll';
 import '@svar-ui/react-gantt/style.css';
 // Иконки SVAR локально (PBT-073, design D2): WillowDark ниже подключается
 // с fonts={false}, внешний запрос к cdn.svar.dev не выполняется (офлайн-PWA).
@@ -1266,6 +1267,141 @@ export default function PlanGanttWidget({
     [],
   );
 
+  // Горизонтальный drag-scroll (PBT-096): пустой фон шкалы перемещается
+  // захватом мыши; полосы задач и элементы управления остаются за SVAR.
+  // Присваивание scrollLeft вызывает штатную синхронизацию таблицы и
+  // passive-трекинг позиции выше, поэтому документ не записывается.
+  useEffect(() => {
+    type PanGesture = {
+      chart: HTMLElement;
+      root: HTMLElement;
+      startX: number;
+      startY: number;
+      startScrollLeft: number;
+      active: boolean;
+    };
+    let gesture: PanGesture | null = null;
+    let suppressClick = false;
+    let clearSuppressedClick = 0;
+    let completedPanRoot: HTMLElement | null = null;
+    const gestureRootContains = (target: Node) =>
+      completedPanRoot?.contains(target) ?? false;
+
+    const clearGesture = () => {
+      if (gesture?.active) {
+        gesture.root.classList.remove('plan-gantt--panning');
+      }
+      gesture = null;
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (
+        event.button !== 0 || event.defaultPrevented ||
+        visibleRef.current === false
+      ) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const chart = target.closest<HTMLElement>(
+        '.plan-gantt__chart .wx-chart',
+      );
+      const root = chart?.closest<HTMLElement>('.plan-gantt');
+      if (
+        chart === null || chart === undefined || root === null ||
+        root === undefined || root.dataset.widgetInstance !== widgetInstanceId ||
+        chart.scrollWidth <= chart.clientWidth
+      ) return;
+      // data-id covers task bars/links and future SVAR items. Keep explicit
+      // controls and editable regions outside the pan gesture as well.
+      if (target.closest(
+        '[data-id], button, input, select, textarea, a, [role="button"], [contenteditable="true"]',
+      )) return;
+      clearGesture();
+      gesture = {
+        chart,
+        root,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScrollLeft: chart.scrollLeft,
+        active: false,
+      };
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      const current = gesture;
+      if (current === null) return;
+      const deltaX = event.clientX - current.startX;
+      const deltaY = event.clientY - current.startY;
+      if (!current.active) {
+        // A small threshold preserves ordinary clicks; vertical movement
+        // cancels the candidate instead of hijacking a page/widget scroll.
+        if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) return;
+        if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+          clearGesture();
+          return;
+        }
+        current.active = true;
+        current.root.classList.add('plan-gantt--panning');
+      }
+      event.preventDefault();
+      const maxScrollLeft = current.chart.scrollWidth - current.chart.clientWidth;
+      current.chart.scrollLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, current.startScrollLeft - deltaX),
+      );
+    };
+
+    const onMouseUp = () => {
+      if (gesture?.active) {
+        suppressClick = true;
+        window.clearTimeout(clearSuppressedClick);
+        clearSuppressedClick = window.setTimeout(() => {
+          suppressClick = false;
+        }, 0);
+      }
+      clearGesture();
+    };
+
+    const onClick = (event: MouseEvent) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      if (event.target instanceof Node && gestureRootContains(event.target)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    // Remember the root until the synthesized click after mouseup.
+    const finishWithRoot = () => {
+      if (gesture?.active) completedPanRoot = gesture.root;
+      onMouseUp();
+      window.setTimeout(() => {
+        completedPanRoot = null;
+      }, 0);
+    };
+    const cancel = () => {
+      suppressClick = false;
+      completedPanRoot = null;
+      window.clearTimeout(clearSuppressedClick);
+      clearGesture();
+    };
+
+    window.document.addEventListener('mousedown', onMouseDown, true);
+    window.document.addEventListener('mousemove', onMouseMove, true);
+    window.document.addEventListener('mouseup', finishWithRoot, true);
+    window.document.addEventListener('click', onClick, true);
+    window.addEventListener('blur', cancel);
+    window.document.addEventListener('visibilitychange', cancel);
+    return () => {
+      cancel();
+      window.document.removeEventListener('mousedown', onMouseDown, true);
+      window.document.removeEventListener('mousemove', onMouseMove, true);
+      window.document.removeEventListener('mouseup', finishWithRoot, true);
+      window.document.removeEventListener('click', onClick, true);
+      window.removeEventListener('blur', cancel);
+      window.document.removeEventListener('visibilitychange', cancel);
+    };
+  }, [widgetInstanceId]);
+
   const scheduleScrollRestore = useCallback(
     (left: number) => {
       clearScrollRetries();
@@ -1414,6 +1550,19 @@ export default function PlanGanttWidget({
   // Смена зума пересобирает представление (cellWidth/scales); позиция
   // взгляда восстанавливается конверсией через дни (design D6.5).
   const chartKey = `${chartRemountKey}|${ganttZoom}`;
+
+  useEffect(() => {
+    if (visible === false || source === null) return;
+    const root = window.document.querySelector<HTMLElement>(
+      `.plan-gantt[data-widget-instance="${widgetInstanceId}"]`,
+    );
+    if (!root) return;
+    return syncGanttTableScroll(root, () => {
+      const state = apiRef.current?.getState();
+      return state && state.cellHeight !== undefined
+        ? { rows: state._tasks, height: state.cellHeight } : null;
+    });
+  }, [widgetInstanceId, chartKey, source, visible]);
 
   useEffect(() => {
     if (taskNavigation === null) return;
@@ -1571,7 +1720,7 @@ export default function PlanGanttWidget({
   }, [source]);
 
   // Шкала дат (PBT-073 design D3; PBT-076 D2 — недельная семантика).
-  // «Дни»: месяц + день (дд.мм). «Недели»: месяц + неделя — одна
+  // «Дни»: число месяца. «Недели»: месяц + неделя — одна
   // колонка = одна неделя, подпись-диапазон её дней «12–18 окт»
   // (format(date, next) — границы самой клетки; полосы и подсветка
   // остаются дневной точности, см. слой ниже).
@@ -1886,8 +2035,8 @@ export default function PlanGanttWidget({
                   Компонент зума в ключе — пересборка при смене масштаба
                   (PBT-073, design D3). */}
               {/* Компактная плотность по референсу OnlineGantt (PBT-068,
-                  замер 2026-10-16): строка 36px. Зум (PBT-076, design D2):
-                  «Дни» — клетка дня 48px; «Недели» (дефолт) — клетка
+                  замер 2026-10-16): строка 36px. Зум (PBT-095):
+                  «Дни» — клетка дня 24px; «Недели» (дефолт) — клетка
                   недели ~100px (≈14px/день), дневная точность сохраняется. */}
               {/* Неделя шкалы с понедельника (PBT-076, design D2.3): локаль
                   i18n-контекста SVAR; недели Вс–Сб разбивали бы выходные

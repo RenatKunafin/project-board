@@ -64,7 +64,9 @@ body {
 .instances {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  /* PBT-093: канвас начинается сразу под вкладками — окно прижимается
+     к заголовку вкладок без фиксированного зазора. */
+  margin-top: 0;
   width: 100%;
   /* Пространство вкладки занимает оставшуюся высоту окна и прокручивается,
      когда окна в сетке не помещаются (решения §4.2). */
@@ -128,6 +130,14 @@ body {
   pointer-events: auto;
 }
 
+/* PBT-093: аутлайн активного жеста (перенос/ресайз) — акцентный цвет,
+   без сдвига layout (outline). */
+.cascade-layout__window--gesture {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-radius: var(--radius-lg);
+}
+
 .cascade-layout__window > .widget-window {
   height: 100%;
   overflow: hidden;
@@ -137,9 +147,20 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.cascade-resize-se {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  right: -10px;
+  bottom: -10px;
+  cursor: se-resize;
+  touch-action: none;
+  user-select: none;
+}
+
 /* Уголок resize каскада — геометрия прототипа (PBT-070 D3 → ревью
    PR#54): путь «M9 3 L3 9 M9 6 L6 9», stroke-width 1.2/10. Хэндл
-   react-rnd (inline: 20×20, right/bottom −10px) центрирован на углу
+   каскада (20×20, right/bottom −10px) центрирован на углу
    и наполовину ЗА окном — маска привязана к углу ОКНА: right/bottom
    11px от хэндла (10px вылета + 1px зазор), размер 16×16. */
 .cascade-resize-se::before {
@@ -831,6 +852,46 @@ body {
   position: relative;
   display: inline-flex;
 }
+
+.settings-button { width: 32px; justify-content: center; padding: 0; }
+.settings-button svg { width: 17px; height: 17px; }
+.settings-menu-item { display: block; width: 100%; border: 0; border-radius: var(--radius-md); padding: 9px 10px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.settings-menu-item:hover { background: var(--accent); }
+
+.backup-dialog { width: min(680px, calc(100vw - 32px)); max-width: none; max-height: min(760px, calc(100dvh - 32px)); padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--background); color: var(--foreground); box-shadow: var(--shadow-float); }
+.backup-dialog::backdrop { background: rgb(12 18 28 / 54%); backdrop-filter: blur(2px); }
+.backup-dialog__content { max-height: min(760px, calc(100dvh - 32px)); overflow-y: auto; padding: 24px; }
+.backup-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.backup-dialog__header h2 { margin: 2px 0 6px; font-size: 22px; }
+.backup-dialog__header p { margin: 0; color: var(--muted-foreground); font-size: 13px; }
+.backup-dialog__eyebrow { text-transform: uppercase; letter-spacing: .08em; font-size: 10px !important; font-weight: 700; }
+.backup-dialog__close { flex: none; width: 32px; height: 32px; border: 0; border-radius: var(--radius-md); background: transparent; color: inherit; font-size: 23px; cursor: pointer; }
+.backup-dialog__close:hover { background: var(--accent); }
+.backup-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 0 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 12px; }
+.backup-summary span:first-child { font-family: var(--font-mono); font-weight: 700; }
+.backup-summary span:last-child { color: var(--muted-foreground); }
+.backup-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin: 14px 0; }
+.backup-dialog button:not(.backup-dialog__close) { min-height: 34px; padding: 6px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.backup-dialog button:disabled { opacity: .55; cursor: wait; }
+.backup-dialog .backup-primary { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); font-weight: 650; }
+.backup-list { display: grid; gap: 8px; margin: 14px 0; padding: 0; list-style: none; }
+.backup-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.backup-list__main { display: grid; gap: 3px; min-width: 0; }
+.backup-list__main strong,.backup-list__main small { font-family: var(--font-mono); font-size: 11px; }
+.backup-list__main span { color: var(--muted-foreground); font-size: 11px; }
+.backup-list__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.backup-list__actions button { padding-inline: 8px !important; }
+.backup-empty { margin: 16px 0; padding: 24px 14px; border: 1px dashed var(--border); border-radius: var(--radius-md); color: var(--muted-foreground); text-align: center; font-size: 12px; }
+.backup-dialog__footer { margin-top: 18px; color: var(--muted-foreground); font-size: 11px; }
+.backup-dialog__message,.backup-dialog__error,.backup-dialog__warning { padding: 9px 11px; border-radius: var(--radius-md); font-size: 12px; }
+.backup-dialog__message { background: var(--accent); }
+.backup-dialog__error,.backup-dialog__warning { background: color-mix(in srgb, var(--destructive, #b42318) 11%, var(--background)); color: var(--destructive, #b42318); }
+.backup-restore { margin-top: 18px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.backup-restore h3 { margin: 0 0 8px; }
+.backup-restore p { font-size: 12px; }
+.backup-safety { display: flex; align-items: flex-start; gap: 9px; margin-top: 16px; font-size: 12px; }
+.backup-danger { background: var(--destructive, #b42318) !important; border-color: var(--destructive, #b42318) !important; color: white !important; }
+@media (max-width: 600px) { .backup-dialog__content { padding: 18px; } .backup-list li { align-items: flex-start; flex-direction: column; } .backup-list__actions { justify-content: flex-start; } .backup-summary { align-items: flex-start; flex-direction: column; } }
 
 .dropdown-panel {
   /* PBT-090: позиция задаётся инлайн (fixed по якорю с clamp) —

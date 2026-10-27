@@ -46,6 +46,11 @@ export async function restoreSavedWorkspace(page: Page, snapshot: SavedWorkspace
       const tabs = db.createObjectStore('tabs', { keyPath: 'id' }); tabs.createIndex('position', 'position');
       const windows = db.createObjectStore('widgetInstances', { keyPath: 'id' }); windows.createIndex('tabId', 'tabId');
       db.createObjectStore('settings', { keyPath: 'key' });
+      if (version >= 3) {
+        const backups = db.createObjectStore('backups', { keyPath: 'id' });
+        backups.createIndex('createdAt', 'createdAt');
+        backups.createIndex('kind', 'kind');
+      }
     };
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {

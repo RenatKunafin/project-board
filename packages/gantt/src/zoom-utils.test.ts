@@ -26,15 +26,15 @@ describe('convertZoomScrollLeft', () => {
   });
 
   it('недели → дни: пиксели пересчитываются по пикселям дня', () => {
-    // 10 дней в «Неделях» (16px/день) = 160px; в «Днях» (48px/день) = 480px.
-    expect(convertZoomScrollLeft(160, 'weeks', 'days')).toBeCloseTo(480);
+    // 10 дней в «Неделях» (16px/день) = 160px; в «Днях» (24px/день) = 240px.
+    expect(convertZoomScrollLeft(160, 'weeks', 'days')).toBeCloseTo(240);
   });
 
   it('дни → недели: позиция сохраняет дробную часть дня', () => {
-    // 480px в «Днях» → 160px в «Неделях».
-    expect(convertZoomScrollLeft(480, 'days', 'weeks')).toBeCloseTo(160);
-    // Полдня в «Днях» (24px) → полдня в «Неделях» (8px).
-    expect(convertZoomScrollLeft(24, 'days', 'weeks')).toBeCloseTo(8);
+    // 240px в «Днях» → 160px в «Неделях».
+    expect(convertZoomScrollLeft(240, 'days', 'weeks')).toBeCloseTo(160);
+    // Полдня в «Днях» (12px) → полдня в «Неделях» (8px).
+    expect(convertZoomScrollLeft(12, 'days', 'weeks')).toBeCloseTo(8);
   });
 
   it('нулевая позиция остаётся нулевой в любом направлении', () => {
@@ -43,19 +43,19 @@ describe('convertZoomScrollLeft', () => {
   });
 
   it('ширины клеток и пиксели дня соответствуют спеке зума', () => {
-    // «Дни» — клетка дня 48px; «Недели» — клетка недели 112px = 16px/день
+    // «Дни» — клетка дня 24px; «Недели» — клетка недели 112px = 16px/день
     // (PBT-076, design D2.2: плотность недельного режима).
-    expect(ZOOM_SCALE.days).toBe(48);
+    expect(ZOOM_SCALE.days).toBe(24);
     expect(ZOOM_SCALE.weeks).toBe(112);
-    expect(zoomPxPerDay('days')).toBe(48);
+    expect(zoomPxPerDay('days')).toBe(24);
     expect(zoomPxPerDay('weeks')).toBe(16);
   });
 });
 
 describe('formatZoomDayLabel', () => {
-  it('«Дни» — дд.мм с ведущими нулями', () => {
-    expect(formatZoomDayLabel(new Date(2026, 9, 5))).toBe('05.10');
-    expect(formatZoomDayLabel(new Date(2026, 11, 31))).toBe('31.12');
+  it('«Дни» — только число месяца без ведущего нуля', () => {
+    expect(formatZoomDayLabel(new Date(2026, 9, 5))).toBe('5');
+    expect(formatZoomDayLabel(new Date(2026, 11, 31))).toBe('31');
   });
 });
 
