@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { storedWorkspace } from './workspace-helper';
 
 const title = 'PBT-097 — вертикальная прокрутка';
 
@@ -134,8 +135,10 @@ test('длинный список прокручивается внутри ка
     if (!point) throw new Error('Не найдена пустая область канвы ресурсного плана');
     return point;
   }, { left: chartBox.x, top: chartBox.y, width: chartBox.width, height: chartBox.height });
-  const range = panes.nth(0).locator('[data-rt-visible-range]');
-  const beforeRange = await range.textContent();
+  const instanceId = await panes.nth(0).locator('.resource-timeline').getAttribute('data-widget-instance');
+  const readZoom = async () => (await storedWorkspace(page)).settings
+    .find(row => row.key === `view:${instanceId}`)?.value as { zoomStart?: number; zoomEnd?: number } | undefined;
+  const beforeZoom = await readZoom();
   await page.mouse.move(point.x, point.y);
   expect(await page.evaluate(({ x, y }) => getComputedStyle(document.elementFromPoint(x, y)!).cursor, point))
     .toBe('grab');
@@ -148,7 +151,11 @@ test('длинный список прокручивается внутри ка
   })).toBe('grabbing');
   await page.mouse.up();
   await expect(panes.nth(0).locator('.resource-timeline')).not.toHaveClass(/resource-timeline--panning/);
-  await expect.poll(() => range.textContent()).not.toBe(beforeRange);
+  await expect.poll(readZoom).not.toEqual(beforeZoom);
+  await expect.poll(readZoom).toMatchObject({
+    zoomStart: expect.any(Number),
+    zoomEnd: expect.any(Number),
+  });
   expect(await page.evaluate(({ x, y }) => getComputedStyle(document.elementFromPoint(x, y)!).cursor, {
     x: point.x + 80,
     y: point.y,
