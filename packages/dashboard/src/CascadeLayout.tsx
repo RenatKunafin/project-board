@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ComponentType, type CSSProperties, ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties, ReactNode } from 'react';
 import { Rnd } from 'react-rnd';
 import type { WidgetSizeConstraints } from '@project-board/widget-sdk';
+import { CascadeResizeHandle } from './CascadeResizeHandle';
 import {
   CASCADE_COLLAPSED_HEIGHT,
   CASCADE_SNAP,
@@ -31,24 +32,13 @@ interface RndProps {
   dragHandleClassName?: string;
   bounds?: string;
   dragGrid?: [number, number];
-  resizeGrid?: [number, number];
   disableDragging?: boolean;
-  enableResizing?: Record<string, boolean>;
-  resizeHandleClasses?: Record<string, string>;
+  enableResizing?: boolean;
   style?: Record<string, string | number>;
   onDrag?: (event: unknown, data: { x: number; y: number }) => void;
-  onResize?: (event: unknown, direction: unknown, ref: { offsetWidth: number; offsetHeight: number },
-    delta: unknown, position: { x: number; y: number }) => void;
   onDragStop?: (
     event: unknown,
     data: { x: number; y: number },
-  ) => void;
-  onResizeStop?: (
-    event: unknown,
-    direction: unknown,
-    ref: { offsetWidth: number; offsetHeight: number },
-    delta: unknown,
-    position: { x: number; y: number },
   ) => void;
 }
 
@@ -66,17 +56,6 @@ export interface CascadeLayoutProps {
   readonly state: CascadeLayoutState;
   readonly onStateChange: (next: CascadeLayoutState) => void;
 }
-
-const RESIZE_HANDLE_CLASSES: Record<string, string> = {
-  top: 'cascade-resize',
-  right: 'cascade-resize',
-  bottom: 'cascade-resize',
-  left: 'cascade-resize',
-  topRight: 'cascade-resize',
-  bottomRight: 'cascade-resize cascade-resize-se',
-  bottomLeft: 'cascade-resize',
-  topLeft: 'cascade-resize',
-};
 
 /**
  * Каскадная раскладка вкладки: свободные позиции и размеры, перекрытие окон,
@@ -98,6 +77,7 @@ export function CascadeLayout({
     height: number;
   } | null>(null);
   const [preview, setPreview] = useState<{ id: string; area: CascadeArea } | null>(null);
+  const [resizeCanvasFloor, setResizeCanvasFloor] = useState<{ width: number; height: number } | null>(null);
   const previousIds = useRef(new Set(items.map(item => item.instanceId)));
   useEffect(() => {
     const element = containerRef.current;
@@ -142,7 +122,61 @@ export function CascadeLayout({
     return { ...displayed, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : displayed.height };
   });
   const viewport = viewportSize ?? { width: 0, height: 0 };
-  const canvas = cascadeCanvasSize(extentAreas, viewport);
+  const extent = cascadeCanvasSize(extentAreas, viewport);
+  // При уменьшении окна не сжимаем канвас до конца жеста: иначе браузер
+  // прижмёт scrollTop, и это смещение будет ошибочно принято за ввод.
+  const canvas = {
+    width: Math.max(extent.width, resizeCanvasFloor?.width ?? 0),
+    height: Math.max(extent.height, resizeCanvasFloor?.height ?? 0),
+  };
+  const [gesture, setGesture] = useState<{ id: string; kind: 'drag' | 'resize' } | null>(null);
+  const edgeStateRef = useRef<{
+    id: string;
+    clientY: number;
+  } | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const previewRef = useRef<{ id: string; area: CascadeArea } | null>(null);
+  const setTrackedPreview = useCallback((next: { id: string; area: CascadeArea } | null) => {
+    previewRef.current = next;
+    setPreview(next);
+  }, []);
+  const stopEdgeLoop = useCallback(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+  }, []);
+  useEffect(() => stopEdgeLoop, [stopEdgeLoop]);
+
+  const edgeLoop = useCallback(() => {
+    const state = edgeStateRef.current;
+    const element = containerRef.current;
+    const previewNow = previewRef.current;
+    if (state === null || element === null || previewNow === null || previewNow.id !== state.id) {
+      frameRef.current = null;
+      return;
+    }
+    const rect = element.getBoundingClientRect();
+    const EDGE = 40;
+    const direction =
+      state.clientY > rect.bottom - EDGE ? 1 : state.clientY < rect.top + EDGE ? -1 : 0;
+    if (direction !== 0) {
+      const depth = direction > 0
+        ? state.clientY - (rect.bottom - EDGE)
+        : rect.top + EDGE - state.clientY;
+      // Автопрокрутка переноса; resize учитывает scroll в своём уголке.
+      const step = Math.round(Math.min(10, 3 + depth * 0.12));
+      element.scrollTop += step * direction;
+    }
+    frameRef.current = requestAnimationFrame(edgeLoop);
+  }, []);
+
+  const edgeScroll = useCallback((clientY: number, id: string) => {
+    edgeStateRef.current = { id, clientY };
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(edgeLoop);
+    }
+  }, [edgeLoop]);
   useEffect(() => {
     const fresh = items.find(item => !previousIds.current.has(item.instanceId));
     previousIds.current = new Set(items.map(item => item.instanceId));
@@ -171,8 +205,8 @@ export function CascadeLayout({
         const typeBounds = cascadeSizeBounds(item.constraints);
         const widthRange = cascadeSnapRange(typeBounds.minWidth,
           Number(typeBounds.maxWidth ?? Infinity));
-        const heightRange = cascadeSnapRange(typeBounds.minHeight,
-          Number(typeBounds.maxHeight ?? Infinity));
+        const resizeArea = gesture?.id === item.instanceId && gesture.kind === 'resize'
+          && preview?.id === item.instanceId ? preview.area : area;
         const visibleHeight = item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height;
         // Запас за краем рабочего поля позволяет расширять его по preview
         // жеста. Левая/верхняя границы остаются 0, остальные — на узлах.
@@ -185,49 +219,51 @@ export function CascadeLayout({
         return (
           <div key={item.instanceId} className="cascade-layout__bounds" style={{ width: planeWidth, height: planeHeight }}>
             <RndComponent
-              className="cascade-layout__window"
-              size={{ width: area.width, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height }}
+              className={`cascade-layout__window${gesture?.id === item.instanceId ? ' cascade-layout__window--gesture' : ''}`}
+              size={{ width: resizeArea.width, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : resizeArea.height }}
               position={{ x: area.x, y: area.y }}
               minWidth={widthRange.min}
-              minHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : heightRange.min}
+              minHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : typeBounds.minHeight}
               maxWidth={Number.isFinite(widthRange.max) ? widthRange.max : undefined}
-              maxHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : Number.isFinite(heightRange.max) ? heightRange.max : undefined}
+              maxHeight={item.collapsed ? CASCADE_COLLAPSED_HEIGHT : typeBounds.maxHeight}
               dragHandleClassName="widget-window__head"
               bounds="parent"
               dragGrid={[CASCADE_SNAP, CASCADE_SNAP]}
-              resizeGrid={[widthRange.step, heightRange.step]}
-              enableResizing={{ bottomRight: !item.collapsed, top: false, right: false, bottom: false, left: false, topRight: false, bottomLeft: false, topLeft: false }}
-              resizeHandleClasses={RESIZE_HANDLE_CLASSES}
+              enableResizing={false}
               style={{ zIndex: depth }}
-              onDrag={(_event, data) => setPreview({ id: item.instanceId, area: { ...area, x: data.x, y: data.y } })}
-              onResize={(_event, _direction, ref, _delta, position) => setPreview({
-                id: item.instanceId, area: { ...position, width: ref.offsetWidth, height: ref.offsetHeight },
-              })}
-              onDragStop={(_event, data) => {
-                setPreview(null);
-                applyArea(
-                  item.instanceId,
-                  snapFor(item.constraints, {
-                    ...area,
-                    x: data.x,
-                    y: data.y,
-                  }, item.collapsed),
-                );
+              onDrag={(event, data) => {
+                setGesture({ id: item.instanceId, kind: 'drag' });
+                const clientY = (event as { clientY?: number }).clientY ?? 0;
+                const nextArea = { ...area, x: data.x, y: data.y };
+                setTrackedPreview({ id: item.instanceId, area: nextArea });
+                edgeScroll(clientY, item.instanceId);
               }}
-              onResizeStop={(_event, _direction, ref, _delta, position) => {
-                setPreview(null);
-                applyArea(
-                  item.instanceId,
-                  snapFor(item.constraints, {
-                    x: position.x,
-                    y: position.y,
-                    width: ref.offsetWidth,
-                    height: ref.offsetHeight,
-                  }, false),
-                );
+              onDragStop={(_event, data) => {
+                const tracked = previewRef.current;
+                const finalDrag = tracked?.id === item.instanceId
+                  ? tracked.area
+                  : { ...area, x: data.x, y: data.y };
+                stopEdgeLoop();
+                edgeStateRef.current = null;
+                setGesture(null);
+                setTrackedPreview(null);
+                applyArea(item.instanceId, snapFor(item.constraints, finalDrag, item.collapsed));
               }}
             >
               {item.node}
+              {!item.collapsed && <CascadeResizeHandle
+                viewport={containerRef}
+                area={area}
+                constraints={item.constraints}
+                onPreview={next => {
+                  const element = containerRef.current;
+                  setResizeCanvasFloor(next && element
+                    ? { width: element.scrollWidth, height: element.scrollHeight } : null);
+                  setGesture(next ? { id: item.instanceId, kind: 'resize' } : null);
+                  setTrackedPreview(next ? { id: item.instanceId, area: next } : null);
+                }}
+                onCommit={next => applyArea(item.instanceId, next)}
+              />}
             </RndComponent>
           </div>
         );

@@ -64,7 +64,9 @@ body {
 .instances {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  /* PBT-093: канвас начинается сразу под вкладками — окно прижимается
+     к заголовку вкладок без фиксированного зазора. */
+  margin-top: 0;
   width: 100%;
   /* Пространство вкладки занимает оставшуюся высоту окна и прокручивается,
      когда окна в сетке не помещаются (решения §4.2). */
@@ -128,6 +130,14 @@ body {
   pointer-events: auto;
 }
 
+/* PBT-093: аутлайн активного жеста (перенос/ресайз) — акцентный цвет,
+   без сдвига layout (outline). */
+.cascade-layout__window--gesture {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-radius: var(--radius-lg);
+}
+
 .cascade-layout__window > .widget-window {
   height: 100%;
   overflow: hidden;
@@ -137,9 +147,20 @@ body {
   border-radius: var(--radius-sm);
 }
 
+.cascade-resize-se {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  right: -10px;
+  bottom: -10px;
+  cursor: se-resize;
+  touch-action: none;
+  user-select: none;
+}
+
 /* Уголок resize каскада — геометрия прототипа (PBT-070 D3 → ревью
    PR#54): путь «M9 3 L3 9 M9 6 L6 9», stroke-width 1.2/10. Хэндл
-   react-rnd (inline: 20×20, right/bottom −10px) центрирован на углу
+   каскада (20×20, right/bottom −10px) центрирован на углу
    и наполовину ЗА окном — маска привязана к углу ОКНА: right/bottom
    11px от хэндла (10px вылета + 1px зазор), размер 16×16. */
 .cascade-resize-se::before {
