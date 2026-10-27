@@ -16,6 +16,6 @@
 
 ## Исследования и результаты
 
-[PBT-011](research/PBT-011.md) — вертикальный срез платформы; [PBT-012](research/PBT-012.md) — фикстуры; [PBT-014](research/PBT-014.md) / [PBT-015](research/PBT-015.md) — компоненты Гантта; [PBT-016](research/PBT-016.md) — прототипные измерения; [PBT-057](research/PBT-057.md) — сквозные цепочки; [PBT-058](research/PBT-058.md) — production benchmark; [PBT-080](research/PBT-080.md) — оптимизация обновления общих видов.
+[PBT-011](research/PBT-011.md) — вертикальный срез платформы; [PBT-012](research/PBT-012.md) — фикстуры; [PBT-014](research/PBT-014.md) / [PBT-015](research/PBT-015.md) — компоненты Гантта; [PBT-016](research/PBT-016.md) — прототипные измерения; [PBT-057](research/PBT-057.md) — сквозные цепочки; [PBT-058](research/PBT-058.md) — production benchmark; [PBT-080](research/PBT-080.md) — оптимизация обновления общих видов; [PBT-061](research/PBT-061.md) — матрица готовности первой версии. Пользовательская инструкция — [user-guide.md](user-guide.md).
 
 Исследования описывают конкретное состояние на дату эксперимента. Завершённые стенды могут быть удалены; их исходники и снимки доступны в git-истории. Актуальные команды запуска — в [README](../README.md), требования — в [OpenSpec](../openspec/specs). Численные raw/окружение сохранены в архиве; новые UI-артефакты пишутся в test-results, не в OpenSpec.
