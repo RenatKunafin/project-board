@@ -458,6 +458,12 @@
   position: relative;
 }
 
+/* До пассивного effect react-grid смещение должно соответствовать уже
+   показанным строкам, а не следующей виртуальной области (PBT-094). */
+.plan-gantt .wx-table .wx-grid .wx-scroll .wx-body {
+  top: var(--plan-gantt-body-offset, var(--wx-body-offset, 0px));
+}
+
 /* Строки с отрицательным offset проходят под неподвижной шапкой. */
 .plan-gantt .wx-table .wx-header-wrapper {
   position: sticky;

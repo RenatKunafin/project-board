@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Gantt, WillowDark } from '@svar-ui/react-gantt';
 import type { IApi, IColumnConfig, IScaleConfig } from '@svar-ui/react-gantt';
+import { syncGanttTableScroll } from './gantt-table-scroll';
 import '@svar-ui/react-gantt/style.css';
 // Иконки SVAR локально (PBT-073, design D2): WillowDark ниже подключается
 // с fonts={false}, внешний запрос к cdn.svar.dev не выполняется (офлайн-PWA).
@@ -1414,6 +1415,19 @@ export default function PlanGanttWidget({
   // Смена зума пересобирает представление (cellWidth/scales); позиция
   // взгляда восстанавливается конверсией через дни (design D6.5).
   const chartKey = `${chartRemountKey}|${ganttZoom}`;
+
+  useEffect(() => {
+    if (visible === false || source === null) return;
+    const root = window.document.querySelector<HTMLElement>(
+      `.plan-gantt[data-widget-instance="${widgetInstanceId}"]`,
+    );
+    if (!root) return;
+    return syncGanttTableScroll(root, () => {
+      const state = apiRef.current?.getState();
+      return state && state.cellHeight !== undefined
+        ? { rows: state._tasks, height: state.cellHeight } : null;
+    });
+  }, [widgetInstanceId, chartKey, source, visible]);
 
   useEffect(() => {
     if (taskNavigation === null) return;
