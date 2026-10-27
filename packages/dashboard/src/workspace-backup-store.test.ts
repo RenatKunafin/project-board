@@ -4,7 +4,7 @@ import Dexie from 'dexie';
 import { WorkspaceBackupStore } from './workspace-backup-store';
 import { WorkspaceStore } from './workspace-store';
 import { IndexedDbDocumentStore } from './document-store';
-import { SCHEMA_V1_DECLARATIONS, SCHEMA_V2_DECLARATIONS } from './db-schema';
+import { SCHEMA_V1_DECLARATIONS, SCHEMA_V2_DECLARATIONS, SCHEMA_V3_DECLARATIONS } from './db-schema';
 import type { WorkspaceBackup } from './workspace-backup';
 
 const emptyPayload = {
@@ -72,6 +72,22 @@ describe('WorkspaceBackupStore', () => {
     await expect(backups.addCapture(backup(1), capture, 'manual')).rejects.toThrow('изменилось в другом окне');
     expect(await backups.list()).toEqual([]);
     backups.close(); workspace.close();
+  });
+
+  it('excludes persisted view settings for already-removed instances from a backup snapshot', async () => {
+    const name = `backup-orphan-view-${crypto.randomUUID()}`;
+    const backups = new WorkspaceBackupStore(name);
+    const legacyContext = new Dexie(name);
+    legacyContext.version(1).stores(SCHEMA_V1_DECLARATIONS);
+    legacyContext.version(2).stores(SCHEMA_V2_DECLARATIONS);
+    legacyContext.version(3).stores(SCHEMA_V3_DECLARATIONS);
+    await legacyContext.open();
+    await legacyContext.table('settings').put({ key: 'view:removed-window', value: { zoom: 'weeks' } });
+    legacyContext.close();
+
+    const snapshot = await backups.readSnapshot();
+    expect(snapshot.viewSettings).toEqual({});
+    backups.close();
   });
 
   it('restores all workspace tables atomically and invalidates stale writers', async () => {

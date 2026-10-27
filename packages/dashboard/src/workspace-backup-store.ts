@@ -115,9 +115,15 @@ export class WorkspaceBackupStore {
     const tabs = (await this.tabs.toArray()).sort((a, b) => a.position - b.position);
     const instances = await this.instances.toArray();
     const settings = await this.settings.toArray();
+    const instanceIds = new Set(instances.map((instance) => instance.id));
     const activeTabId = (settings.find((row) => row.key === 'workspace')?.value as { activeTabId?: unknown } | undefined)?.activeTabId;
     const viewSettings: Record<string, Record<string, unknown>> = {};
-    for (const row of settings) if (row.key.startsWith('view:') && row.value && typeof row.value === 'object' && !Array.isArray(row.value)) Object.defineProperty(viewSettings, row.key.slice(5), { value: row.value, enumerable: true, configurable: true, writable: true });
+    for (const row of settings) {
+      if (!row.key.startsWith('view:')) continue;
+      const instanceId = row.key.slice(5);
+      if (!instanceIds.has(instanceId) || !row.value || typeof row.value !== 'object' || Array.isArray(row.value)) continue;
+      Object.defineProperty(viewSettings, instanceId, { value: row.value, enumerable: true, configurable: true, writable: true });
+    }
     const generationRow = settings.find((row) => row.key === '__generation');
     return { payload: { documents, workspace: { tabs: tabs.map((tab) => ({ ...tab, active: tab.active === 1 ? 1 : 0 })), instances: instances.map((item) => ({ ...item, collapsed: item.collapsed === 1 ? 1 : 0 })), activeTabId: typeof activeTabId === 'string' ? activeTabId : null } as WorkspaceSnapshot, viewSettings }, generation: typeof generationRow?.value === 'number' ? generationRow.value : 0 };
   }

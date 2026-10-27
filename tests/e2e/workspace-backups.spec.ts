@@ -8,6 +8,28 @@ async function openBackups(page: import('@playwright/test').Page): Promise<void>
   await expect(page.getByRole('dialog', { name: 'Резервные копии' })).toBeVisible();
 }
 
+async function seedOrphanViewSettings(page: import('@playwright/test').Page, count: number): Promise<void> {
+  await page.evaluate(async (numberOfSettings) => {
+    const request = indexedDB.open('project-board');
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    try {
+      const transaction = db.transaction('settings', 'readwrite');
+      const table = transaction.objectStore('settings');
+      for (let index = 0; index < numberOfSettings; index += 1) {
+        table.put({ key: `view:removed-window-${index}`, value: { zoom: 'weeks' } });
+      }
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+      });
+    } finally { db.close(); }
+  }, count);
+}
+
 test('ручная копия сохраняется, скачивается, восстанавливается со страховкой и удаляется', async ({ page }) => {
   await page.goto('/');
   const { pane } = await createDocumentWindow(page, 'Чек-лист', 'Backup sample', true);
@@ -118,6 +140,20 @@ test('открытие и перезагрузка не создают авто�
     await page.getByRole('button', { name: 'Создать копию' }).click();
     await expect(page.getByText(`${Math.min(index, 5)} / 5 копий`)).toBeVisible();
   }
+});
+
+test('при создании копии игнорируются настройки закрытых окон из старых данных', async ({ page }) => {
+  await page.goto('/');
+  await seedOrphanViewSettings(page, 9);
+  await page.reload();
+  await openBackups(page);
+  await page.getByRole('button', { name: 'Создать копию' }).click();
+  await expect(page.getByText('1 / 5 копий')).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Скачать' }).click();
+  const downloaded = await download;
+  const json = JSON.parse(await readFile((await downloaded.path())!, 'utf8')) as { viewSettings: Record<string, unknown> };
+  expect(Object.keys(json.viewSettings).some((key) => key.startsWith('removed-window-'))).toBe(false);
 });
 
 test('ручная копия и восстановление работают офлайн', async ({ page, context }) => {

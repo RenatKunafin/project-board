@@ -851,6 +851,13 @@ export default function App({
   };
 
   const closePane = (instanceId: string): void => {
+    liveInstanceIdsRef.current.delete(instanceId);
+    collapsedHeights.current.delete(instanceId);
+    const views = { ...viewStatesRef.current };
+    delete views[instanceId];
+    viewStatesRef.current = views;
+    void workspaceStore.deleteViewSettings([instanceId])
+      .catch((error) => console.error('view settings delete failed', error));
     // Закрытие развёрнутого окна снимает максимизацию вкладки (PBT-071):
     // узел удаляется из overlay сам (React убирает от фактического родителя).
     setMaximizedByTab((previous) => {
