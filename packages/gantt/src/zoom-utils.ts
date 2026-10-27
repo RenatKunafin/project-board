@@ -1,8 +1,8 @@
 /**
  * Масштаб шкалы проектного Гантта «Дни/Недели» (PBT-073 D3/D6.5; PBT-076 D2 —
- * недельная семантика: «Недели» = одна колонка шкалы — одна неделя).
+ * недельная семантика; PBT-095 — компактность дневного масштаба).
  *
- * «Дни»: дневные колонки, cellWidth 48, подпись дд.мм.
+ * «Дни»: дневные колонки, cellWidth 24, подпись числа месяца.
  * «Недели»: недельные колонки (unit 'week' SVAR), cellWidth 112 на неделю
  * (16px/день), подпись-диапазон дд.мм–дд.мм «12.10–18.10» — решения
  * владельца 2026-10-21 и 2026-10-22 (ревью PR#55).
@@ -18,7 +18,7 @@ export type GanttZoom = 'days' | 'weeks';
  * «Недели» — клетка недели (подбор живой сверкой, design D2.2).
  */
 export const ZOOM_SCALE: Readonly<Record<GanttZoom, number>> = {
-  days: 48,
+  days: 24,
   weeks: 112,
 };
 
@@ -49,8 +49,13 @@ export function convertZoomScrollLeft(
   return (left / zoomPxPerDay(from)) * zoomPxPerDay(to);
 }
 
-/** Формат даты шкалы дня: «Дни» — дд.мм. */
+/** Подпись дневной шкалы: число месяца без месяца и ведущего нуля. */
 export function formatZoomDayLabel(date: Date): string {
+  return String(date.getDate());
+}
+
+/** Формат границы недели: дд.мм. */
+function formatDayMonth(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   return `${day}.${month}`;
@@ -66,7 +71,7 @@ export function formatZoomDayLabel(date: Date): string {
  */
 export function formatWeekRangeLabel(start: Date, next?: Date): string {
   const end = next === undefined ? addDays(start, 6) : addDays(next, -1);
-  return `${formatZoomDayLabel(start)}–${formatZoomDayLabel(end)}`;
+  return `${formatDayMonth(start)}–${formatDayMonth(end)}`;
 }
 
 /** Дата через N календарных дней (локальная, без мутации исходной). */
