@@ -1024,13 +1024,6 @@ export default function ResourceTimelineWidget({
               />
               Конфликты
             </span>
-            <span
-              className="resource-timeline__legend-range"
-              data-rt-visible-range
-            >
-              {timelineDayIso(effectiveVisible.start)} —{' '}
-              {timelineDayIso(effectiveVisible.end)}
-            </span>
           </div>
         )}
       {/* Строка состояния виджета (PBT-074, паттерн PBT-073): название

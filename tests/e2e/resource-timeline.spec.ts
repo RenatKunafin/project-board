@@ -257,7 +257,7 @@ test('оба вида одного документа: изменение в п�
   expect(after).toBeGreaterThan(before + 20);
 });
 
-test('легенда и диапазон видимой области; футер с названием документа (PBT-074)', async ({
+test('легенда без диапазона дат; футер с названием документа (PBT-074/PBT-098)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -270,23 +270,25 @@ test('легенда и диапазон видимой области; футе
   );
   const pane = page.getByRole('group', { name: 'Ресурсы · Легенда плана' });
 
-  // Легенда: три образца + mono-диапазон видимой области (производное).
+  // Легенда сохраняет три образца, подпись диапазона не отображается.
   const legend = pane.locator('[data-rt-legend]');
   await expect(legend).toBeVisible();
   await expect(legend.locator('.resource-timeline__legend-item')).toHaveText(
     ['Задачи', 'Отсутствия', 'Конфликты'],
   );
-  const range = pane.locator('[data-rt-visible-range]');
-  await expect(range).toHaveText(/^\d{4}-\d{2}-\d{2} — \d{4}-\d{2}-\d{2}$/);
+  await expect(pane.locator('[data-rt-visible-range]')).toHaveCount(0);
 
-  // Зум меняет видимую область — диапазон обновляется, документ не меняется.
-  const before = await range.textContent();
+  // Зум продолжает менять шкалу, не меняя документ.
+  const task = pane.locator('[data-rt-chart] [data-rt-task="t-a"]').first();
+  const beforeWidth = await task.evaluate((el) => el.getBoundingClientRect().width);
   const revisionBefore = await page.evaluate(
     (id) => window.__projectBoard?.readDocument(id)?.revision,
     documentId,
   );
   await pane.locator('[data-rt-zoom-in]').click();
-  await expect.poll(async () => range.textContent()).not.toBe(before);
+  await expect.poll(async () => task.evaluate((el) => el.getBoundingClientRect().width))
+    .toBeGreaterThan(beforeWidth);
+  await page.screenshot({ path: 'test-results/pbt-098-resource-timeline.png' });
   const revisionAfter = await page.evaluate(
     (id) => window.__projectBoard?.readDocument(id)?.revision,
     documentId,

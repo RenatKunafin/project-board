@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { storedWorkspace } from './workspace-helper';
 
 const title = 'Обновления общего плана';
 const content = {
@@ -94,7 +95,10 @@ test('назначение и календарь обновляют ресурс
 
   // Новый ресурс и сроки за прежними границами: область по умолчанию
   // расширяется, выбранный масштаб другого экземпляра сохраняется.
-  const selectedRange = await second.locator('[data-rt-visible-range]').textContent();
+  const selectedZoom = (await storedWorkspace(page)).settings
+    .find(row => row.key === `view:${ids[1]}`)?.value as { zoomStart?: number; zoomEnd?: number } | undefined;
+  expect(selectedZoom?.zoomStart).toEqual(expect.any(Number));
+  expect(selectedZoom?.zoomEnd).toEqual(expect.any(Number));
   const defaultWidth = (await barGeometry(first)).width;
   await page.evaluate(id => {
     const doc = window.__projectBoard!.readDocument(id) as unknown as { content: typeof content };
@@ -110,9 +114,10 @@ test('назначение и календарь обновляют ресурс
   await expect(first.locator('[data-rt-task]').filter({ hasText: 'Новая назначенная' })).toBeVisible();
   await expect(second.locator('[data-rt-task]')).toHaveCount(1);
   await expect.poll(async () => (await barGeometry(first)).width).toBeLessThan(defaultWidth);
-  // После reload RGL/ResizeObserver ещё могут менять ширину окна;
-  // выбранный диапазон дат сохраняется независимо от числа пикселей.
-  await expect(second.locator('[data-rt-visible-range]')).toHaveText(selectedRange!);
+  // Диапазон масштаба сохраняется в настройках экземпляра, независимо от
+  // ширины окна и от новых сроков в общем плане.
+  await expect.poll(async () => (await storedWorkspace(page)).settings
+    .find(row => row.key === `view:${ids[1]}`)?.value).toEqual(selectedZoom);
   await project.locator('[data-catalogs]').click();
   await settings.locator('[data-settings-section="calendar"]').click();
   await settings.locator('[data-calendar-holiday-from]').fill('2026-09-02');
