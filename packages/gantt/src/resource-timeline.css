@@ -367,11 +367,6 @@
   border: 1px solid var(--destructive);
 }
 
-.resource-timeline__legend-range {
-  margin-left: auto;
-  font-family: var(--font-mono);
-}
-
 .resource-timeline__footer {
   display: flex;
   align-items: center;
