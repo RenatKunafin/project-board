@@ -1,0 +1,22 @@
+{
+  "format": "project-board-workspace",
+  "formatVersion": 1,
+  "workspaceSchemaVersion": 1,
+  "createdAt": "2026-10-27T12:00:00.000Z",
+  "documents": [],
+  "workspace": {
+    "tabs": [
+      {
+        "id": "tab-main",
+        "title": "Дашборд",
+        "position": 0,
+        "mode": "grid",
+        "cascadeOrder": [],
+        "active": 1
+      }
+    ],
+    "instances": [],
+    "activeTabId": "tab-main"
+  },
+  "viewSettings": {}
+}

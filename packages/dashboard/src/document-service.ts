@@ -76,6 +76,8 @@ const RETRY_DELAYS_MS = [250, 500, 1000];
 export interface AutosavingDocumentService extends DocumentService {
   /** Восстанавливает все документы из хранилища в память. */
   restoreAll(): Promise<ManagedDocument[]>;
+  /** Применяет зарегистрированные миграции к импорту без записи в хранилище. */
+  prepareDocumentsForRestore(documents: readonly ManagedDocument[]): ManagedDocument[];
   /** Подтверждает запись всей очереди, включая in-flight; отказ отклоняет Promise. */
   flushAll(): Promise<void>;
   /** Выборка документов из памяти, опционально по модулю и типу. */
@@ -593,6 +595,16 @@ export function createDocumentService(
       return all.map(
         (document) => documents.get(document.id)?.document ?? document,
       );
+    },
+    prepareDocumentsForRestore(input): ManagedDocument[] {
+      return input.map((document) => {
+        const support = migrationsIndex.get(supportKey(document));
+        if (!support || document.schemaVersion >= support.actualVersion) return document;
+        const chain = buildChain(support, document.schemaVersion);
+        let content = document.content;
+        for (const { step } of chain) content = step.migrate(content);
+        return { ...document, schemaVersion: support.actualVersion, content };
+      });
     },
     listRecoveryIssues(): DocumentRecoveryIssue[] {
       return [...recoveryIssues];

@@ -4,9 +4,10 @@ import {
   type ManagedDocument,
 } from '@project-board/widget-sdk';
 import {
-  DOCUMENTS_TABLE_DECLARATION,
   WORKSPACE_DB_SCHEMA_VERSION,
-  WORKSPACE_TABLE_DECLARATIONS,
+  SCHEMA_V1_DECLARATIONS,
+  SCHEMA_V2_DECLARATIONS,
+  SCHEMA_V3_DECLARATIONS,
 } from './db-schema';
 
 export type PersistenceErrorCode =
@@ -53,17 +54,17 @@ export const DOCUMENTS_DB_SCHEMA_VERSION = DB_SCHEMA_VERSION;
 export class IndexedDbDocumentStore implements DocumentStore {
   private readonly db: Dexie;
   private readonly documents: Table<ManagedDocument, string>;
+  private readonly settings: Table<{ key: string; value: unknown }, string>;
   private opened = false;
+  private generation = 0;
 
   constructor(name: string) {
     this.db = new Dexie(name);
-    this.db
-      .version(WORKSPACE_DB_SCHEMA_VERSION - 1)
-      .stores({ documents: DOCUMENTS_TABLE_DECLARATION });
-    this.db
-      .version(WORKSPACE_DB_SCHEMA_VERSION)
-      .stores(WORKSPACE_TABLE_DECLARATIONS);
+    this.db.version(1).stores(SCHEMA_V1_DECLARATIONS);
+    this.db.version(2).stores(SCHEMA_V2_DECLARATIONS);
+    this.db.version(3).stores(SCHEMA_V3_DECLARATIONS);
     this.documents = this.db.table('documents');
+    this.settings = this.db.table('settings');
   }
 
   async open(): Promise<void> {
@@ -83,6 +84,8 @@ export class IndexedDbDocumentStore implements DocumentStore {
         );
       }
       this.opened = true;
+      const setting = await this.settings.get('__generation');
+      this.generation = typeof setting?.value === 'number' ? setting.value : 0;
     } catch (error) {
       throw toPersistenceError(error);
     }
@@ -94,8 +97,12 @@ export class IndexedDbDocumentStore implements DocumentStore {
   ): Promise<void> {
     try {
       await this.openOnce();
-      await this.db.transaction('rw', this.documents, async () => {
-        const stored = await this.documents.get(document.id);
+      await this.db.transaction('rw', [this.documents, this.settings], async () => {
+        const [setting, stored] = await Promise.all([
+          this.settings.get('__generation'),
+          this.documents.get(document.id),
+        ]);
+        this.assertGeneration(setting);
         const storedRevision = stored?.revision ?? 0;
         if (storedRevision !== expectedStoredRevision) {
           throw new DocumentConflictError(
@@ -119,7 +126,9 @@ export class IndexedDbDocumentStore implements DocumentStore {
   ): Promise<void> {
     try {
       await this.openOnce();
-      await this.db.transaction('rw', this.documents, async () => {
+      await this.db.transaction('rw', [this.documents, this.settings], async () => {
+        const setting = await this.settings.get('__generation');
+        this.assertGeneration(setting);
         for (const entry of entries) {
           const stored = await this.documents.get(entry.document.id);
           const storedRevision = stored?.revision ?? 0;
@@ -183,7 +192,11 @@ export class IndexedDbDocumentStore implements DocumentStore {
   async delete(documentId: string): Promise<void> {
     try {
       await this.openOnce();
-      await this.documents.delete(documentId);
+      await this.db.transaction('rw', [this.documents, this.settings], async () => {
+        const setting = await this.settings.get('__generation');
+        this.assertGeneration(setting);
+        await this.documents.delete(documentId);
+      });
     } catch (error) {
       throw toPersistenceError(error);
     }
@@ -197,6 +210,13 @@ export class IndexedDbDocumentStore implements DocumentStore {
   private async openOnce(): Promise<void> {
     if (!this.opened) {
       await this.open();
+    }
+  }
+
+  private assertGeneration(row: { value?: unknown } | undefined): void {
+    const current = typeof row?.value === 'number' ? row.value : 0;
+    if (current !== this.generation) {
+      throw new PersistenceError('write-failed', 'Рабочее пространство восстановлено в другом окне. Перезагрузите приложение.');
     }
   }
 }

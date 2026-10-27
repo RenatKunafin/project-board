@@ -25,11 +25,28 @@ export type { TiledArea, TiledLayoutState } from './tiled-layout';
 export { CascadeLayout } from './CascadeLayout';
 export type { CascadeItemInput, CascadeLayoutProps } from './CascadeLayout';
 export { WorkspaceStore } from './workspace-store';
+export { WorkspaceBackupStore, MAX_WORKSPACE_BACKUPS } from './workspace-backup-store';
+export type { StoredWorkspaceBackup, WorkspaceBackupCapture, WorkspaceBackupKind } from './workspace-backup-store';
 export type {
   WorkspaceSnapshot,
   WorkspaceTabRecord,
   WidgetInstanceRecord,
 } from './workspace-store';
+export {
+  deserializeWorkspaceBackup,
+  serializeWorkspaceBackup,
+  WORKSPACE_BACKUP_FORMAT,
+  WORKSPACE_BACKUP_FORMAT_VERSION,
+  WORKSPACE_BACKUP_SCHEMA_VERSION,
+} from './workspace-backup';
+export type {
+  WorkspaceBackup,
+  WorkspaceBackupCompatibility,
+  WorkspaceBackupIssue,
+  WorkspaceBackupPayload,
+  WorkspaceBackupResult,
+  WorkspaceBackupSerializeResult,
+} from './workspace-backup';
 export {
   CASCADE_CELL,
   CASCADE_COLLAPSED_HEIGHT,
