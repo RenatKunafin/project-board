@@ -1,5 +1,6 @@
-import { FileText, Layers, LayoutGrid, X } from 'lucide-react';
+import { FileText, Layers, LayoutGrid, Settings, X } from 'lucide-react';
 import { PwaStatus } from './PwaStatus';
+import { WorkspaceBackupDialog } from './WorkspaceBackupDialog';
 import type {
   AutosavingDocumentService,
   WidgetRegistry,
@@ -37,6 +38,8 @@ import {
   type DocumentTypeInfo,
   type TiledLayoutState,
   type WorkspaceSnapshot,
+  type WorkspaceBackupCompatibility,
+  WorkspaceBackupStore,
 } from '@project-board/dashboard';
 import {
   useCallback,
@@ -68,7 +71,8 @@ type HeaderPanel =
   | { readonly kind: 'widgets' }
   | { readonly kind: 'documents' }
   | { readonly kind: 'picker'; readonly typeId: string }
-  | { readonly kind: 'open-with'; readonly documentId: string };
+  | { readonly kind: 'open-with'; readonly documentId: string }
+  | { readonly kind: 'settings' };
 
 export interface RestoredWorkspace {
   readonly tabs: readonly {
@@ -92,6 +96,8 @@ interface AppProps {
   initialViewStates?: Record<string, Record<string, unknown>>;
   /** Ошибка восстановления документов при старте: каталог показывает её, а не «пусто». */
   documentsLoadError?: boolean;
+  backupStore?: WorkspaceBackupStore;
+  backupCompatibility?: WorkspaceBackupCompatibility;
 }
 
 type CascadeByTab = { readonly [tabId: string]: CascadeLayoutState };
@@ -558,6 +564,8 @@ export default function App({
   restored,
   initialViewStates,
   documentsLoadError = false,
+  backupStore,
+  backupCompatibility = { widgetTypeIds: [], documentTypes: [] },
 }: AppProps) {
   // Состояние представлений экземпляров (PBT-049, ADR-6.4): стабильный ref —
   // виджеты сами применяют свой state, платформа не ре-рендерит панели.
@@ -610,6 +618,8 @@ export default function App({
   const [headerPanel, setHeaderPanel] = useState<HeaderPanel>({ kind: 'none' });
   const widgetsButtonRef = useRef<HTMLButtonElement>(null);
   const documentsButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
 
   // Версия структурных операций над документами (rename/delete/перепривязка):
   // эти операции не меняют состояние App, редьюсер провоцирует перерендер,
@@ -1005,6 +1015,24 @@ export default function App({
         workspaceStore.flush(snapshot, structuredClone(views)),
       ]);
     } while (snapshot !== snapshotRef.current || views !== viewStatesRef.current);
+  };
+
+  const prepareBackupSnapshot = async () => {
+    await prepareForUpdate();
+    if (backupStore) return backupStore.readCapture();
+    return {
+      payload: {
+        documents: documentService.listDocuments(),
+        workspace: snapshotRef.current!,
+        viewSettings: structuredClone(viewStatesRef.current),
+      },
+      generation: 0,
+    };
+  };
+
+  const openBackupDialog = (): void => {
+    setHeaderPanel({ kind: 'none' });
+    setBackupDialogOpen(true);
   };
 
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
@@ -1418,6 +1446,14 @@ export default function App({
               )}
             </DropdownPanel>
           </span>
+          {backupStore && <span className="header-anchor">
+            <button type="button" ref={settingsButtonRef} className="add-widget-button settings-button" aria-label="Настройки" title="Настройки" aria-expanded={headerPanel.kind === 'settings'} onClick={() => setHeaderPanel((current) => current.kind === 'settings' ? { kind: 'none' } : { kind: 'settings' })}>
+              <Settings aria-hidden="true" />
+            </button>
+            <DropdownPanel open={headerPanel.kind === 'settings'} onClose={() => setHeaderPanel({ kind: 'none' })} anchorRef={settingsButtonRef} ariaLabel="Настройки">
+              <button type="button" className="settings-menu-item" onClick={openBackupDialog}>Резервные копии</button>
+            </DropdownPanel>
+          </span>}
         </div>
       </header>
 
@@ -1459,6 +1495,7 @@ export default function App({
           );
         })}
       </section>
+      {backupStore && <WorkspaceBackupDialog open={backupDialogOpen} onClose={() => { setBackupDialogOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} backupStore={backupStore} compatibility={backupCompatibility} prepareSnapshot={prepareBackupSnapshot} prepareForRestore={prepareForUpdate} prepareDocuments={(documents) => documentService.prepareDocumentsForRestore(documents)} />}
     </main>
   );
 }

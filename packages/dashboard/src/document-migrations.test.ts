@@ -110,6 +110,26 @@ beforeEach(() => {
 });
 
 describe('миграции при восстановлении (fake-indexeddb)', () => {
+  it('prepares imported documents through existing migrations without writing or changing input', () => {
+    const service = createDocumentService({ migrations: [support] });
+    const imported = legacyDocument();
+    const prepared = service.prepareDocumentsForRestore([imported]);
+    expect(prepared[0]).toMatchObject({ schemaVersion: 3, revision: 4, content: { source: 'migrated', items: expect.arrayContaining([{ text: 'Пункт один', done: false, createdAt: '2026-10-13T00:00:00.000Z' }]) } });
+    expect(imported).toEqual(legacyDocument());
+  });
+
+  it('preserves unknown modules and future versions during import preparation', () => {
+    const service = createDocumentService({ migrations: [support] });
+    const unknown = legacyDocument({ id: 'unknown', moduleId: 'other', documentType: 'custom' });
+    const future = legacyDocument({ id: 'future', schemaVersion: 4 });
+    expect(service.prepareDocumentsForRestore([unknown, future])).toEqual([unknown, future]);
+  });
+
+  it('fails preparation atomically when an imported migration throws', () => {
+    const broken: DocumentMigrationsSupport = { ...support, steps: [{ from: 1, to: 3, migrate: () => { throw new Error('migration failed'); } }] };
+    const service = createDocumentService({ migrations: [broken] });
+    expect(() => service.prepareDocumentsForRestore([legacyDocument()])).toThrow('migration failed');
+  });
   it('старая фикстура преобразуется цепочкой 1→3 с сохранением идентификатора, названия и редакции', async () => {
     const store = await freshStore(`mig-${crypto.randomUUID()}`);
     await store.save(legacyDocument(), 0);

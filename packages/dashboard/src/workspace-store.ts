@@ -1,8 +1,8 @@
 import Dexie, { type Table } from 'dexie';
 import {
-  DOCUMENTS_TABLE_DECLARATION,
-  WORKSPACE_DB_SCHEMA_VERSION,
-  WORKSPACE_TABLE_DECLARATIONS,
+  SCHEMA_V1_DECLARATIONS,
+  SCHEMA_V2_DECLARATIONS,
+  SCHEMA_V3_DECLARATIONS,
 } from './db-schema';
 
 export interface WorkspaceTabRecord {
@@ -77,19 +77,22 @@ export class WorkspaceStore {
   private readonly instances: Table<InstanceRow, string>;
   private readonly settings: Table<SettingRow, string>;
   private opened = false;
+  private generation = 0;
   private writes: Promise<void> = Promise.resolve();
 
   constructor(name: string) {
     this.db = new Dexie(name);
-    this.db
-      .version(WORKSPACE_DB_SCHEMA_VERSION - 1)
-      .stores({ documents: DOCUMENTS_TABLE_DECLARATION });
-    this.db
-      .version(WORKSPACE_DB_SCHEMA_VERSION)
-      .stores(WORKSPACE_TABLE_DECLARATIONS);
+    this.db.version(1).stores(SCHEMA_V1_DECLARATIONS);
+    this.db.version(2).stores(SCHEMA_V2_DECLARATIONS);
+    this.db.version(3).stores(SCHEMA_V3_DECLARATIONS);
     this.tabs = this.db.table('tabs');
     this.instances = this.db.table('widgetInstances');
     this.settings = this.db.table('settings');
+  }
+
+  close(): void {
+    this.db.close();
+    this.opened = false;
   }
 
   async load(): Promise<WorkspaceSnapshot> {
@@ -166,6 +169,7 @@ export class WorkspaceStore {
       'rw',
       [this.tabs, this.instances, this.settings],
       async () => {
+        await this.assertGeneration();
         await this.tabs.clear();
         await this.instances.clear();
         await this.tabs.bulkPut(tabRows);
@@ -211,14 +215,20 @@ export class WorkspaceStore {
     value: Record<string, unknown>,
   ): Promise<void> {
     return this.enqueue(async () => {
-      await this.settings.put({ key: `view:${instanceId}`, value });
+      await this.db.transaction('rw', this.settings, async () => {
+        await this.assertGeneration();
+        await this.settings.put({ key: `view:${instanceId}`, value });
+      });
     });
   }
 
   /** Удаление настроек закрытых экземпляров после всех прежних записей. */
   deleteViewSettings(instanceIds: readonly string[]): Promise<void> {
     return this.enqueue(async () => {
-      await this.settings.bulkDelete(instanceIds.map((id) => `view:${id}`));
+      await this.db.transaction('rw', this.settings, async () => {
+        await this.assertGeneration();
+        await this.settings.bulkDelete(instanceIds.map((id) => `view:${id}`));
+      });
     });
   }
 
@@ -236,6 +246,16 @@ export class WorkspaceStore {
     if (!this.opened) {
       await this.db.open();
       this.opened = true;
+      const setting = await this.settings.get('__generation');
+      this.generation = typeof setting?.value === 'number' ? setting.value : 0;
+    }
+  }
+
+  private async assertGeneration(): Promise<void> {
+    const setting = await this.settings.get('__generation');
+    const current = typeof setting?.value === 'number' ? setting.value : 0;
+    if (current !== this.generation) {
+      throw new Error('Рабочее пространство восстановлено в другом окне. Перезагрузите приложение.');
     }
   }
 }

@@ -5,6 +5,7 @@ import {
   createDocumentService,
   createIndexedDbDocumentStore,
   createWidgetRegistry,
+  WorkspaceBackupStore,
   StorageSelfTest,
   WorkspaceStore,
   type CascadeLayoutState,
@@ -33,7 +34,7 @@ declare global {
       /** Запись содержимого документа для контрольных данных e2e (PBT-037). */
       writeDocumentContent: (documentId: string, content: unknown) => void;
       /** Чтение документа (ревизия/содержимое) для проверок e2e (PBT-039). */
-      readDocument: (documentId: string) => { revision: number } | undefined;
+      readDocument: (documentId: string) => { revision: number; content: unknown } | undefined;
     };
   }
 }
@@ -46,6 +47,11 @@ const documentService = createDocumentService({
   migrations: collectDocumentMigrations(widgetTypes),
 });
 const workspaceStore = new WorkspaceStore('project-board');
+const backupStore = new WorkspaceBackupStore('project-board');
+const backupCompatibility = {
+  widgetTypeIds: widgetTypes.map((type) => type.id),
+  documentTypes: widgetTypes.flatMap((type) => type.documentSupport ? [{ moduleId: type.documentSupport.moduleId, documentType: type.documentSupport.documentType, schemaVersion: type.documentSupport.schemaVersion }] : []),
+};
 
 // Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
 window.addEventListener('pagehide', () => {
@@ -138,6 +144,8 @@ async function bootstrap(): Promise<void> {
           restored={restored}
           initialViewStates={initialViewStates}
           documentsLoadError={documentsLoadError}
+          backupStore={backupStore}
+          backupCompatibility={backupCompatibility}
         />
       </React.StrictMode>,
     );
@@ -151,6 +159,8 @@ async function bootstrap(): Promise<void> {
         documentService={documentService}
         workspaceStore={workspaceStore}
         documentsLoadError={documentsLoadError}
+        backupStore={backupStore}
+        backupCompatibility={backupCompatibility}
       />
     </React.StrictMode>,
   );
