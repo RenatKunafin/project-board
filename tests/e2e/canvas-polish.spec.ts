@@ -107,10 +107,96 @@ test('ресайз за нижний край прокрутки одним же
   // Продолжаем движение вдоль нижнего края: канвас должен поддаваться.
   await page.mouse.move(h!.x + 40, vh - 4, { steps: 10 });
   await page.mouse.move(h!.x + 120, vh - 4, { steps: 10 });
+  await expect.poll(async () => (await viewportOf(page))!.scroll).toBeGreaterThan(before!.scroll);
   const during = await viewportOf(page);
   await page.mouse.up();
   await page.waitForTimeout(400);
   const after = await viewportOf(page);
   expect(during!.scroll).toBeGreaterThan(before!.scroll);
   expect(after!.scrollHeight).toBeGreaterThan(before!.scrollHeight);
+});
+
+test('тачпад: удержание уголка у края непрерывно растит окно, размер сохраняется после отпускания', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 640 });
+  await page.goto('/');
+  const { pane } = await createDocumentWindow(page, 'Чек-лист', 'Тачпад');
+  const wrap = page.locator('.cascade-layout__window').filter({ has: pane });
+  const viewport = page.locator('.cascade-viewport');
+  const handle = await wrap.locator('.cascade-resize-se').boundingBox();
+  const view = await viewport.boundingBox();
+  if (!handle || !view) throw new Error('Нет уголка или канваса');
+  const x = handle.x + handle.width / 2;
+  const edgeY = view.y + view.height - 12;
+  await page.mouse.move(x, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, edgeY, { steps: 6 });
+  // Палец удерживает жест у края: новых pointermove/mousemove нет.
+  await page.waitForTimeout(500);
+  const first = await wrap.evaluate(node => node.offsetHeight);
+  const firstScroll = await viewport.evaluate(node => node.scrollTop);
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBeGreaterThan(first + 160);
+  expect(await viewport.evaluate(node => node.scrollTop)).toBeGreaterThan(firstScroll + 128);
+  const corner = await wrap.locator('.cascade-resize-se').boundingBox();
+  expect(Math.abs(corner!.y + corner!.height / 2 - edgeY)).toBeLessThanOrEqual(24);
+
+  // Возврат от края уменьшает окно, автопрокрутка останавливается.
+  const grown = await wrap.evaluate(node => node.offsetHeight);
+  await page.mouse.move(x, edgeY - 144, { steps: 6 });
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBeLessThan(grown - 96);
+  const beforeRelease = await wrap.evaluate(node => ({ width: node.offsetWidth, height: node.offsetHeight }));
+  await page.mouse.up();
+  await expect(wrap).not.toHaveClass(/--gesture/);
+  await page.waitForTimeout(350);
+  expect(await wrap.evaluate(node => ({ width: node.offsetWidth, height: node.offsetHeight }))).toEqual(beforeRelease);
+  const scrollAfterRelease = await viewport.evaluate(node => node.scrollTop);
+  await page.waitForTimeout(150);
+  expect(await viewport.evaluate(node => node.scrollTop)).toBe(scrollAfterRelease);
+
+  await pane.getByRole('button', { name: 'Свернуть Чек-лист · Тачпад', exact: true }).click();
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBe(34);
+  await pane.getByRole('button', { name: 'Развернуть Чек-лист · Тачпад', exact: true }).click();
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBe(beforeRelease.height);
+  await page.waitForTimeout(350);
+  await page.reload();
+  await expect.poll(() => wrap.evaluate(node => ({ width: node.offsetWidth, height: node.offsetHeight }))).toEqual(beforeRelease);
+});
+
+test('тачпад: ручная прокрутка учитывается в ресайзе, скрытие вкладки отменяет незавершённый жест', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 640 });
+  await page.goto('/');
+  const { pane } = await createDocumentWindow(page, 'Чек-лист', 'Прокрутка и отмена');
+  const tab = page.getByRole('tab', { selected: true });
+  const tabId = await tab.getAttribute('id');
+  const wrap = page.locator('.cascade-layout__window').filter({ has: pane });
+  const viewport = page.locator('.cascade-viewport').first();
+  const original = await wrap.evaluate(node => node.offsetHeight);
+  const handle = await wrap.locator('.cascade-resize-se').boundingBox();
+  const view = await viewport.boundingBox();
+  if (!handle || !view) throw new Error('Нет уголка или канваса');
+  const x = handle.x + handle.width / 2;
+  const edgeY = view.y + view.height - 12;
+  await page.mouse.move(x, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(x, edgeY, { steps: 6 });
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBeGreaterThan(original + 320);
+  await page.mouse.move(x, edgeY - 120, { steps: 6 });
+  const height = await wrap.evaluate(node => node.offsetHeight);
+  const scroll = await viewport.evaluate(node => node.scrollTop);
+  await page.mouse.wheel(0, -96);
+  await expect.poll(() => viewport.evaluate(node => node.scrollTop)).toBeLessThan(scroll - 64);
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBeLessThan(height - 64);
+  const corner = await wrap.locator('.cascade-resize-se').boundingBox();
+  expect(Math.abs(corner!.y + corner!.height / 2 - (edgeY - 120))).toBeLessThanOrEqual(24);
+
+  // Клавиатурная навигация остаётся доступной при удерживаемом указателе.
+  await page.getByRole('button', { name: 'Новая вкладка', exact: true }).press('Enter');
+  await expect(pane).toBeHidden();
+  await expect(wrap).not.toHaveClass(/--gesture/);
+  await page.mouse.up();
+  await page.locator(`[id="${tabId}"]`).press('Enter');
+  await expect(pane).toBeVisible();
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBe(original);
+  await page.waitForTimeout(350);
+  await page.reload();
+  await expect.poll(() => wrap.evaluate(node => node.offsetHeight)).toBe(original);
 });

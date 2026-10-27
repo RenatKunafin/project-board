@@ -99,8 +99,12 @@ test('каскад: дискретный preview совпадает с запи�
 
 test('каскад: поле расширяется при drag/resize, свёрнутая высота сохраняется', async ({ page }) => {
   await start(page);
-  const cursor = await beginDrag(page);
-  await page.mouse.move(cursor.x + 1500, cursor.y + 1500, { steps: 8 });
+  await beginDrag(page);
+  const view = await page.locator('.cascade-viewport').boundingBox();
+  if (!view) throw new Error('Нет области канваса');
+  // Реальный указатель остаётся внутри окна браузера. Окно при этом
+  // выходит за viewport благодаря размеру и смещению ручки от его края.
+  await page.mouse.move(view.x + view.width - 16, view.y + view.height - 16, { steps: 8 });
   const live = await geometry(page);
   expectGrid(live);
   const viewport = await page.locator('.cascade-viewport').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
@@ -123,7 +127,9 @@ test('каскад: поле расширяется при drag/resize, свёр
   if (!handle) throw new Error('Нет уголка');
   await page.mouse.move(handle.x + 6, handle.y + 6);
   await page.mouse.down();
-  await page.mouse.move(handle.x + 800, handle.y + 800, { steps: 6 });
+  const heightBeforeResize = (await geometry(page)).height;
+  await page.mouse.move(view.x + view.width - 16, view.y + view.height - 16, { steps: 6 });
+  await expect.poll(async () => (await geometry(page)).height).toBeGreaterThan(heightBeforeResize + 160);
   const duringResize = await geometry(page);
   expectGrid(duringResize);
   const expandedCanvas = await page.locator('.cascade-layout').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
@@ -147,7 +153,7 @@ test('каскад: поле расширяется при drag/resize, свёр
 
   await pane(page).getByRole('button', { name: `Свернуть ${label}`, exact: true }).click();
   const collapsedCursor = await beginDrag(page);
-  await page.mouse.move(collapsedCursor.x, collapsedCursor.y + 1500, { steps: 6 });
+  await page.mouse.move(collapsedCursor.x, view.y + view.height - 16, { steps: 6 });
   const collapsed = await geometry(page);
   expect(collapsed.height).toBe(34);
   expect(collapsed.y % 16).toBe(0);
