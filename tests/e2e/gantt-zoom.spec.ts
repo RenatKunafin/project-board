@@ -105,7 +105,7 @@ async function scaleRowFormat(
 ): Promise<'dayNumber' | 'weekRange' | 'unknown'> {
   const text = await page.evaluate(() => {
     const scale = document.querySelector('.plan-gantt__chart .wx-scale');
-    return scale ? (scale.textContent || '') : '';
+    return scale ? (scale as HTMLElement).innerText : '';
   });
   if (/\d{2}\.\d{2}\s*[–-]\s*\d{2}\.\d{2}/.test(text)) {
     return 'weekRange';
