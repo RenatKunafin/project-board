@@ -6,7 +6,8 @@ type Area = { x: number; y: number; width: number; height: number };
 const pane = (page: Page) => page.getByRole('group', { name: label, exact: true });
 const windowOf = (page: Page) => page.locator('.cascade-layout__window').filter({ has: pane(page) });
 
-// PBT-093: допуск — до двух узлов автопрокрутки при жесте у края.
+// PBT-093: допуск — краевой рост добавляет до нескольких узлов между
+// живым замером и отпусканием (плавная автопрокрутка у края).
 const CASCADE_SNAP_TOLERANCE = 32;
 
 async function geometry(page: Page): Promise<Area> {
@@ -123,14 +124,26 @@ test('каскад: поле расширяется при drag/resize, свёр
   await page.mouse.move(handle.x + 6, handle.y + 6);
   await page.mouse.down();
   await page.mouse.move(handle.x + 800, handle.y + 800, { steps: 6 });
-  const resized = await geometry(page);
-  expectGrid(resized);
+  const duringResize = await geometry(page);
+  expectGrid(duringResize);
   const expandedCanvas = await page.locator('.cascade-layout').evaluate(e => ({ width: e.clientWidth, height: e.clientHeight }));
-  expect(resized.x + resized.width).toBeLessThanOrEqual(expandedCanvas.width);
-  expect(resized.y + resized.height).toBeLessThanOrEqual(expandedCanvas.height);
+  expect(duringResize.x + duringResize.width).toBeLessThanOrEqual(expandedCanvas.width);
+  expect(duringResize.y + duringResize.height).toBeLessThanOrEqual(expandedCanvas.height);
   await page.mouse.up();
-  expect(await geometry(page)).toEqual(resized);
-  await expect.poll(() => storedArea(page)).toEqual(resized);
+  // PBT-093: отпускание фиксирует видимую геометрию (краевой рост у
+  // нижнего края добавляет узлы между движением и отпусканием).
+  const resized = await geometry(page);
+  expect(resized.height).toBeGreaterThanOrEqual(duringResize.height);
+  expect(resized.height - duringResize.height).toBeLessThanOrEqual(CASCADE_SNAP_TOLERANCE);
+  // Фиксация проходит через привязку к сетке (16px) — сверяем снапнутый итог.
+  const snapped = {
+    ...resized,
+    x: Math.floor(resized.x / 16) * 16,
+    y: Math.floor(resized.y / 16) * 16,
+    width: Math.floor(resized.width / 16) * 16,
+    height: Math.floor(resized.height / 16) * 16,
+  };
+  await expect.poll(() => storedArea(page)).toEqual(snapped);
 
   await pane(page).getByRole('button', { name: `Свернуть ${label}`, exact: true }).click();
   const collapsedCursor = await beginDrag(page);

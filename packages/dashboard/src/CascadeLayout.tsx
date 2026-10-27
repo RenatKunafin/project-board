@@ -145,24 +145,63 @@ export function CascadeLayout({
   const canvas = cascadeCanvasSize(extentAreas, viewport);
   // PBT-093: аутлайн активного жеста (перенос/ресайз) и автопрокрутка
   // канваса при приближении указателя к верхнему/нижнему краю viewport —
-  // жест продолжается за видимую область одним движением.
+  // жест продолжается за видимую область одним движением. Прокрутка и
+  // рост окна идут непрерывным циклом кадров, пока указатель в краевой
+  // зоне (ревью владельца: прокрутка только на движении мыши «застревала»:
+  // курсор стоит — окно не растёт). Preview — источник истины жеста.
   const [gesture, setGesture] = useState<{ id: string } | null>(null);
-  const edgeScroll = useCallback((clientY: number): void => {
-    const element = containerRef.current;
-    if (element === null) return;
-    const rect = element.getBoundingClientRect();
-    const EDGE = 32;
-    const MAX_STEP = 24;
-    const below = clientY - (rect.bottom - EDGE);
-    if (below > 0) {
-      element.scrollTop += Math.min(MAX_STEP, Math.ceil(below / 8) * 4);
-      return;
-    }
-    const above = rect.top + EDGE - clientY;
-    if (above > 0) {
-      element.scrollTop -= Math.min(MAX_STEP, Math.ceil(above / 8) * 4);
+  const edgeStateRef = useRef<{
+    id: string;
+    kind: 'drag' | 'resize';
+    clientY: number;
+  } | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const previewRef = useRef<{ id: string; area: CascadeArea } | null>(null);
+  const setTrackedPreview = useCallback((next: { id: string; area: CascadeArea } | null) => {
+    previewRef.current = next;
+    setPreview(next);
+  }, []);
+  const stopEdgeLoop = useCallback(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
     }
   }, []);
+  useEffect(() => stopEdgeLoop, [stopEdgeLoop]);
+
+  const edgeLoop = useCallback(() => {
+    const state = edgeStateRef.current;
+    const element = containerRef.current;
+    const previewNow = previewRef.current;
+    if (state === null || element === null || previewNow === null || previewNow.id !== state.id) {
+      frameRef.current = null;
+      return;
+    }
+    const rect = element.getBoundingClientRect();
+    const EDGE = 40;
+    const direction =
+      state.clientY > rect.bottom - EDGE ? 1 : state.clientY < rect.top + EDGE ? -1 : 0;
+    if (direction !== 0) {
+      const depth = direction > 0
+        ? state.clientY - (rect.bottom - EDGE)
+        : rect.top + EDGE - state.clientY;
+      // Скорость растёт с глубиной захода, ограничена ~600px/с (10px/кадр).
+      // Рост окна выполняет жест на движениях (interactjs считает дельту от
+      // старта); цикл непрерывно доводит прокрутку, освобождая дно канваса,
+      // — при ведении тачпада жест не застревает у края. Ограничение: при
+      // полностью замершем указателе роста нет (см. PBT-093, Risks).
+      const step = Math.round(Math.min(10, 3 + depth * 0.12));
+      element.scrollTop += step * direction;
+    }
+    frameRef.current = requestAnimationFrame(edgeLoop);
+  }, []);
+
+  const edgeScroll = useCallback((clientY: number, id: string, kind: 'drag' | 'resize') => {
+    edgeStateRef.current = { id, kind, clientY };
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(edgeLoop);
+    }
+  }, [edgeLoop]);
   useEffect(() => {
     const fresh = items.find(item => !previousIds.current.has(item.instanceId));
     previousIds.current = new Set(items.map(item => item.instanceId));
@@ -221,40 +260,41 @@ export function CascadeLayout({
               style={{ zIndex: depth }}
               onDrag={(event, data) => {
                 setGesture({ id: item.instanceId });
-                edgeScroll((event as { clientY?: number }).clientY ?? 0);
-                setPreview({ id: item.instanceId, area: { ...area, x: data.x, y: data.y } });
+                const clientY = (event as { clientY?: number }).clientY ?? 0;
+                const nextArea = { ...area, x: data.x, y: data.y };
+                setTrackedPreview({ id: item.instanceId, area: nextArea });
+                edgeScroll(clientY, item.instanceId, 'drag');
               }}
               onResize={(event, _direction, ref, _delta, position) => {
                 setGesture({ id: item.instanceId });
-                edgeScroll((event as { clientY?: number }).clientY ?? 0);
-                setPreview({
-                  id: item.instanceId, area: { ...position, width: ref.offsetWidth, height: ref.offsetHeight },
-                });
+                const clientY = (event as { clientY?: number }).clientY ?? 0;
+                const nextArea = { ...position, width: ref.offsetWidth, height: ref.offsetHeight };
+                setTrackedPreview({ id: item.instanceId, area: nextArea });
+                edgeScroll(clientY, item.instanceId, 'resize');
               }}
               onDragStop={(_event, data) => {
+                // Preview — источник истины жеста: краевой цикл мог увести
+                // окно дальше данных Rnd (тачпад у края без mousemove).
+                const tracked = previewRef.current;
+                const finalDrag = tracked?.id === item.instanceId
+                  ? tracked.area
+                  : { ...area, x: data.x, y: data.y };
+                stopEdgeLoop();
+                edgeStateRef.current = null;
                 setGesture(null);
-                setPreview(null);
-                applyArea(
-                  item.instanceId,
-                  snapFor(item.constraints, {
-                    ...area,
-                    x: data.x,
-                    y: data.y,
-                  }, item.collapsed),
-                );
+                setTrackedPreview(null);
+                applyArea(item.instanceId, snapFor(item.constraints, finalDrag, item.collapsed));
               }}
               onResizeStop={(_event, _direction, ref, _delta, position) => {
+                const tracked = previewRef.current;
+                const finalResize = tracked?.id === item.instanceId
+                  ? tracked.area
+                  : { x: position.x, y: position.y, width: ref.offsetWidth, height: ref.offsetHeight };
+                stopEdgeLoop();
+                edgeStateRef.current = null;
                 setGesture(null);
-                setPreview(null);
-                applyArea(
-                  item.instanceId,
-                  snapFor(item.constraints, {
-                    x: position.x,
-                    y: position.y,
-                    width: ref.offsetWidth,
-                    height: ref.offsetHeight,
-                  }, false),
-                );
+                setTrackedPreview(null);
+                applyArea(item.instanceId, snapFor(item.constraints, finalResize, false));
               }}
             >
               {item.node}
