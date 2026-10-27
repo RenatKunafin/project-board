@@ -64,7 +64,9 @@ body {
 .instances {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
+  /* PBT-093: канвас начинается сразу под вкладками — окно прижимается
+     к заголовку вкладок без фиксированного зазора. */
+  margin-top: 0;
   width: 100%;
   /* Пространство вкладки занимает оставшуюся высоту окна и прокручивается,
      когда окна в сетке не помещаются (решения §4.2). */
@@ -126,6 +128,14 @@ body {
 
 .cascade-layout__window {
   pointer-events: auto;
+}
+
+/* PBT-093: аутлайн активного жеста (перенос/ресайз) — акцентный цвет,
+   без сдвига layout (outline). */
+.cascade-layout__window--gesture {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-radius: var(--radius-lg);
 }
 
 .cascade-layout__window > .widget-window {

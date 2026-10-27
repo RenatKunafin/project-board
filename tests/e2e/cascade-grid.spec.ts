@@ -6,6 +6,9 @@ type Area = { x: number; y: number; width: number; height: number };
 const pane = (page: Page) => page.getByRole('group', { name: label, exact: true });
 const windowOf = (page: Page) => page.locator('.cascade-layout__window').filter({ has: pane(page) });
 
+// PBT-093: допуск — до двух узлов автопрокрутки при жесте у края.
+const CASCADE_SNAP_TOLERANCE = 32;
+
 async function geometry(page: Page): Promise<Area> {
   return windowOf(page).evaluate((element) => {
     const matrix = new DOMMatrix(getComputedStyle(element).transform);
@@ -105,7 +108,14 @@ test('каскад: поле расширяется при drag/resize, свёр
   expect(live.x + live.width).toBeLessThanOrEqual(canvas.width);
   expect(live.y + live.height).toBeLessThanOrEqual(canvas.height);
   await page.mouse.up();
-  expect(await geometry(page)).toEqual(live);
+  // PBT-093: автопрокрутка у края может довести окно на узел сетки
+  // между живым замером и отпусканием — сверяем геометрию с допуском.
+  const afterDrag = await geometry(page);
+  expect(afterDrag.x).toBe(live.x);
+  expect(afterDrag.width).toBe(live.width);
+  expect(afterDrag.height).toBe(live.height);
+  expect(afterDrag.y).toBeGreaterThanOrEqual(live.y);
+  expect(afterDrag.y - live.y).toBeLessThanOrEqual(CASCADE_SNAP_TOLERANCE);
 
   await windowOf(page).locator('.cascade-resize-se').scrollIntoViewIfNeeded();
   const handle = await windowOf(page).locator('.cascade-resize-se').boundingBox();

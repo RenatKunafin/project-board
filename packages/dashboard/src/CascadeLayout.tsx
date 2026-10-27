@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType, type CSSProperties, ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties, ReactNode } from 'react';
 import { Rnd } from 'react-rnd';
 import type { WidgetSizeConstraints } from '@project-board/widget-sdk';
 import {
@@ -143,6 +143,26 @@ export function CascadeLayout({
   });
   const viewport = viewportSize ?? { width: 0, height: 0 };
   const canvas = cascadeCanvasSize(extentAreas, viewport);
+  // PBT-093: аутлайн активного жеста (перенос/ресайз) и автопрокрутка
+  // канваса при приближении указателя к верхнему/нижнему краю viewport —
+  // жест продолжается за видимую область одним движением.
+  const [gesture, setGesture] = useState<{ id: string } | null>(null);
+  const edgeScroll = useCallback((clientY: number): void => {
+    const element = containerRef.current;
+    if (element === null) return;
+    const rect = element.getBoundingClientRect();
+    const EDGE = 32;
+    const MAX_STEP = 24;
+    const below = clientY - (rect.bottom - EDGE);
+    if (below > 0) {
+      element.scrollTop += Math.min(MAX_STEP, Math.ceil(below / 8) * 4);
+      return;
+    }
+    const above = rect.top + EDGE - clientY;
+    if (above > 0) {
+      element.scrollTop -= Math.min(MAX_STEP, Math.ceil(above / 8) * 4);
+    }
+  }, []);
   useEffect(() => {
     const fresh = items.find(item => !previousIds.current.has(item.instanceId));
     previousIds.current = new Set(items.map(item => item.instanceId));
@@ -185,7 +205,7 @@ export function CascadeLayout({
         return (
           <div key={item.instanceId} className="cascade-layout__bounds" style={{ width: planeWidth, height: planeHeight }}>
             <RndComponent
-              className="cascade-layout__window"
+              className={`cascade-layout__window${gesture?.id === item.instanceId ? ' cascade-layout__window--gesture' : ''}`}
               size={{ width: area.width, height: item.collapsed ? CASCADE_COLLAPSED_HEIGHT : area.height }}
               position={{ x: area.x, y: area.y }}
               minWidth={widthRange.min}
@@ -199,11 +219,20 @@ export function CascadeLayout({
               enableResizing={{ bottomRight: !item.collapsed, top: false, right: false, bottom: false, left: false, topRight: false, bottomLeft: false, topLeft: false }}
               resizeHandleClasses={RESIZE_HANDLE_CLASSES}
               style={{ zIndex: depth }}
-              onDrag={(_event, data) => setPreview({ id: item.instanceId, area: { ...area, x: data.x, y: data.y } })}
-              onResize={(_event, _direction, ref, _delta, position) => setPreview({
-                id: item.instanceId, area: { ...position, width: ref.offsetWidth, height: ref.offsetHeight },
-              })}
+              onDrag={(event, data) => {
+                setGesture({ id: item.instanceId });
+                edgeScroll((event as { clientY?: number }).clientY ?? 0);
+                setPreview({ id: item.instanceId, area: { ...area, x: data.x, y: data.y } });
+              }}
+              onResize={(event, _direction, ref, _delta, position) => {
+                setGesture({ id: item.instanceId });
+                edgeScroll((event as { clientY?: number }).clientY ?? 0);
+                setPreview({
+                  id: item.instanceId, area: { ...position, width: ref.offsetWidth, height: ref.offsetHeight },
+                });
+              }}
               onDragStop={(_event, data) => {
+                setGesture(null);
                 setPreview(null);
                 applyArea(
                   item.instanceId,
@@ -215,6 +244,7 @@ export function CascadeLayout({
                 );
               }}
               onResizeStop={(_event, _direction, ref, _delta, position) => {
+                setGesture(null);
                 setPreview(null);
                 applyArea(
                   item.instanceId,
