@@ -68,6 +68,18 @@
   background: var(--surface-raised);
 }
 
+/* Горизонтальный drag-scroll пустого фона шкалы (PBT-096). Полосы и
+   resize-ручки сохраняют собственные курсоры SVAR. */
+.plan-gantt__chart .wx-chart {
+  cursor: grab;
+}
+
+.plan-gantt--panning .plan-gantt__chart .wx-chart,
+.plan-gantt--panning .plan-gantt__chart .wx-chart * {
+  cursor: grabbing;
+  user-select: none;
+}
+
 /* Тёмная тема SVAR на семантических токенах (PBT-073, design D1).
    Референс: прототип flexi-dashboard-hub, styles.css — блок
    «.svar-gantt .wx-willow-dark-theme» (переносим визуальный язык, не код).

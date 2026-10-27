@@ -1267,6 +1267,141 @@ export default function PlanGanttWidget({
     [],
   );
 
+  // Горизонтальный drag-scroll (PBT-096): пустой фон шкалы перемещается
+  // захватом мыши; полосы задач и элементы управления остаются за SVAR.
+  // Присваивание scrollLeft вызывает штатную синхронизацию таблицы и
+  // passive-трекинг позиции выше, поэтому документ не записывается.
+  useEffect(() => {
+    type PanGesture = {
+      chart: HTMLElement;
+      root: HTMLElement;
+      startX: number;
+      startY: number;
+      startScrollLeft: number;
+      active: boolean;
+    };
+    let gesture: PanGesture | null = null;
+    let suppressClick = false;
+    let clearSuppressedClick = 0;
+    let completedPanRoot: HTMLElement | null = null;
+    const gestureRootContains = (target: Node) =>
+      completedPanRoot?.contains(target) ?? false;
+
+    const clearGesture = () => {
+      if (gesture?.active) {
+        gesture.root.classList.remove('plan-gantt--panning');
+      }
+      gesture = null;
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (
+        event.button !== 0 || event.defaultPrevented ||
+        visibleRef.current === false
+      ) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const chart = target.closest<HTMLElement>(
+        '.plan-gantt__chart .wx-chart',
+      );
+      const root = chart?.closest<HTMLElement>('.plan-gantt');
+      if (
+        chart === null || chart === undefined || root === null ||
+        root === undefined || root.dataset.widgetInstance !== widgetInstanceId ||
+        chart.scrollWidth <= chart.clientWidth
+      ) return;
+      // data-id covers task bars/links and future SVAR items. Keep explicit
+      // controls and editable regions outside the pan gesture as well.
+      if (target.closest(
+        '[data-id], button, input, select, textarea, a, [role="button"], [contenteditable="true"]',
+      )) return;
+      clearGesture();
+      gesture = {
+        chart,
+        root,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScrollLeft: chart.scrollLeft,
+        active: false,
+      };
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      const current = gesture;
+      if (current === null) return;
+      const deltaX = event.clientX - current.startX;
+      const deltaY = event.clientY - current.startY;
+      if (!current.active) {
+        // A small threshold preserves ordinary clicks; vertical movement
+        // cancels the candidate instead of hijacking a page/widget scroll.
+        if (Math.abs(deltaX) < 4 && Math.abs(deltaY) < 4) return;
+        if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+          clearGesture();
+          return;
+        }
+        current.active = true;
+        current.root.classList.add('plan-gantt--panning');
+      }
+      event.preventDefault();
+      const maxScrollLeft = current.chart.scrollWidth - current.chart.clientWidth;
+      current.chart.scrollLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, current.startScrollLeft - deltaX),
+      );
+    };
+
+    const onMouseUp = () => {
+      if (gesture?.active) {
+        suppressClick = true;
+        window.clearTimeout(clearSuppressedClick);
+        clearSuppressedClick = window.setTimeout(() => {
+          suppressClick = false;
+        }, 0);
+      }
+      clearGesture();
+    };
+
+    const onClick = (event: MouseEvent) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      if (event.target instanceof Node && gestureRootContains(event.target)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    // Remember the root until the synthesized click after mouseup.
+    const finishWithRoot = () => {
+      if (gesture?.active) completedPanRoot = gesture.root;
+      onMouseUp();
+      window.setTimeout(() => {
+        completedPanRoot = null;
+      }, 0);
+    };
+    const cancel = () => {
+      suppressClick = false;
+      completedPanRoot = null;
+      window.clearTimeout(clearSuppressedClick);
+      clearGesture();
+    };
+
+    window.document.addEventListener('mousedown', onMouseDown, true);
+    window.document.addEventListener('mousemove', onMouseMove, true);
+    window.document.addEventListener('mouseup', finishWithRoot, true);
+    window.document.addEventListener('click', onClick, true);
+    window.addEventListener('blur', cancel);
+    window.document.addEventListener('visibilitychange', cancel);
+    return () => {
+      cancel();
+      window.document.removeEventListener('mousedown', onMouseDown, true);
+      window.document.removeEventListener('mousemove', onMouseMove, true);
+      window.document.removeEventListener('mouseup', finishWithRoot, true);
+      window.document.removeEventListener('click', onClick, true);
+      window.removeEventListener('blur', cancel);
+      window.document.removeEventListener('visibilitychange', cancel);
+    };
+  }, [widgetInstanceId]);
+
   const scheduleScrollRestore = useCallback(
     (left: number) => {
       clearScrollRetries();
