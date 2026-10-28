@@ -2,12 +2,14 @@ import { defineConfig, type UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import colors from './pwa/colors.json';
-import { UPDATE_GUARD_SOURCE } from './pwa/update-guard';
+import { updateGuardSource } from './pwa/update-guard';
+import releaseNotes from './src/release-notes.json';
 
 // Сгенерированы из tokens.css командой npm run generate:pwa-assets.
 
 export default defineConfig(async () => {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(UPDATE_GUARD_SOURCE));
+  const source = updateGuardSource(releaseNotes);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
   const hash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 12);
   const guardFile = `assets/pwa-update-guard-${hash}.js`;
   return {
@@ -15,7 +17,7 @@ export default defineConfig(async () => {
       react(),
       {
         name: 'project-board-update-guard',
-        generateBundle() { this.emitFile({ type: 'asset', fileName: guardFile, source: UPDATE_GUARD_SOURCE }); },
+        generateBundle() { this.emitFile({ type: 'asset', fileName: guardFile, source }); },
       },
       VitePWA({
         strategies: 'generateSW',

@@ -34,6 +34,26 @@ export function requestUpdate(worker: ServiceWorker, type: 'PB_UPDATE_CHECK' | '
   });
 }
 
+export function requestReleaseNotes(worker: ServiceWorker): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => finish(new Error('Заметки новой версии не получены.')), 5000);
+    const finish = (error?: Error, result?: unknown) => {
+      clearTimeout(timer);
+      channel.port1.close();
+      channel.port2.close();
+      if (error) reject(error); else resolve(result);
+    };
+    channel.port1.onmessage = ({ data }: MessageEvent<{ ok?: boolean; releaseNotes?: unknown }>) => {
+      if (!data || data.ok !== true) finish(new Error('Заметки новой версии недоступны.'));
+      else finish(undefined, data.releaseNotes);
+    };
+    try { worker.postMessage({ type: 'PB_RELEASE_NOTES' }, [channel.port2]); } catch {
+      finish(new Error('Новая версия больше не доступна.'));
+    }
+  });
+}
+
 /** Слушатель установлен до запроса активации и всегда снимается при отказе. */
 export async function activateUpdate(worker: ServiceWorker): Promise<void> {
   let changed: (() => void) | undefined;

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { activateUpdate, requestUpdate, withUpdateTimeout } from './pwa-update';
+import { activateUpdate, requestReleaseNotes, requestUpdate, withUpdateTimeout } from './pwa-update';
+import { isReleaseNotes, type ReleaseNote } from './release-notes';
 
 type OfflineState = 'preparing' | 'ready' | 'unavailable';
 
@@ -13,12 +14,25 @@ const LABELS: Record<OfflineState, string> = {
 export function PwaStatus({ prepareForUpdate }: { readonly prepareForUpdate: () => Promise<void> }) {
   const [state, setState] = useState<OfflineState>('preparing');
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
+  const [candidateRelease, setCandidateRelease] = useState<ReleaseNote | null>(null);
   const [postponed, setPostponed] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'confirm' | 'saving' | 'activating' | 'error'>('idle');
   const [error, setError] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
   const applying = useRef(false);
   const busy = phase === 'saving' || phase === 'activating';
+
+  useEffect(() => {
+    let cancelled = false;
+    setCandidateRelease(null);
+    if (waiting?.state === 'installed') {
+      void requestReleaseNotes(waiting).then((value) => {
+        if (cancelled || !isReleaseNotes(value)) return;
+        setCandidateRelease(value.releases[0] ?? null);
+      }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, [waiting]);
 
   useEffect(() => {
     if (phase === 'idle') dialog.current?.close();
@@ -133,6 +147,10 @@ export function PwaStatus({ prepareForUpdate }: { readonly prepareForUpdate: () 
       <dialog className="pwa-update-dialog" ref={dialog} aria-labelledby="pwa-update-title"
         onCancel={(event) => { if (busy) event.preventDefault(); else setPhase('idle'); }}>
         <h2 id="pwa-update-title">Обновление Project Board</h2>
+        {candidateRelease && <section className="pwa-update-release" aria-label={`Изменения ${candidateRelease.version}`}>
+          <h3>{candidateRelease.version} · {candidateRelease.summary}</h3>
+          <ul>{candidateRelease.changes.map((change) => <li key={change}>{change}</li>)}</ul>
+        </section>}
         <p>Приложение перезапустится. Сначала сохраните изменения в открытых формах. Документы и расположение окон будут сохранены перед обновлением.</p>
         {busy && <p role="status">{phase === 'saving' ? 'Сохранение…' : 'Обновление…'}</p>}
         {error && <p role="alert">{error}</p>}
