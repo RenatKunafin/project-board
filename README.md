@@ -47,7 +47,7 @@ openspec validate --all --strict
 | apps/project-board | Приложение и регистрация модулей |
 | packages/dashboard | Платформа: окна, раскладки, документы и хранение |
 | packages/widget-sdk | Публичный контракт виджетов |
-| packages/checklist, packages/gantt | Предметные модули |
+| packages/checklist, packages/gantt, packages/notes | Предметные модули |
 | examples/counter-widget | Учебный модуль вне продуктовой комплектации |
 | tests | Unit-фикстуры, browser, PWA, сквозные проверки и benchmark |
 | docs | Руководства, ADR и исследования |
