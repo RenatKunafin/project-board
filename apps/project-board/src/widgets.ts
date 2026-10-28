@@ -1,5 +1,6 @@
 import type { WidgetTypeDefinition } from '@project-board/widget-sdk';
 import { createChecklistModule } from '@project-board/checklist';
+import { createNotesModule } from '@project-board/notes';
 import { createGanttModule } from '@project-board/gantt';
 
 // Единственная точка регистрации типов виджетов.
@@ -7,4 +8,5 @@ import { createGanttModule } from '@project-board/gantt';
 export const widgetTypes: readonly WidgetTypeDefinition[] = [
   ...createChecklistModule().widgetTypes,
   ...createGanttModule().widgetTypes,
+  ...createNotesModule().widgetTypes,
 ];

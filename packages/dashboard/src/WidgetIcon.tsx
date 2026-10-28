@@ -1,10 +1,11 @@
-import { CalendarRange, FileText, ListTodo, Puzzle, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, CalendarRange, FileText, ListTodo, Puzzle, Users, type LucideIcon } from 'lucide-react';
 
 // Ключи графики, а не предметные ID типов: платформа не знает модулей.
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['lucide:calendar-range', CalendarRange],
   ['lucide:users', Users],
   ['lucide:list-todo', ListTodo],
+  ['lucide:book-open', BookOpen],
 ]);
 
 export interface WidgetIconProps {

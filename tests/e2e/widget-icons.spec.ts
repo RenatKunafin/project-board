@@ -5,7 +5,7 @@ test('иконка типа согласована между каталогом
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   const widgets = page.getByRole('dialog', { name: 'Каталог виджетов' });
   // Все встроенные карточки используют декоративные SVG; доступные имена не меняются.
-  await expect(widgets.locator('.widget-catalog__tile svg[aria-hidden="true"]')).toHaveCount(3);
+  await expect(widgets.locator('.widget-catalog__tile svg[aria-hidden="true"]')).toHaveCount(4);
   const planType = widgets.getByRole('button', { name: 'План', exact: true });
   const planGraphic = await planType.locator('svg').innerHTML();
   const resourceGraphic = await widgets.getByRole('button', { name: 'Ресурсы', exact: true }).locator('svg').innerHTML();
@@ -29,7 +29,7 @@ test('иконка типа согласована между каталогом
   // У документа плана — каноническая иконка типа, у представлений — свои.
   const document = documents.getByRole('button', { name: /^Иконки плана/ });
   await expect(document.locator('.doc-catalog__tile svg')).toHaveJSProperty('innerHTML', planGraphic);
-  await expect(documents.getByLabel('Тип нового документа').locator('option')).toHaveText(['Чек-лист', 'План']);
+  await expect(documents.getByLabel('Тип нового документа').locator('option')).toHaveText(['Чек-лист', 'План', 'Заметки']);
   await expect(documents).not.toContainText('lucide:');
   await document.click();
   await expect(documents.getByRole('button', { name: 'План', exact: true }).locator('svg')).toHaveJSProperty('innerHTML', planGraphic);
