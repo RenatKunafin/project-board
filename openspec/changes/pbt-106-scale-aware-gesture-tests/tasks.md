@@ -7,4 +7,4 @@
 
 - [x] 2.1 Собрать production preview и выполнить все 10 сценариев `tests/e2e/shared-plan-gestures.spec.ts` без retry/skip; убедиться, что исходные 7 сценариев больше не падают.
 - [x] 2.2 Выполнить полный набор `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `openspec validate pbt-106-scale-aware-gesture-tests --strict` и `openspec validate --all --strict`; подтвердить, что runtime-код не менялся.
-- [ ] 2.3 Открыть один PR в `develop` по шаблону проекта с описанием baseline-причины и фактических результатов проверок.
+- [x] 2.3 Открыть один PR в `develop` по шаблону проекта с описанием baseline-причины и фактических результатов проверок.
