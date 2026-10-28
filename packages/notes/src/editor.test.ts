@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentChangeHandler, DocumentService, ManagedDocument } from '@project-board/widget-sdk';
+import { DocumentConflictError } from '@project-board/widget-sdk';
+import { createNotesDocumentService } from './service';
 import { NotesEditor } from './editor';
 import { parseNotesContent } from './model';
 
@@ -117,6 +119,70 @@ describe('редактор заметок', () => {
     other.select('one'); expect(other.getSnapshot().draft?.body).toBe('Общий');
     expect(handlers.size).toBe(2);
     stop(); stopOther(); expect(handlers.size).toBe(0);
+  });
+  it('фильтры не пишут документ; создание наследует тег и сбрасывает только запрос после успеха', () => {
+    const { editor, get, revision, reject } = setup();
+    const before = revision();
+    editor.setQuery('Запрос'); editor.setTag('идея');
+    expect(revision()).toBe(before);
+    reject(true); expect(editor.create()).toBe(false);
+    expect(editor.getSnapshot().query).toBe('Запрос');
+    reject(false); expect(editor.create()).toBe(true);
+    expect(editor.getSnapshot().query).toBe('');
+    expect(editor.getSnapshot().activeTag).toBe('идея');
+    expect(get().notes.at(-1)?.tags).toEqual(['идея']);
+  });
+  it('относительные операции тегов сохраняют соседние изменения, дубли — no-op', () => {
+    const { editor, documents, get, revision } = setup();
+    const other = createNotesDocumentService(documents, 'book', 1);
+    editor.addTags('one', ['новый']);
+    other.addTags('one', ['другой']);
+    expect(get().notes[0].tags).toEqual(['идея', 'новый', 'другой']);
+    const before = revision(); editor.addTags('one', [' #ИДЕЯ ', '#']);
+    expect(revision()).toBe(before);
+    editor.setPinned('one', false); editor.removeTag('one', 'НОВЫЙ');
+    expect(get().notes[0]).toMatchObject({ body: 'one', pinned: false, tags: ['идея', 'другой'] });
+    expect(get().notes[1].body).toBe('two');
+  });
+  it('не переписывает старые варианты тегов при no-op и удаляет все варианты выбранного чипа', () => {
+    const { documents, get, revision, external } = setup();
+    external({ content: { notes: get().notes.map(note => note.id === 'one' ? { ...note, tags: ['#ИДЕЯ', 'идея', 'другой'] } : note) } });
+    const service = createNotesDocumentService(documents, 'book', 1);
+    const before = revision(); service.addTags('one', [' ##Идея ']);
+    expect(revision()).toBe(before);
+    expect(get().notes[0].tags).toEqual(['#ИДЕЯ', 'идея', 'другой']);
+    service.removeTag('one', 'ИДЕЯ'); expect(get().notes[0].tags).toEqual(['другой']);
+  });
+  it('повторно применяет добавление тега к свежей редакции при конфликте SDK', () => {
+    const { documents, get } = setup();
+    const update = documents.update;
+    let once = true;
+    documents.update = (id, revision, content) => {
+      if (once) {
+        once = false;
+        update(id, revision, { notes: get().notes.map(note => note.id === 'one' ? { ...note, body: 'Внешний текст', tags: [...note.tags, 'внешний'] } : note) });
+        throw new DocumentConflictError(id, revision + 1, revision);
+      }
+      return update(id, revision, content);
+    };
+    createNotesDocumentService(documents, 'book', 1).addTags('one', ['мой']);
+    expect(get().notes[0]).toMatchObject({ body: 'Внешний текст', tags: ['идея', 'внешний', 'мой'] });
+  });
+  it('сбрасывает исчезнувший тег, сохраняет запрос и выбирает по актуальной выдаче после удаления', () => {
+    const { editor, get, external } = setup();
+    editor.setTag('идея'); editor.setQuery('two');
+    external({ content: { notes: get().notes.map(note => ({ ...note, tags: [] })) } });
+    expect(editor.getSnapshot().activeTag).toBeNull(); expect(editor.getSnapshot().query).toBe('two');
+    expect(editor.getSnapshot().draft?.base.id).toBe('one');
+    editor.remove('one'); expect(editor.getSnapshot().draft?.base.id).toBe('two');
+    editor.setQuery('пусто'); editor.remove('two');
+    expect(editor.getSnapshot().draft).toBeUndefined();
+  });
+  it('очищает выбор при удалении и пустой выдаче, сохраняя другие заметки', () => {
+    const { editor, get } = setup();
+    editor.setQuery('нет совпадений'); editor.remove('one');
+    expect(editor.getSnapshot().draft).toBeUndefined();
+    expect(get().notes.map(note => note.id)).toEqual(['two']);
   });
   it('изолирует повреждённые уведомления и запрещает запись в будущую схему', () => {
     const { editor, external } = setup();

@@ -1,5 +1,6 @@
 import type { DocumentService } from '@project-board/widget-sdk';
 import { NotesEditConflictError, type Note, type NotesDocument } from './model';
+import { filterNotes, normalizedTags } from './organization';
 import { createNotesDocumentService } from './service';
 
 export interface EditorDraft {
@@ -9,6 +10,8 @@ export interface EditorDraft {
   readonly conflict?: { readonly incoming?: Note };
 }
 export interface EditorState {
+  readonly query: string;
+  readonly activeTag: string | null;
   readonly document?: NotesDocument;
   readonly draft?: EditorDraft;
   readonly composing: boolean;
@@ -25,7 +28,7 @@ export class NotesEditor {
   private readonly service;
   private listeners = new Set<() => void>();
   private selectedId?: string;
-  private state: EditorState = { composing: false, renaming: false, writeFailed: false };
+  private state: EditorState = { query: '', activeTag: null, composing: false, renaming: false, writeFailed: false };
 
   constructor(private readonly documents: DocumentService, private readonly documentId: string, selectedId: string | undefined,
     private readonly selectSetting: (id: string | null) => void,
@@ -57,7 +60,7 @@ export class NotesEditor {
     });
   }
   private choose(document: NotesDocument, id?: string) {
-    const note = document.content.notes.find(item => item.id === id) ?? document.content.notes[0];
+    const note = document.content.notes.find(item => item.id === id) ?? filterNotes(document.content.notes, this.state.query, this.state.activeTag)[0];
     const nextId = note?.id;
     if (this.selectedId !== nextId) {
       this.selectedId = nextId;
@@ -67,6 +70,9 @@ export class NotesEditor {
       renaming: false, error: undefined, writeFailed: false });
   }
   private receive(document: NotesDocument) {
+    if (this.state.activeTag && !document.content.notes.some(note => normalizedTags(note.tags).includes(this.state.activeTag!))) {
+      this.state = { ...this.state, activeTag: null };
+    }
     const draft = this.state.draft;
     if (!draft) { this.choose(document, this.selectedId); return; }
     const incoming = document.content.notes.find(note => note.id === draft.base.id);
@@ -92,12 +98,26 @@ export class NotesEditor {
     return !!this.state.draft?.conflict || this.state.writeFailed || this.state.renaming;
   }
   create() {
-    if (this.blocked()) return;
+    if (this.blocked()) return false;
     try {
       const id = this.newId();
-      const document = this.service.createNote({ id, title: 'Новая заметка', updatedAt: new Date().toISOString() });
+      const document = this.service.createNote({ id, title: 'Новая заметка',
+        tags: this.state.activeTag ? [this.state.activeTag] : [], updatedAt: new Date().toISOString() });
       this.choose(document, id);
-    } catch (error) { this.set({ error: messageOf(error) }); }
+      this.set({ query: '' });
+      return true;
+    } catch (error) { this.set({ error: messageOf(error) }); return false; }
+  }
+  setQuery(query: string) { this.set({ query }); }
+  setTag(activeTag: string | null) { this.set({ activeTag }); }
+  resetFilters() { this.set({ query: '', activeTag: null }); }
+  addTags(id: string, tags: readonly string[]) { return this.metadata(() => this.service.addTags(id, tags)); }
+  removeTag(id: string, tag: string) { return this.metadata(() => this.service.removeTag(id, tag)); }
+  setPinned(id: string, pinned: boolean) { return this.metadata(() => this.service.setPinned(id, pinned)); }
+  private metadata(operation: () => NotesDocument) {
+    if (this.blocked()) return false;
+    try { operation(); this.set({ error: undefined }); return true; }
+    catch (error) { this.set({ error: messageOf(error) }); return false; }
   }
   remove(id: string) {
     if (this.blocked()) return false;
