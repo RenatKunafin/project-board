@@ -132,8 +132,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.resource-timeline .rct-header-root .rct-title,
-.resource-timeline .rct-dateHeader-primary {
+.resource-timeline .rct-header-root .rct-title {
   color: var(--foreground);
 }
 
@@ -146,30 +145,21 @@
   font-size: 12px;
 }
 
-/* primary-строка после общей (равная специфичность, дефолт беты даёт
-   background-color: initial — порядок решает, по прототипу строка 167).
-   Границы месячных колонок — тем же токеном и той же толщиной, что
-   дневные (дефолт беты красит правую границу месяца в светлый #bbb —
-   ревью PR#53). */
-.resource-timeline .rct-dateHeader-primary {
-  background: var(--chrome);
-  border-color: var(--border);
-  border-left-width: 1px;
-  border-right-width: 1px;
-}
-
 /* Дефолт беты утолщает первые границы (2px) — приводим к единой 1px,
    как у дневных линий. */
-.resource-timeline .rct-dateHeader {
+.resource-timeline .react-calendar-timeline .rct-dateHeader {
   border-left-width: 1px;
+  white-space: nowrap;
 }
 
 /* Заголовок сайдбара (SidebarHeader «Исполнитель»). */
-.resource-timeline .rct-sidebar-header {
+.resource-timeline .resource-timeline__sidebar-header {
   display: flex;
-  align-items: flex-end;
-  height: 100%;
-  padding: 0 12px 8px;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  height: auto;
+  padding: 0;
   font-size: 12px;
   color: var(--muted-foreground);
 }
