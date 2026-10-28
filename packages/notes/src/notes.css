@@ -1,10 +1,10 @@
-.notes-widget { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 12px; box-sizing: border-box; gap: 10px; color: var(--foreground); font-size: 14px; }
+.notes-widget { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: auto; padding: 12px; box-sizing: border-box; gap: 10px; color: var(--foreground); font-size: 14px; }
 .notes-toolbar, .notes-heading, .notes-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .notes-toolbar { justify-content: space-between; }
 .notes-toolbar span, .notes-empty { color: var(--muted-foreground); }
-.notes-content { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; overflow: auto; }
-.notes-list { display: flex; gap: 6px; overflow: auto; flex: none; padding: 2px; }
-.notes-list button { flex: none; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes-content { display: flex; flex-direction: column; flex: 1 0 auto; min-height: 340px; gap: 10px; overflow: auto; }
+.notes-list { display: block; overflow: auto; flex: none; max-height: 180px; padding: 2px; }
+.notes-list .notes-card { display: flex; flex-direction: column; width: 100%; text-align: left; margin-bottom: 4px; }
 .notes-widget button, .notes-dialog button { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--foreground); font: inherit; cursor: pointer; }
 .notes-widget button:hover, .notes-dialog button:hover { background: var(--accent); }
 .notes-widget button:focus-visible, .notes-dialog button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -25,3 +25,24 @@
 .notes-versions label { flex: 1 1 240px; min-width: 0; }
 .notes-versions textarea { width: 100%; min-height: 160px; resize: vertical; font: 12px/1.5 var(--font-mono); }
 .notes-actions { margin-top: 12px; }
+
+.notes-toolbar, .notes-filters, .notes-search { flex: none; }
+.notes-search, .notes-tags > input { box-sizing: border-box; min-width: 0; width: 100%; padding: 6px 8px; border: 1px solid var(--input); border-radius: var(--radius-sm); background: var(--background); color: var(--foreground); font: inherit; }
+.notes-search:focus, .notes-tags > input:focus { outline: 2px solid var(--ring); outline-offset: -2px; }
+.notes-filters, .notes-tag-chips { display: flex; gap: 6px; flex-wrap: wrap; max-height: 90px; overflow: auto; }
+.notes-filters button { overflow-wrap: anywhere; min-width: 0; }
+.notes-filters button[aria-pressed='true'] { border-color: var(--primary); background: var(--accent); }
+.notes-filters span, .notes-card time { font-family: var(--font-mono); }
+.notes-group h4 { margin: 8px 0 4px; font-size: 11px; color: var(--muted-foreground); text-transform: uppercase; }
+.notes-card strong { font-size: 13px; }
+.notes-card strong, .notes-card-summary > span { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes-card-summary { display: flex; gap: 8px; max-width: 100%; font-size: 11px; color: var(--muted-foreground); }
+.notes-card time { flex: none; }
+.notes-tags { display: flex; flex-direction: column; gap: 6px; }
+.notes-tag { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; border-radius: var(--radius-sm); background: var(--muted); overflow-wrap: anywhere; max-width: 100%; }
+.notes-tag button { border: none; padding: 2px 6px; }
+.notes-filter-hint { margin: 0; font-size: 12px; color: var(--muted-foreground); }
+
+/* The outer viewport scrolls at the minimum window size; controls cannot
+   consume the entire editor viewport when tags wrap over several rows. */
+.notes-card-summary > span { min-width: 0; }

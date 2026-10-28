@@ -4,6 +4,7 @@ import {
   type ManagedDocument,
   type Unsubscribe,
 } from '@project-board/widget-sdk';
+import { normalizeTag, normalizedTags } from './organization';
 import type { Note, NotesContent, NotesDocument } from './model';
 import {
   NotesDocumentError,
@@ -27,6 +28,8 @@ export interface NotesDocumentService {
   createNote(input: NewNoteInput): NotesDocument;
   updateNote(noteId: string, patch: NotePatch, baseNote: Note): NotesDocument;
   setTags(noteId: string, tags: readonly string[]): NotesDocument;
+  addTags(noteId: string, tags: readonly string[]): NotesDocument;
+  removeTag(noteId: string, tag: string): NotesDocument;
   setPinned(noteId: string, pinned: boolean): NotesDocument;
   deleteNote(noteId: string): NotesDocument;
 }
@@ -104,6 +107,23 @@ export function createNotesDocumentService(
     updateNote: updateWithBaseline,
     setTags(noteId, tags) {
       return commit((document) => setNoteTags(document.content, noteId, tags, now()));
+    },
+    addTags(noteId, rawTags) {
+      return commit(document => {
+        const note = document.content.notes.find(item => item.id === noteId);
+        if (!note) throw new NotesEditConflictError(noteId);
+        const existing = new Set(normalizedTags(note.tags));
+        const additions = normalizedTags(rawTags).filter(tag => !existing.has(tag));
+        return additions.length ? setNoteTags(document.content, noteId, [...note.tags, ...additions], now()) : document.content;
+      });
+    },
+    removeTag(noteId, rawTag) {
+      return commit(document => {
+        const note = document.content.notes.find(item => item.id === noteId);
+        if (!note) throw new NotesEditConflictError(noteId);
+        const tag = normalizeTag(rawTag);
+        return setNoteTags(document.content, noteId, note.tags.filter(value => normalizeTag(value) !== tag), now());
+      });
     },
     setPinned(noteId, pinned) {
       return commit((document) => setNotePinned(document.content, noteId, pinned, now()));

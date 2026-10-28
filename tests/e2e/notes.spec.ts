@@ -236,11 +236,20 @@ test('будущая схема блокнота не заменяется пу�
 
 test('конфликт скрытой вкладки доступен через портал; возврат показывает актуальный документ', async ({ page }) => {
   const { pane, documentId } = await prepare(page);
-  await compose(pane, 'Черновик скрытой вкладки');
-  // Переключение без искусственного compositionend моделирует ещё не
-  // завершённый ввод, пока платформа скрывает владельца.
+  const input = pane.getByLabel('Текст заметки', { exact: true });
+  // Keep focus on the chrome: focusing this synthetic composition with fill()
+  // lets the browser commit it on blur before the remote update is delivered.
+  await input.evaluate(element => {
+    element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(element, 'Черновик скрытой вкладки');
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(input).toHaveValue('Черновик скрытой вкладки');
   await page.getByRole('button', { name: 'Новая вкладка', exact: true }).evaluate(button => (button as HTMLButtonElement).click());
   await expect(pane).toBeHidden();
+  const committed = await page.evaluate(id => window.__projectBoard!.readDocument(id)?.content, documentId);
+  expect(committed).toMatchObject({ notes: [{ body: '' }] });
+  await expect(input).toHaveValue('Черновик скрытой вкладки');
   await externalBody(page, documentId, 'Изменение на скрытой вкладке');
   const dialog = page.getByRole('dialog', { name: 'Конфликт заметки', exact: true });
   await expect(dialog).toBeVisible();

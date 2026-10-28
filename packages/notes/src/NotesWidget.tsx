@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { WidgetProps, DocumentService } from '@project-board/widget-sdk';
 import { NotesEditor } from './editor';
+import { NoteTags } from './NoteTags';
+import { allTags, groupNotes, noteDate, notePreview } from './organization';
+import { watchLocalDay } from './calendar';
+import type { Note } from './model';
 import { NotesDialog } from './NotesDialog';
 import './notes.css';
 
@@ -9,7 +13,9 @@ export default function NotesWidget(props: WidgetProps) {
   return <NotesPanel key={props.documentId} {...props} documentId={props.documentId} documentService={props.documentService} />;
 }
 
-function NotesPanel({ widgetInstanceId, documentId, documentService, settings, updateSettings }: WidgetProps & {
+const EMPTY_NOTES: readonly Note[] = [];
+
+function NotesPanel({ widgetInstanceId, documentId, documentService, settings, updateSettings, visible }: WidgetProps & {
   documentId: string; documentService: DocumentService;
 }) {
   const update = useRef(updateSettings);
@@ -21,7 +27,16 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
   useEffect(() => editor.start(), [editor]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string }>();
   const [discardTitle, setDiscardTitle] = useState(false);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => visible ? watchLocalDay(setNow) : undefined, [visible]);
+  const notes = state.document?.content.notes ?? EMPTY_NOTES;
+  const cached = useRef<{ tags: ReturnType<typeof allTags>; groups: ReturnType<typeof groupNotes> }>({ tags: [], groups: [] });
+  const { tags, groups } = useMemo(() => {
+    if (visible) cached.current = { tags: allTags(notes), groups: groupNotes(notes, state.query, state.activeTag, now) };
+    return cached.current;
+  }, [visible, notes, state.query, state.activeTag, now]);
   const draft = state.draft;
+  const outsideFilter = draft && !groups.some(group => group.notes.some(note => note.id === draft.base.id));
   const conflict = draft?.conflict;
   const renameCancel = () => {
     if (draft && draft.title !== draft.base.title) setDiscardTitle(true);
@@ -30,23 +45,44 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
   return <section className="notes-widget" data-instance={widgetInstanceId} aria-label="Блокнот">
     <div className="notes-toolbar"><button type="button" onClick={() => editor.create()}>Новая заметка</button>
       <span>Заметок: {state.document?.content.notes.length ?? 0}</span></div>
+    <input className="notes-search" aria-label="Поиск заметок" placeholder="Поиск по заголовку, тексту и тегам"
+      value={state.query} onChange={event => editor.setQuery(event.target.value)} />
+    <div className="notes-filters" role="group" aria-label="Фильтр по тегам">
+      <button type="button" aria-label="Все теги" aria-pressed={state.activeTag === null} onClick={() => editor.setTag(null)}>Все <span>{notes.length}</span></button>
+      {tags.map(({ tag, count }) => <button key={tag} type="button" aria-label={`Фильтр ${tag}`} aria-pressed={state.activeTag === tag}
+        onClick={() => editor.setTag(state.activeTag === tag ? null : tag)}>#{tag} <span>{count}</span></button>)}
+    </div>
     {state.error && <p role="alert" className="notes-error">{state.error}</p>}
     {state.document && <div className="notes-content">
       <nav className="notes-list" aria-label="Заметки блокнота">
-        {state.document.content.notes.map(note => <button key={note.id} type="button"
-          aria-pressed={note.id === draft?.base.id} onClick={() => editor.select(note.id)}>{note.title}</button>)}
+        {groups.map(group => <div key={group.title} className="notes-group">
+          <h4>{group.title}</h4>
+          {group.notes.map(note => <button key={note.id} type="button" className="notes-card" aria-label={note.title}
+            aria-describedby={`${widgetInstanceId}-${note.id}-summary`} aria-pressed={note.id === draft?.base.id} onClick={() => editor.select(note.id)}>
+            <strong>{note.pinned && <span aria-hidden="true">◆ </span>}{note.title}</strong>
+            <span id={`${widgetInstanceId}-${note.id}-summary`} className="notes-card-summary">
+              <time dateTime={note.updatedAt}>{noteDate(note.updatedAt)}</time><span>{notePreview(note.body)}</span>
+            </span>
+          </button>)}
+        </div>)}
+        {!groups.length && notes.length > 0 && <div className="notes-empty"><p>Ничего не найдено</p>
+          <button type="button" onClick={() => editor.resetFilters()}>Сбросить фильтры</button></div>}
       </nav>
       {draft ? <div className="notes-editor">
+        {outsideFilter && <p className="notes-filter-hint">Открытая заметка не входит в текущий фильтр.</p>}
         <div className="notes-heading"><h3>{draft.base.title}</h3>
+          <button type="button" aria-label={draft.base.pinned ? 'Открепить' : 'Закрепить'} aria-pressed={draft.base.pinned}
+            onClick={() => editor.setPinned(draft.base.id, !draft.base.pinned)}>{draft.base.pinned ? 'Открепить' : 'Закрепить'}</button>
           <button type="button" onClick={() => { setDiscardTitle(false); editor.beginRename(); }}>Переименовать заметку</button>
           <button type="button" onClick={() => setDeleteTarget({ id: draft.base.id, title: draft.base.title })}>Удалить заметку</button>
         </div>
+        <NoteTags note={draft.base} editor={editor} />
         <textarea aria-label="Текст заметки" value={draft.body} spellCheck={false}
           onChange={event => editor.editBody(event.target.value)}
           onCompositionStart={() => editor.beginComposition()}
           onCompositionEnd={event => editor.endComposition(event.currentTarget.value)}
           onBlur={event => { if (state.composing) editor.endComposition(event.currentTarget.value); }} />
-      </div> : <p className="notes-empty">В блокноте пока нет заметок. Создайте первую заметку.</p>}
+      </div> : <p className="notes-empty">{notes.length ? "Выберите заметку или сбросьте фильтры." : "В блокноте пока нет заметок. Создайте первую заметку."}</p>}
     </div>}
     {conflict && draft ? <NotesDialog title="Конфликт заметки">
       <p>{state.document?.title} · {draft.base.title}</p>
