@@ -60,6 +60,10 @@ test('A → B сохраняет свежую правку, workspace/settings, 
   }), planId);
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
   await detect(page, request);
+  await notification(page).getByRole('button', { name: 'Обновить', exact: true }).click();
+  await expect(dialog(page).getByText('v1.0.2 · Управляйте резервными копиями и работайте с планами удобнее.')).toBeVisible();
+  await expect(dialog(page).getByText(/Создавайте, скачивайте и восстанавливайте резервные копии/)).toBeVisible();
+  await dialog(page).getByRole('button', { name: 'Отмена', exact: true }).click();
   await list(page).getByPlaceholder('Новая задача…').fill('Последняя правка перед обновлением');
   await list(page).getByRole('button', { name: 'Добавить', exact: true }).click();
   await list(page).getByRole('button', { name: 'Скрыть выполненные', exact: true }).click();
@@ -86,6 +90,9 @@ test('A → B сохраняет свежую правку, workspace/settings, 
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
   await offline.goto('/');
   await versionB(offline);
+  await offline.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await offline.getByRole('button', { name: 'Что нового', exact: true }).click();
+  await expect(offline.getByRole('dialog', { name: 'Что нового' }).getByRole('heading', { name: 'v1.0.0', exact: true })).toBeVisible();
   await expect(list(offline).getByText('Последняя правка перед обновлением')).toBeVisible();
   await expect(offline.locator('[data-migration-content]')).toContainText('"migrated":true');
   const cached = await offline.evaluate(async () => (await Promise.all((await caches.keys()).map(async (name) =>
