@@ -227,6 +227,9 @@ test('при минимальном размере длинные теги не 
   await pane.getByRole('button', { name: 'Закрепить', exact: true }).click();
   await expect(pane.getByRole('button', { name: 'Открепить', exact: true })).toBeVisible();
   await pane.getByRole('button', { name: 'Убрать тег ещё один тег', exact: true }).click();
+  await pane.getByRole('button', { name: 'Назад к списку', exact: true }).click();
   await pane.getByLabel('Поиск заметок').fill('Редактор');
   await expect(pane.getByRole('navigation').getByRole('button', { name: 'Первая', exact: true })).toBeVisible();
+  await pane.getByRole('navigation').getByRole('button', { name: 'Первая', exact: true }).click();
+  await expect(input).toBeVisible();
 });

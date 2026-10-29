@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@project-board/widget-sdk": "*"
+    "@project-board/widget-sdk": "*",
+    "lucide-react": "0.575.0",
+    "markdown-it": "15.0.3"
   },
   "peerDependencies": {
     "react": "^18.3.1",

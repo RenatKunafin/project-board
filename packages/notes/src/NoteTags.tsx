@@ -33,9 +33,15 @@ export function NoteTags({ note, editor }: { readonly note: Note; readonly edito
         if (event.nativeEvent.isComposing || composing.current === note.id) return;
         if (event.key === 'Enter' || event.key === ',') { event.preventDefault(); accept(note.id, true); }
       }}
-      onBlur={() => {
+      onBlur={event => {
         if (composing.current === note.id) { composing.current = null; return; }
-        if (drafts.current[note.id]?.raw) accept(note.id, true);
+        if (drafts.current[note.id]?.raw) {
+          if (event.relatedTarget instanceof HTMLButtonElement && event.relatedTarget.classList.contains('notes-card')) {
+            // Let a note-selection click finish before its new timestamp
+            // reorders the list under the pointer.
+            window.setTimeout(() => accept(note.id, true), 0);
+          } else accept(note.id, true);
+        }
       }}
       onCompositionStart={() => { composing.current = note.id; }}
       onCompositionEnd={event => {
