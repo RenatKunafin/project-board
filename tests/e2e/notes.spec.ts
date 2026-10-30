@@ -117,6 +117,9 @@ test('Markdown: узкая панель повторяет мобильную к
   const { pane } = await prepare(page, 'Узкий блокнот');
   const widget = pane.locator('.notes-widget');
   await widget.evaluate(element => { (element as HTMLElement).style.width = '380px'; });
+  await pane.getByLabel('Добавить тег', { exact: true }).fill('пример');
+  await pane.getByLabel('Добавить тег', { exact: true }).press('Enter');
+  await pane.screenshot({ path: 'test-results/pbt-104-note-tags-inline.png' });
   const longWord = 'длинноесловобезпробелов'.repeat(12);
   const source = `${longWord}\n\n[длинная ссылка](https://example.com/${'путь'.repeat(22)})\n\n\`\`\`\n${'кодстрокой'.repeat(30)}\n\`\`\``;
   await pane.getByLabel('Текст заметки', { exact: true }).fill(source);

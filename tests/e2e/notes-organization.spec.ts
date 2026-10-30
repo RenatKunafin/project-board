@@ -60,6 +60,9 @@ test('поиск, счётчики и тег работают вместе; со
 test('теги принимаются Enter, запятой, вставкой и blur без дублей; снятие последнего сбрасывает фильтр', async ({ page }) => {
   const { pane, documentId } = await prepare(page);
   const input = pane.getByLabel('Добавить тег', { exact: true });
+  await expect(input.locator('xpath=..')).toHaveClass(/notes-tag-entry/);
+  await expect(input).toHaveCSS('border-top-width', '0px');
+  expect(await input.evaluate(element => element.getBoundingClientRect().width)).toBeLessThan(140);
   await input.fill(' ##ИДЕЯ '); await input.press(',');
   await expect(input).toHaveValue('');
   const before = await raw(page, documentId);
