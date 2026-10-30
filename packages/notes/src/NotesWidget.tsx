@@ -8,6 +8,7 @@ import type { Note } from './model';
 import { NotesDialog } from './NotesDialog';
 import { parseMarkdown, renderMarkdownNodes, countWords, type MarkdownViewModel } from './markdown';
 import { downloadNoteMarkdown } from './export';
+import { readNotesWindowSettings, type NotesPane, type NotesWindowSettings } from './window-settings';
 import { ArrowLeft, Download, Eye, PenLine, Pin, Plus, Search, Trash2 } from 'lucide-react';
 import './notes.css';
 
@@ -24,20 +25,39 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
 }) {
   const update = useRef(updateSettings);
   update.current = updateSettings;
-  const [editor] = useState(() => new NotesEditor(documentService, documentId,
-    typeof settings.selectedNoteId === 'string' ? settings.selectedNoteId : undefined,
-    selectedNoteId => update.current?.({ selectedNoteId })));
+  const initialSettings = readNotesWindowSettings(settings);
+  const saveSettings = (patch: Partial<NotesWindowSettings>) => update.current?.(patch);
+  const [editor] = useState(() => new NotesEditor(documentService, documentId, initialSettings, saveSettings));
   const state = useSyncExternalStore(editor.subscribe, editor.getSnapshot);
   useEffect(() => editor.start(), [editor]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string }>();
   const [now, setNow] = useState(Date.now);
-  const [mode, setMode] = useState<'text' | 'preview'>('text');
-  const [mobileEditor, setMobileEditor] = useState(false);
+  const [mode, setMode] = useState(initialSettings.mode);
+  const [narrowPane, setNarrowPane] = useState<NotesPane>(initialSettings.narrowPane);
+  const root = useRef<HTMLElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const eventTitleInput = useRef<HTMLInputElement>(null);
   const preview = useRef<HTMLDivElement>(null);
+  const backButton = useRef<HTMLButtonElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const selectedCard = useRef<HTMLButtonElement>(null);
   const parsedCache = useRef({ body: '', result: parseMarkdown('') });
   useEffect(() => visible ? watchLocalDay(setNow) : undefined, [visible]);
+  useEffect(() => {
+    const element = root.current;
+    if (!visible || !element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement) || !element.contains(active)) return;
+      requestAnimationFrame(() => {
+        if (!element.contains(active) || active.getClientRects().length) return;
+        if (active.closest('.notes-editor')) searchInput.current?.focus();
+        else if (active.closest('.notes-list-pane')) backButton.current?.focus();
+      });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [visible]);
   const notes = state.document?.content.notes ?? EMPTY_NOTES;
   const cached = useRef<{ tags: ReturnType<typeof allTags>; groups: ReturnType<typeof groupNotes> }>({ tags: [], groups: [] });
   const { tags, groups } = useMemo(() => {
@@ -64,10 +84,14 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
     }
     if (current.composing || current.writeFailed || current.renaming || current.draft?.conflict) return;
     setMode(next);
+    saveSettings({ mode: next });
     requestAnimationFrame(() => (next === 'text' ? textarea.current : preview.current)?.focus());
   };
   const createNote = () => {
-    if (editor.create()) { setMode('text'); setMobileEditor(true); }
+    if (editor.create()) {
+      setMode('text'); setNarrowPane('note');
+      saveSettings({ mode: 'text', narrowPane: 'note' });
+    }
   };
   const download = () => {
     let current = editor.getSnapshot();
@@ -83,14 +107,14 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
       editor.reportError(error);
     }
   };
-  return <section className="notes-widget" data-instance={widgetInstanceId} aria-label="Блокнот">
+  return <section ref={root} className="notes-widget" data-instance={widgetInstanceId} aria-label="Блокнот">
     {state.error && !state.renaming && <p role="alert" className="notes-error">{state.error}</p>}
     {state.document && <div className="notes-content">
-      <aside className={`notes-list-pane${mobileEditor ? ' notes-mobile-hidden' : ''}`}>
+      <aside className={`notes-list-pane${narrowPane === 'note' ? ' notes-mobile-hidden' : ''}`}>
         <div className="notes-list-toolbar">
           <label className="notes-search-field">
             <Search aria-hidden="true" />
-            <input className="notes-search" aria-label="Поиск заметок" placeholder="Поиск"
+            <input ref={searchInput} className="notes-search" aria-label="Поиск заметок" placeholder="Поиск"
               value={state.query} onChange={event => editor.setQuery(event.target.value)} />
           </label>
           <button className="notes-new-button" type="button" onClick={createNote} aria-label="Новая заметка" title="Новая заметка"><Plus aria-hidden="true" /></button>
@@ -104,7 +128,12 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
         {groups.map(group => <div key={group.title} className="notes-group">
           <h4>{group.title}</h4>
           {group.notes.map(note => <button key={note.id} type="button" className="notes-card" aria-label={note.title}
-            aria-describedby={`${widgetInstanceId}-${note.id}-summary`} aria-pressed={note.id === draft?.base.id} onClick={() => { editor.select(note.id); setMobileEditor(true); }}>
+            ref={note.id === draft?.base.id ? selectedCard : undefined}
+            aria-describedby={`${widgetInstanceId}-${note.id}-summary`} aria-pressed={note.id === draft?.base.id} onClick={() => {
+              if (!editor.select(note.id)) return;
+              setNarrowPane('note'); saveSettings({ narrowPane: 'note' });
+              requestAnimationFrame(() => { if (backButton.current?.getClientRects().length) backButton.current.focus(); });
+            }}>
             <strong>{note.pinned && <Pin className="notes-card-pin" aria-hidden="true" />}{note.title}</strong>
             <span id={`${widgetInstanceId}-${note.id}-summary`} className="notes-card-summary">
               <time dateTime={note.updatedAt}>{noteDate(note.updatedAt)}</time><span>{notePreview(note.body)}</span>
@@ -115,10 +144,13 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
           <button type="button" onClick={() => editor.resetFilters()}>Сбросить фильтры</button></div>}
       </nav>
       </aside>
-      {draft ? <div className={`notes-editor${mobileEditor ? ' notes-mobile-active' : ''}`}>
+      {draft ? <div className={`notes-editor${narrowPane === 'note' ? ' notes-mobile-active' : ''}`}>
         {outsideFilter && <p className="notes-filter-hint">Открытая заметка не входит в текущий фильтр.</p>}
         <div className="notes-heading">
-          <button className="notes-back-button" type="button" aria-label="Назад к списку" onClick={() => setMobileEditor(false)}>
+          <button ref={backButton} className="notes-back-button" type="button" aria-label="Назад к списку" onClick={() => {
+            setNarrowPane('list'); saveSettings({ narrowPane: 'list' });
+            requestAnimationFrame(() => selectedCard.current?.focus());
+          }}>
             <ArrowLeft aria-hidden="true" />
           </button>
           <div className="notes-mode" role="group" aria-label="Режим заметки">
@@ -190,7 +222,12 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
         <button type="button" onClick={() => editor.discardInput()}>Отбросить мой ввод</button></div>
     </NotesDialog> : deleteTarget ? <NotesDialog title="Удалить заметку?" onCancel={() => setDeleteTarget(undefined)}>
       <p>«{deleteTarget.title}» будет удалена без корзины и возможности восстановления.</p>
-      <div className="notes-actions"><button type="button" onClick={() => { if (editor.remove(deleteTarget.id)) { setDeleteTarget(undefined); setMobileEditor(false); } }}>Удалить</button>
+      <div className="notes-actions"><button type="button" onClick={() => {
+        if (editor.remove(deleteTarget.id)) {
+          setDeleteTarget(undefined); setNarrowPane('list'); saveSettings({ narrowPane: 'list' });
+          requestAnimationFrame(() => (selectedCard.current ?? searchInput.current)?.focus());
+        }
+      }}>Удалить</button>
         <button type="button" onClick={() => setDeleteTarget(undefined)}>Отмена</button></div>
     </NotesDialog> : null}
   </section>;

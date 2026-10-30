@@ -2,6 +2,9 @@ import type { DocumentService } from '@project-board/widget-sdk';
 import { NotesEditConflictError, type Note, type NotesDocument } from './model';
 import { filterNotes, normalizedTags } from './organization';
 import { createNotesDocumentService } from './service';
+import type { NotesWindowSettings } from './window-settings';
+
+type EditorWindowSettings = Pick<NotesWindowSettings, 'selectedNoteId' | 'query' | 'activeTag'>;
 
 export interface EditorDraft {
   readonly base: Note;
@@ -28,13 +31,14 @@ export class NotesEditor {
   private readonly service;
   private listeners = new Set<() => void>();
   private selectedId?: string;
-  private state: EditorState = { query: '', activeTag: null, composing: false, renaming: false, writeFailed: false };
+  private state: EditorState;
 
-  constructor(private readonly documents: DocumentService, private readonly documentId: string, selectedId: string | undefined,
-    private readonly selectSetting: (id: string | null) => void,
+  constructor(private readonly documents: DocumentService, private readonly documentId: string, settings: EditorWindowSettings,
+    private readonly updateSettings: (patch: Partial<EditorWindowSettings>) => void,
     private readonly newId: () => string = () => crypto.randomUUID()) {
     this.service = createNotesDocumentService(documents, documentId, 1);
-    this.selectedId = selectedId;
+    this.selectedId = typeof settings.selectedNoteId === 'string' ? settings.selectedNoteId : undefined;
+    this.state = { query: settings.query, activeTag: settings.activeTag, composing: false, renaming: false, writeFailed: false };
   }
 
   getSnapshot = (): EditorState => this.state;
@@ -65,7 +69,7 @@ export class NotesEditor {
     const nextId = note?.id;
     if (this.selectedId !== nextId) {
       this.selectedId = nextId;
-      this.selectSetting(nextId ?? null);
+      this.updateSettings({ selectedNoteId: nextId ?? null });
     }
     this.set({ document, draft: note ? cleanDraft(note) : undefined, composing: false,
       renaming: false, error: undefined, writeFailed: false });
@@ -73,6 +77,7 @@ export class NotesEditor {
   private receive(document: NotesDocument) {
     if (this.state.activeTag && !document.content.notes.some(note => normalizedTags(note.tags).includes(this.state.activeTag!))) {
       this.state = { ...this.state, activeTag: null };
+      this.updateSettings({ activeTag: null });
     }
     const draft = this.state.draft;
     if (!draft) { this.choose(document, this.selectedId); return; }
@@ -90,10 +95,10 @@ export class NotesEditor {
     this.set({ document, error: undefined, draft: { base: incoming,
       body: bodyDirty ? draft.body : incoming.body, title: titleDirty ? draft.title : incoming.title } });
   }
-  select(id: string) {
-    if (this.blocked()) return;
-    try { this.choose(this.service.get(), id); }
-    catch (error) { this.set({ error: messageOf(error) }); }
+  select(id: string): boolean {
+    if (this.blocked()) return false;
+    try { this.choose(this.service.get(), id); return true; }
+    catch (error) { this.set({ error: messageOf(error) }); return false; }
   }
   private blocked() {
     return !!this.state.draft?.conflict || this.state.writeFailed || this.state.renaming;
@@ -105,13 +110,23 @@ export class NotesEditor {
       const document = this.service.createNote({ id, title: 'Новая заметка',
         tags: this.state.activeTag ? [this.state.activeTag] : [], updatedAt: new Date().toISOString() });
       this.choose(document, id);
+      if (this.state.query) this.updateSettings({ query: '' });
       this.set({ query: '' });
       return true;
     } catch (error) { this.set({ error: messageOf(error) }); return false; }
   }
-  setQuery(query: string) { this.set({ query }); }
-  setTag(activeTag: string | null) { this.set({ activeTag }); }
-  resetFilters() { this.set({ query: '', activeTag: null }); }
+  setQuery(query: string) {
+    if (query === this.state.query) return;
+    this.set({ query }); this.updateSettings({ query });
+  }
+  setTag(activeTag: string | null) {
+    if (activeTag === this.state.activeTag) return;
+    this.set({ activeTag }); this.updateSettings({ activeTag });
+  }
+  resetFilters() {
+    if (!this.state.query && this.state.activeTag === null) return;
+    this.set({ query: '', activeTag: null }); this.updateSettings({ query: '', activeTag: null });
+  }
   addTags(id: string, tags: readonly string[]) { return this.metadata(() => this.service.addTags(id, tags)); }
   removeTag(id: string, tag: string) { return this.metadata(() => this.service.removeTag(id, tag)); }
   setPinned(id: string, pinned: boolean) { return this.metadata(() => this.service.setPinned(id, pinned)); }
