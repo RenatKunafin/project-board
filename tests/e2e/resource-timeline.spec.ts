@@ -300,3 +300,122 @@ test('легенда без диапазона дат; футер с назва�
     'Легенда плана',
   );
 });
+
+test('месячная шкала показывает год в подписи месяца без отдельного годового ряда (PBT-100)', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
+  const documentId = await createResourcesView(page, 'Шкала без ряда года');
+  await page.evaluate(
+    ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
+    { id: documentId, value: planContent },
+  );
+  const pane = page.getByRole('group', { name: 'Ресурсы · Шкала без ряда года' });
+  const chart = pane.locator('[data-rt-chart]');
+  const revision = await page.evaluate(
+    (id) => window.__projectBoard?.readDocument(id)?.revision,
+    documentId,
+  );
+  const monthLabel = chart.locator('.rct-dateHeader').filter({ hasText: 'октябрь 2026 г.' });
+  for (let index = 0; index < 5 && await monthLabel.count() === 0; index += 1) {
+    await pane.locator('[data-rt-zoom-out]').click();
+  }
+
+  await expect(monthLabel.first()).toBeVisible();
+  await expect(chart.locator('.rct-dateHeader-primary')).toHaveCount(0);
+  await expect(chart.locator('.rct-dateHeader')).not.toHaveCount(0);
+  const sidebarAlignment = await chart.locator('.resource-timeline__sidebar-header').evaluate((element) => {
+    const cell = element.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const text = range.getBoundingClientRect();
+    const row = element.parentElement!.getBoundingClientRect();
+    return [Math.abs((cell.left + cell.right) / 2 - (text.left + text.right) / 2), Math.abs((row.top + row.bottom) / 2 - (text.top + text.bottom) / 2)];
+  });
+  const calendarAlignment = await monthLabel.first().evaluate((element) => {
+    const cell = element.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const text = range.getBoundingClientRect();
+    return [Math.abs((cell.left + cell.right) / 2 - (text.left + text.right) / 2), Math.abs((cell.top + cell.bottom) / 2 - (text.top + text.bottom) / 2)];
+  });
+  expect(sidebarAlignment[0]).toBeLessThan(1);
+  expect(sidebarAlignment[1]).toBeLessThan(1);
+  expect(Math.abs(sidebarAlignment[0] - calendarAlignment[0])).toBeLessThan(1);
+  expect(Math.abs(sidebarAlignment[1] - calendarAlignment[1])).toBeLessThan(1);
+  await page.screenshot({ path: 'test-results/pbt-100-resource-timeline-no-year.png' });
+  expect(await page.evaluate((id) => window.__projectBoard?.readDocument(id)?.revision, documentId)).toBe(revision);
+  expect(errors).toEqual([]);
+});
+
+test('длинные названия месяцев с годом помещаются в одну строку (PBT-100)', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Сетка', exact: true }).click();
+  const documentId = await createResourcesView(page, 'Длинные месяцы');
+  const longRangePlan = {
+    ...planContent,
+    tasks: planContent.tasks.map((task, index) =>
+      index === 0
+        ? { ...task, start: '2026-09-01', end: '2027-02-28' }
+        : task,
+    ),
+  };
+  await page.evaluate(
+    ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
+    { id: documentId, value: longRangePlan },
+  );
+  const pane = page.getByRole('group', { name: 'Ресурсы · Длинные месяцы' });
+  const chart = pane.locator('[data-rt-chart]');
+  const revision = await page.evaluate(
+    (id) => window.__projectBoard?.readDocument(id)?.revision,
+    documentId,
+  );
+  await pane.getByRole('button', { name: /^Развернуть на весь дашборд/ }).click();
+  for (let index = 0; index < 5; index += 1) {
+    await pane.locator('[data-rt-zoom-out]').click();
+  }
+  const september = chart
+    .locator('.rct-dateHeader')
+    .filter({ hasText: 'сентябрь 2026 г.' });
+  const february = chart
+    .locator('.rct-dateHeader')
+    .filter({ hasText: 'февраль 2027 г.' });
+  await expect(september).toBeVisible();
+  await expect(february).toBeVisible();
+  for (const [name, label] of [['september', september], ['february', february]] as const) {
+    await expect(label).toBeInViewport({ ratio: 1 });
+    const dimensions = await label.evaluate((element) => {
+      const textRange = document.createRange();
+      textRange.selectNodeContents(element);
+      const text = textRange.getBoundingClientRect();
+      const label = element.firstElementChild as HTMLElement;
+      return {
+        cellWidth: element.getBoundingClientRect().width,
+        textWidth: text.width,
+        textHeight: text.height,
+        labelScrollWidth: label.scrollWidth,
+        labelClientWidth: label.clientWidth,
+        whiteSpace: getComputedStyle(label).whiteSpace,
+      };
+    });
+    expect(dimensions.cellWidth).toBeGreaterThanOrEqual(132);
+    expect(dimensions.cellWidth).toBeGreaterThanOrEqual(dimensions.textWidth);
+    expect(dimensions.textHeight).toBeLessThanOrEqual(16);
+    expect(dimensions.labelScrollWidth).toBeLessThanOrEqual(
+      dimensions.labelClientWidth,
+    );
+    expect(dimensions.whiteSpace).toBe('nowrap');
+    await page.screenshot({ path: `test-results/pbt-100-month-${name}.png` });
+  }
+  await page.screenshot({ path: 'test-results/pbt-100-long-month-labels.png' });
+  expect(
+    await page.evaluate(
+      (id) => window.__projectBoard?.readDocument(id)?.revision,
+      documentId,
+    ),
+  ).toBe(revision);
+});

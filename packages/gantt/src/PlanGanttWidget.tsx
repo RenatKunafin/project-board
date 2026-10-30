@@ -316,7 +316,7 @@ export default function PlanGanttWidget({
   const closeEditor = useCallback(() => {
     setEditor(undefined);
     setAbsenceConvertOpen(undefined);
-    focusAnchorRef.current?.focus();
+    focusAnchorRef.current?.focus({ preventScroll: true });
     focusAnchorRef.current = null;
   }, []);
 
@@ -1107,19 +1107,6 @@ export default function PlanGanttWidget({
     return next;
     // rangeTick — принудительный пересчёт после расширения из жестов.
   }, [source, rangeTick]);
-  // Прокрутка шкалы к началу плана после пересборки представления
-  // (перезаливка сбрасывает позицию прокрутки). Отступ −2 дня: полоса
-  // не упирается в левый край видимой области, а её центр остаётся
-  // в пределах вьюпорта для жестов в обе стороны.
-  useEffect(() => {
-    if (source === null || chartRange === undefined) {
-      return;
-    }
-    apiRef.current?.exec('scroll-chart', {
-      date: ganttDate(addCalendarDays(chartRange.anchor, -2)),
-    });
-  }, [source, chartRange]);
-
   // ─── Подсветка нерабочих дней в недельном режиме (PBT-076, D2.3) ──
   // highlightTime SVAR не срабатывает для week-клеток (сторож в
   // react-gantt: только day/hour) — блоки нерабочих дней рисуем сами
@@ -1183,45 +1170,99 @@ export default function PlanGanttWidget({
   // попыток 0/150/350 мс — не поллинг). Отличается от отвергнутых в D8
   // PBT-071: поллинга-удержания (гонки), перемонтирования (пустая шкала),
   // якорного старта (уход к началу плана).
-  // Пассивный трекинг scrollLeft: подписка на document (capture-фаза —
+  // Пассивный трекинг обеих осей: подписка на document (capture-фаза —
   // scroll не всплывает), фильтр по классу контейнера SVAR и экземпляру
   // виджета. На host-элементе не вешается: при первом рендере чарт ещё
   // не смонтирован (ветка «Загрузка плана…»), а эффект с пустыми deps
   // повторно не выполняется — слушатель терялся (диагностика PBT-073).
   const lastScrollLeftRef = useRef(0);
+  const lastScrollTopRef = useRef(0);
   // Активное окно восстановления (design D6): пересборка шкалы SVAR
   // асинхронна и может сбросить прокрутку ПОСЛЕ стартовой серии попыток;
   // сброс — это scroll-событие, на него реагируем повторным применением.
-  const pendingRestoreRef = useRef<{ left: number; until: number } | null>(
-    null,
+  const pendingRestoreRef = useRef<{
+    left: number;
+    top: number;
+    until: number;
+  } | null>(null);
+  const applyChartScrollLeft = useCallback(
+    (instanceId: string, left: number) => {
+      const chart = window.document.querySelector<HTMLElement>(
+        `.plan-gantt[data-widget-instance="${instanceId}"] .wx-chart`,
+      );
+      if (chart !== null) {
+        chart.scrollLeft = left;
+      }
+      apiRef.current?.exec('scroll-chart', { left });
+    },
+    [],
+  );
+  const applyChartScrollPosition = useCallback(
+    (instanceId: string, left: number, top: number) => {
+      const root = window.document.querySelector<HTMLElement>(
+        `.plan-gantt[data-widget-instance="${instanceId}"]`,
+      );
+      const chart = root?.querySelector<HTMLElement>('.wx-chart');
+      const scroller = root?.querySelector<HTMLElement>('.wx-gantt');
+      if (chart !== null && chart !== undefined) {
+        chart.scrollLeft = left;
+      }
+      if (scroller !== null && scroller !== undefined) {
+        scroller.scrollTop = top;
+      }
+      apiRef.current?.exec('scroll-chart', { left });
+    },
+    [],
   );
   useEffect(() => {
     const onScroll = (event: Event) => {
       const target = event.target;
       if (
         target instanceof HTMLElement &&
-        target.classList.contains('wx-chart')
+        (target.classList.contains('wx-chart') ||
+          target.classList.contains('wx-gantt'))
       ) {
         const root = target.closest('.plan-gantt');
         if (
           root?.getAttribute('data-widget-instance') === widgetInstanceId
         ) {
-          lastScrollLeftRef.current = target.scrollLeft;
+          const chart = root.querySelector<HTMLElement>('.wx-chart');
+          const scroller = root.querySelector<HTMLElement>('.wx-gantt');
+          const left = chart?.scrollLeft ?? lastScrollLeftRef.current;
+          const top = scroller?.scrollTop ?? lastScrollTopRef.current;
           const pending = pendingRestoreRef.current;
           if (
             pending !== null &&
             window.performance.now() < pending.until
           ) {
-            if (Math.abs(target.scrollLeft - pending.left) <= 33) {
-              // Позиция восстановлена — окно закрывается.
+            if (
+              Math.abs(left - pending.left) <= 33 &&
+              Math.abs(top - pending.top) <= 2
+            ) {
+              // Обе оси восстановлены — окно закрывается.
               pendingRestoreRef.current = null;
-            } else if (target.scrollLeft < pending.left - 33) {
-              // Сброс пересборки догнал серию попыток — вернуть позицию
+              lastScrollLeftRef.current = left;
+              lastScrollTopRef.current = top;
+            } else if (
+              left < pending.left - 33 ||
+              top < pending.top - 2
+            ) {
+              // Сброс пересборки догнал серию попыток — вернуть обе оси
               // (в rAF: не драться с пересборкой внутри обработчика).
               window.requestAnimationFrame(() => {
-                applyChartScrollLeft(widgetInstanceId, pending.left);
+                applyChartScrollPosition(
+                  widgetInstanceId,
+                  pending.left,
+                  pending.top,
+                );
               });
+            } else {
+              lastScrollLeftRef.current = left;
+              lastScrollTopRef.current = top;
             }
+          } else {
+            lastScrollLeftRef.current = left;
+            lastScrollTopRef.current = top;
           }
         }
       }
@@ -1236,12 +1277,12 @@ export default function PlanGanttWidget({
       window.document.removeEventListener('scroll', onScroll, {
         capture: true,
       });
-  }, [widgetInstanceId]);
+  }, [widgetInstanceId, applyChartScrollPosition]);
 
   // Запланированное восстановление (px): серия попыток покрывает
   // асинхронность пересборки шкалы SVAR и remount при смене зума;
-  // scroll-chart {left} — штатный путь (обработчик библиотеки
-  // устанавливает scrollLeft контейнера, кламп выполняет браузер).
+  // scroll-chart {left} — штатный горизонтальный путь (обработчик
+  // библиотеки устанавливает scrollLeft, кламп выполняет браузер).
   const scrollRetryTimersRef = useRef<number[]>([]);
   const clearScrollRetries = useCallback(() => {
     for (const timer of scrollRetryTimersRef.current) {
@@ -1249,24 +1290,6 @@ export default function PlanGanttWidget({
     }
     scrollRetryTimersRef.current = [];
   }, []);
-  // Применение позиции: прямое присвоение scrollLeft контейнеру чарта +
-  // штатный scroll-chart поверх. Только exec недостаточно: SVAR хранит
-  // «последний применённый left» и после пересборки при развороте
-  // игнорирует повторный тот же left (диагностика PBT-073, dist 3773).
-  // Прямое присвоение диспатчит scroll — SVAR сам синхронизирует таблицу.
-  const applyChartScrollLeft = useCallback(
-    (instanceId: string, left: number) => {
-      const chart = window.document.querySelector<HTMLElement>(
-        `.plan-gantt[data-widget-instance="${instanceId}"] .wx-chart`,
-      );
-      if (chart !== null) {
-        chart.scrollLeft = left;
-      }
-      apiRef.current?.exec('scroll-chart', { left });
-    },
-    [],
-  );
-
   // Горизонтальный drag-scroll (PBT-096): пустой фон шкалы перемещается
   // захватом мыши; полосы задач и элементы управления остаются за SVAR.
   // Присваивание scrollLeft вызывает штатную синхронизацию таблицы и
@@ -1403,24 +1426,46 @@ export default function PlanGanttWidget({
   }, [widgetInstanceId]);
 
   const scheduleScrollRestore = useCallback(
-    (left: number) => {
+    (left: number, top = lastScrollTopRef.current) => {
       clearScrollRetries();
       // Окно восстановления (2 с): стартовая серия + реакция на сброс
-      // пересборки через scroll-событие (см. трекинг выше).
+      // обеих осей при пересборке через scroll-событие.
       pendingRestoreRef.current = {
         left,
+        top,
         until: window.performance.now() + 2000,
       };
       for (const delay of [0, 150, 350]) {
         const timer = window.setTimeout(() => {
-          applyChartScrollLeft(widgetInstanceId, left);
+          applyChartScrollPosition(widgetInstanceId, left, top);
         }, delay);
         scrollRetryTimersRef.current.push(timer);
       }
     },
-    [clearScrollRetries, applyChartScrollLeft, widgetInstanceId],
+    [clearScrollRetries, applyChartScrollPosition, widgetInstanceId],
   );
   useEffect(() => clearScrollRetries, [clearScrollRetries]);
+
+  // Первое отображение показывает начало плана. Последующие изменения
+  // данных (например, создание задачи) сохраняют выбранный пользователем
+  // участок шкалы через механизм восстановления прокрутки SVAR.
+  const hasPositionedInitialChartRef = useRef(false);
+  useEffect(() => {
+    if (visible === false || source === null || chartRange === undefined) {
+      return;
+    }
+    if (!hasPositionedInitialChartRef.current) {
+      hasPositionedInitialChartRef.current = true;
+      apiRef.current?.exec('scroll-chart', {
+        date: ganttDate(addCalendarDays(chartRange.anchor, -2)),
+      });
+      return;
+    }
+    scheduleScrollRestore(
+      lastScrollLeftRef.current,
+      lastScrollTopRef.current,
+    );
+  }, [visible, source, chartRange, scheduleScrollRestore]);
 
   // Восстановление после изменения размеров окна (разворот/возврат,
   // resize рамки): пиксельная позиция валидна — cellWidth не меняется.

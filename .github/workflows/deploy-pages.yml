@@ -29,6 +29,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Проверка заметок выпуска
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: npm run verify:release-notes -- --version="$RELEASE_TAG"
       - name: Проверки коммита тега
         run: |
           npm run verify:repository

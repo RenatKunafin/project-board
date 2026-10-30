@@ -1,6 +1,7 @@
 import { FileText, Layers, LayoutGrid, Settings, X } from 'lucide-react';
 import { PwaStatus } from './PwaStatus';
 import { WorkspaceBackupDialog } from './WorkspaceBackupDialog';
+import { ReleaseNotesDialog } from './ReleaseNotesDialog';
 import type {
   AutosavingDocumentService,
   WidgetRegistry,
@@ -620,6 +621,7 @@ export default function App({
   const documentsButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
 
   // Версия структурных операций над документами (rename/delete/перепривязка):
   // эти операции не меняют состояние App, редьюсер провоцирует перерендер,
@@ -1042,6 +1044,11 @@ export default function App({
     setBackupDialogOpen(true);
   };
 
+  const openReleaseNotes = (): void => {
+    setHeaderPanel({ kind: 'none' });
+    setReleaseNotesOpen(true);
+  };
+
   const handleCatalogPick = (type: WidgetTypeDefinition): void => {
     if (!type.documentSupport) {
       addPane(type);
@@ -1459,6 +1466,7 @@ export default function App({
             </button>
             <DropdownPanel open={headerPanel.kind === 'settings'} onClose={() => setHeaderPanel({ kind: 'none' })} anchorRef={settingsButtonRef} ariaLabel="Настройки">
               <button type="button" className="settings-menu-item" onClick={openBackupDialog}>Резервные копии</button>
+              <button type="button" className="settings-menu-item" onClick={openReleaseNotes}>Что нового</button>
             </DropdownPanel>
           </span>}
         </div>
@@ -1503,6 +1511,7 @@ export default function App({
         })}
       </section>
       {backupStore && <WorkspaceBackupDialog open={backupDialogOpen} onClose={() => { setBackupDialogOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} backupStore={backupStore} compatibility={backupCompatibility} prepareSnapshot={prepareBackupSnapshot} prepareForRestore={prepareForUpdate} prepareDocuments={(documents) => documentService.prepareDocumentsForRestore(documents)} />}
+      <ReleaseNotesDialog open={releaseNotesOpen} onClose={() => { setReleaseNotesOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} />
     </main>
   );
 }

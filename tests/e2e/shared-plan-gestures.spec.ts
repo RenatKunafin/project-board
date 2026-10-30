@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { zoomPxPerDay } from '../../packages/gantt/src/zoom-utils';
 
 const title = 'Общий жест';
 const content = {
@@ -52,6 +53,7 @@ async function setup(page: Page, count: number, mode = 'Сетка', maximize = 
 }
 
 async function gesture(page: Page, pane: Locator, kind: 'drag' | 'left' | 'right', outside = false, taskId = 'target') {
+  const deltaX = zoomPxPerDay('days') * 2;
   const bar = pane.locator(`.wx-bar[data-id=":${taskId}"]`);
   await expect(bar).toBeVisible();
   // Полоса после 30-дневного запаса шкалы: прокручиваем реальный чарт.
@@ -68,12 +70,12 @@ async function gesture(page: Page, pane: Locator, kind: 'drag' | 'left' | 'right
   await page.waitForTimeout(100);
   await page.mouse.down();
   for (let step = 1; step <= 6; step += 1) {
-    await page.mouse.move(x + 96 * step / 6, y);
+    await page.mouse.move(x + deltaX * step / 6, y);
     await page.waitForTimeout(60);
   }
   if (outside) {
     const bounds = (await pane.locator('.wx-chart').boundingBox())!;
-    await page.mouse.move(x + 96, bounds.y - 10, { steps: 4 });
+    await page.mouse.move(x + deltaX, bounds.y - 10, { steps: 4 });
   }
   await page.waitForTimeout(300);
   await page.mouse.up();

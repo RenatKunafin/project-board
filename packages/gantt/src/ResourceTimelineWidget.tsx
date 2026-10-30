@@ -50,6 +50,10 @@ const TIMELINE_KEYS: TimelineKeys = {
 };
 
 const DAY_MS = 86_400_000;
+// Самая длинная русская подпись месяца с годом при 12px monospace занимает
+// около 122px. Оставляем небольшой запас на границы ячейки.
+const MONTH_HEADER_MIN_WIDTH = 132;
+const MAX_ZOOM = 730 * DAY_MS;
 
 /** Мс жеста → ISO ближайшей локальной полуночи (полуденное правило спайка PBT-015). */
 function snapToDayIso(ms: number): string {
@@ -88,22 +92,8 @@ function renderGroup({ group }: { group: TimelineGroup }) {
   );
 }
 
-/**
- * Подписи шапки шкалы (PBT-074): дефолтные форматы беты латинские
- * («Mo 5», «August 2026») — задаю ru-RU явно. Primary-строка — «октябрь
- * 2026 г.» (годовая колонка в узких окнах — только год); вторичная —
- * число дня, неделя — дд.мм (бета укрупняет единицу при узкой ширине,
- * наблюдение PBT-047).
- */
+/** Подписи нижней строки шкалы (PBT-074): задаю ru-RU явно. */
 type HeaderLabelFormat = NonNullable<DateHeaderProps<unknown>['labelFormat']>;
-
-const primaryHeaderLabelFormat: HeaderLabelFormat = ([date], unit) =>
-  date.toDate().toLocaleDateString(
-    'ru-RU',
-    unit === 'year'
-      ? { year: 'numeric' }
-      : { month: 'long', year: 'numeric' },
-  );
 
 const dayHeaderLabelFormat: HeaderLabelFormat = ([date], unit) => {
   const value = date.toDate();
@@ -651,6 +641,30 @@ export default function ResourceTimelineWidget({
     return () => observer.disconnect();
   }, [scrollHost]);
 
+  // RCT рассчитывает ширину заголовка, вертикальных границ и полос задач
+  // по одной временной шкале. Поэтому вместо отдельного растягивания шапки
+  // ограничиваем отдаление так, чтобы даже 28-дневный месяц помещал подпись.
+  const maxVisibleSpan = useMemo(() => {
+    if (hostWidth <= 0) {
+      return MAX_ZOOM;
+    }
+    return Math.min(
+      MAX_ZOOM,
+      Math.max(7 * DAY_MS, (hostWidth * 28 * DAY_MS) / MONTH_HEADER_MIN_WIDTH),
+    );
+  }, [hostWidth]);
+  const clampVisibleRange = useCallback(
+    (start: number, end: number) => {
+      const span = Math.min(end - start, maxVisibleSpan);
+      const center = (start + end) / 2;
+      return {
+        start: Math.round(center - span / 2),
+        end: Math.round(center + span / 2),
+      };
+    },
+    [maxVisibleSpan],
+  );
+
   // ─── Масштаб: контролируемая видимая область (PBT-049) ──────────────────
   // Восстановление — из настроек экземпляра; изменение (кнопки, колесо,
   // перетаскивание через onTimeChange) сохраняется с дебаунсом 500 мс.
@@ -695,12 +709,13 @@ export default function ResourceTimelineWidget({
   const zoomBy = useCallback(
     (factor: number) => {
       setVisibleRange((previous) => {
-        const current =
-          previous ?? { start: range.start, end: range.end };
+        const current = previous
+          ? clampVisibleRange(previous.start, previous.end)
+          : clampVisibleRange(range.start, range.end);
         const center = (current.start + current.end) / 2;
         const span = Math.min(
           Math.max((current.end - current.start) * factor, 7 * DAY_MS),
-          730 * DAY_MS,
+          maxVisibleSpan,
         );
         const next = {
           start: Math.round(center - span / 2),
@@ -710,13 +725,13 @@ export default function ResourceTimelineWidget({
         return next;
       });
     },
-    [range, applyVisible],
+    [range, applyVisible, clampVisibleRange, maxVisibleSpan],
   );
   const visibleStart = visibleRange?.start ?? range.start;
   const visibleEnd = visibleRange?.end ?? range.end;
   const effectiveVisible = useMemo(
-    () => ({ start: visibleStart, end: visibleEnd }),
-    [visibleStart, visibleEnd],
+    () => clampVisibleRange(visibleStart, visibleEnd),
+    [visibleStart, visibleEnd, clampVisibleRange],
   );
   const calendar = plan ? calendarView(plan.calendar) : undefined;
 
@@ -953,7 +968,7 @@ export default function ResourceTimelineWidget({
             lineHeight={42}
             itemHeightRatio={0.7}
             minZoom={7 * DAY_MS}
-            maxZoom={730 * DAY_MS}
+            maxZoom={maxVisibleSpan}
             timeSteps={{
               second: 1,
               minute: 1,
@@ -974,8 +989,9 @@ export default function ResourceTimelineWidget({
             groupRenderer={renderGroup}
             dragSnap={DAY_MS}
           >
-            {/* Шапки шкалы по прототипу (PBT-074): primaryHeader — месяц
-                год (chrome), вторичная — дни (mono из css, D2). */}
+            {/* Нижний ряд шкалы содержит текущую единицу времени; на масштабе
+                месяца подпись уже включает год. Отдельный primaryHeader убран
+                как дублирующий годовой ряд (PBT-100). */}
             <TimelineHeaders>
               <SidebarHeader>
                 {({ getRootProps }) => (
@@ -987,11 +1003,6 @@ export default function ResourceTimelineWidget({
                   </div>
                 )}
               </SidebarHeader>
-              <DateHeader
-                unit="primaryHeader"
-                height={28}
-                labelFormat={primaryHeaderLabelFormat}
-              />
               <DateHeader height={28} labelFormat={dayHeaderLabelFormat} />
             </TimelineHeaders>
           </Timeline>
