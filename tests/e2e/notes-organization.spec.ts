@@ -31,6 +31,7 @@ async function openBackups(page: Page) {
 
 test('поиск, счётчики и тег работают вместе; создание очищает только свой поиск', async ({ page }) => {
   const first = await prepare(page); await addTag(first.pane, ' ##РАБОТА ');
+  await expect(first.pane.locator('.notes-tag')).toHaveCSS('font-size', '11px');
   await first.pane.getByRole('button', { name: 'Новая заметка', exact: true }).click();
   await rename(page, first.pane, 'Вторая'); await addTag(first.pane, 'работа');
   await addTag(first.pane, 'личное');

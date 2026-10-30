@@ -58,7 +58,19 @@ test('заметки: CRUD, независимый выбор двух окон,
   const reopened = await openDocumentWindow(page, 'Заметки', 'Блокнот');
   await page.reload();
   await expect(reopened.pane.getByLabel('Текст заметки', { exact: true })).toHaveValue('Перед закрытием  \n\n');
-  await reopened.pane.getByRole('button', { name: 'Удалить заметку', exact: true }).click();
+  const trash = reopened.pane.getByRole('button', { name: 'Удалить заметку', exact: true });
+  await trash.hover();
+  const [trashColor, destructiveColor] = await reopened.pane.evaluate(widget => {
+    const icon = widget.querySelector('.notes-heading .notes-icon-button[aria-label="Удалить заметку"] svg')!;
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--destructive)';
+    widget.append(probe);
+    const expected = getComputedStyle(probe).color;
+    probe.remove();
+    return [getComputedStyle(icon).color, expected];
+  });
+  expect(trashColor).toBe(destructiveColor);
+  await trash.click();
   await page.getByRole('dialog', { name: 'Удалить заметку?', exact: true }).getByRole('button', { name: 'Отмена', exact: true }).click();
   await expect(reopened.pane.getByRole('heading', { name: 'Первая', exact: true })).toBeVisible();
   for (const remaining of [1, 0]) {
