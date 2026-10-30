@@ -24,4 +24,4 @@
 - [x] 4.1 После финальных правок выполнить `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `npm run test:pwa-updates`, `openspec validate pbt-105-notes-adaptive-navigation --strict` и `openspec validate --all --strict`; проверить фактические результаты и не менять бюджеты/ограничения ради PASS.
 - [x] 4.2 Выполнить Pages release checks `npm run build:pages`, `npm run verify:pages` и `npm run test:pages`; проверить текущую сборку с base `/project-board/`.
 - [x] 4.3 Сверить PBT-105 DoD и открыть один PR в `develop` с поведением, проверками и ограничениями; PR CI прошёл.
-- [ ] 4.4 После одобрения PR владельцем архивировать change с sync `notes`, дождаться CI архивного коммита и merge.
+- [x] 4.4 После одобрения PR владельцем архивировать change и синхронизировать `notes`.
