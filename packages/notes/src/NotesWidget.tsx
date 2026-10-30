@@ -8,7 +8,7 @@ import type { Note } from './model';
 import { NotesDialog } from './NotesDialog';
 import { parseMarkdown, renderMarkdownNodes, countWords, type MarkdownViewModel } from './markdown';
 import { downloadNoteMarkdown } from './export';
-import { ArrowLeft, Download, Eye, PenLine, Pin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Eye, PenLine, Pin, Plus, Search, Trash2 } from 'lucide-react';
 import './notes.css';
 
 export default function NotesWidget(props: WidgetProps) {
@@ -92,9 +92,12 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
     {state.document && <div className="notes-content">
       <aside className={`notes-list-pane${mobileEditor ? ' notes-mobile-hidden' : ''}`}>
         <div className="notes-list-toolbar">
-          <input className="notes-search" aria-label="Поиск заметок" placeholder="Поиск"
-            value={state.query} onChange={event => editor.setQuery(event.target.value)} />
-          <button className="notes-new-button" type="button" onClick={createNote} aria-label="Новая заметка" title="Новая заметка">+</button>
+          <label className="notes-search-field">
+            <Search aria-hidden="true" />
+            <input className="notes-search" aria-label="Поиск заметок" placeholder="Поиск"
+              value={state.query} onChange={event => editor.setQuery(event.target.value)} />
+          </label>
+          <button className="notes-new-button" type="button" onClick={createNote} aria-label="Новая заметка" title="Новая заметка"><Plus aria-hidden="true" /></button>
         </div>
         <div className="notes-filters" role="group" aria-label="Фильтр по тегам">
           <button type="button" aria-label="Все теги" aria-pressed={state.activeTag === null} onClick={() => editor.setTag(null)}>Все <span>{notes.length}</span></button>
@@ -142,7 +145,7 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
           <div className="notes-title-row">
             <h3 className="notes-title">{draft.title}</h3>
             <button type="button" className="notes-title-edit" aria-label="Переименовать заметку" title="Переименовать заметку"
-              onClick={() => { setDiscardTitle(false); editor.beginRename(); }}><PenLine aria-hidden="true" /></button>
+              onClick={() => { setDiscardTitle(false); editor.beginRename(); }}>Переименовать</button>
           </div>
           <NoteTags note={draft.base} editor={editor} />
           {mode === 'text' ? <textarea ref={textarea} aria-label="Текст заметки" value={draft.body} spellCheck={false}
