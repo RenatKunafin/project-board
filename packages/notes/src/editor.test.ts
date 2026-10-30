@@ -4,9 +4,12 @@ import { DocumentConflictError } from '@project-board/widget-sdk';
 import { createNotesDocumentService } from './service';
 import { NotesEditor } from './editor';
 import { parseNotesContent } from './model';
+import type { NotesWindowSettings } from './window-settings';
 
 const NOW = '2026-10-28T12:00:00.000Z';
-function setup() {
+function setup(initial: Pick<NotesWindowSettings, 'selectedNoteId' | 'query' | 'activeTag'> = {
+  selectedNoteId: 'one', query: '', activeTag: null,
+}) {
   const note = (id: string) => ({ id, title: id, body: id, tags: ['идея'], pinned: true, updatedAt: NOW });
   let document: ManagedDocument = { id: 'book', moduleId: 'notes', documentType: 'notes', schemaVersion: 1,
     title: 'Книга', revision: 1, createdAt: NOW, updatedAt: NOW, content: { notes: [note('one'), note('two')] } };
@@ -32,11 +35,11 @@ function setup() {
     subscribe: (_id, handler) => { handlers.add(handler); return () => { handlers.delete(handler); }; },
     getViewSettings: () => undefined, setViewSettings: () => {},
   };
-  const selections: (string | null)[] = [];
+  const settingsUpdates: Partial<Pick<NotesWindowSettings, 'selectedNoteId' | 'query' | 'activeTag'>>[] = [];
   let nextId = 0;
-  const editor = new NotesEditor(documents, 'book', 'one', id => selections.push(id), () => `new-${++nextId}`);
+  const editor = new NotesEditor(documents, 'book', initial, patch => settingsUpdates.push(patch), () => `new-${++nextId}`);
   const stop = editor.start();
-  return { editor, documents, stop, selections, handlers,
+  return { editor, documents, stop, settingsUpdates, handlers,
     get: () => parseNotesContent(document.content),
     revision: () => document.revision,
     reject: (value: boolean) => { rejectWrite = value; },
@@ -112,7 +115,7 @@ describe('редактор заметок', () => {
   });
   it('сохраняет независимый выбор и освобождает подписку', () => {
     const { editor, documents, stop, handlers } = setup();
-    const other = new NotesEditor(documents, 'book', 'two', () => {});
+    const other = new NotesEditor(documents, 'book', { selectedNoteId: 'two', query: '', activeTag: null }, () => {});
     const stopOther = other.start();
     editor.editBody('Общий');
     expect(other.getSnapshot().draft?.base.id).toBe('two');
@@ -121,7 +124,7 @@ describe('редактор заметок', () => {
     stop(); stopOther(); expect(handlers.size).toBe(0);
   });
   it('фильтры не пишут документ; создание наследует тег и сбрасывает только запрос после успеха', () => {
-    const { editor, get, revision, reject } = setup();
+    const { editor, get, revision, reject, settingsUpdates } = setup();
     const before = revision();
     editor.setQuery('Запрос'); editor.setTag('идея');
     expect(revision()).toBe(before);
@@ -131,6 +134,10 @@ describe('редактор заметок', () => {
     expect(editor.getSnapshot().query).toBe('');
     expect(editor.getSnapshot().activeTag).toBe('идея');
     expect(get().notes.at(-1)?.tags).toEqual(['идея']);
+    expect(settingsUpdates).toContainEqual({ query: 'Запрос' });
+    expect(settingsUpdates).toContainEqual({ activeTag: 'идея' });
+    expect(settingsUpdates).toContainEqual({ query: '' });
+    expect(revision()).toBeGreaterThan(before);
   });
   it('относительные операции тегов сохраняют соседние изменения, дубли — no-op', () => {
     const { editor, documents, get, revision } = setup();
@@ -169,14 +176,22 @@ describe('редактор заметок', () => {
     expect(get().notes[0]).toMatchObject({ body: 'Внешний текст', tags: ['идея', 'внешний', 'мой'] });
   });
   it('сбрасывает исчезнувший тег, сохраняет запрос и выбирает по актуальной выдаче после удаления', () => {
-    const { editor, get, external } = setup();
+    const { editor, get, external, settingsUpdates } = setup();
     editor.setTag('идея'); editor.setQuery('two');
     external({ content: { notes: get().notes.map(note => ({ ...note, tags: [] })) } });
     expect(editor.getSnapshot().activeTag).toBeNull(); expect(editor.getSnapshot().query).toBe('two');
+    expect(settingsUpdates).toContainEqual({ activeTag: null });
     expect(editor.getSnapshot().draft?.base.id).toBe('one');
     editor.remove('one'); expect(editor.getSnapshot().draft?.base.id).toBe('two');
     editor.setQuery('пусто'); editor.remove('two');
     expect(editor.getSnapshot().draft).toBeUndefined();
+  });
+  it('восстанавливает настройки поиска и тега, а устаревший выбор заменяет существующей заметкой без её создания', () => {
+    const { editor, settingsUpdates, get, revision } = setup({ selectedNoteId: 'deleted', query: 'two', activeTag: 'идея' });
+    expect(editor.getSnapshot()).toMatchObject({ query: 'two', activeTag: 'идея', draft: { base: { id: 'two' } } });
+    expect(settingsUpdates).toContainEqual({ selectedNoteId: 'two' });
+    expect(get().notes).toHaveLength(2);
+    expect(revision()).toBe(1);
   });
   it('очищает выбор при удалении и пустой выдаче, сохраняя другие заметки', () => {
     const { editor, get } = setup();
