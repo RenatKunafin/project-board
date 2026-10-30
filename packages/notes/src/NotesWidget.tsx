@@ -30,11 +30,11 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
   const state = useSyncExternalStore(editor.subscribe, editor.getSnapshot);
   useEffect(() => editor.start(), [editor]);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string }>();
-  const [discardTitle, setDiscardTitle] = useState(false);
   const [now, setNow] = useState(Date.now);
   const [mode, setMode] = useState<'text' | 'preview'>('text');
   const [mobileEditor, setMobileEditor] = useState(false);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const eventTitleInput = useRef<HTMLInputElement>(null);
   const preview = useRef<HTMLDivElement>(null);
   const parsedCache = useRef({ body: '', result: parseMarkdown('') });
   useEffect(() => visible ? watchLocalDay(setNow) : undefined, [visible]);
@@ -55,10 +55,6 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
   }, [visible, draft?.body]);
   const outsideFilter = draft && !groups.some(group => group.notes.some(note => note.id === draft.base.id));
   const conflict = draft?.conflict;
-  const renameCancel = () => {
-    if (draft && draft.title !== draft.base.title) setDiscardTitle(true);
-    else editor.cancelRename();
-  };
   const changeMode = (next: 'text' | 'preview') => {
     if (next === mode) return;
     let current = editor.getSnapshot();
@@ -88,7 +84,7 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
     }
   };
   return <section className="notes-widget" data-instance={widgetInstanceId} aria-label="Блокнот">
-    {state.error && <p role="alert" className="notes-error">{state.error}</p>}
+    {state.error && !state.renaming && <p role="alert" className="notes-error">{state.error}</p>}
     {state.document && <div className="notes-content">
       <aside className={`notes-list-pane${mobileEditor ? ' notes-mobile-hidden' : ''}`}>
         <div className="notes-list-toolbar">
@@ -109,7 +105,7 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
           <h4>{group.title}</h4>
           {group.notes.map(note => <button key={note.id} type="button" className="notes-card" aria-label={note.title}
             aria-describedby={`${widgetInstanceId}-${note.id}-summary`} aria-pressed={note.id === draft?.base.id} onClick={() => { editor.select(note.id); setMobileEditor(true); }}>
-            <strong>{note.pinned && <span aria-hidden="true">◆ </span>}{note.title}</strong>
+            <strong>{note.pinned && <Pin className="notes-card-pin" aria-hidden="true" />}{note.title}</strong>
             <span id={`${widgetInstanceId}-${note.id}-summary`} className="notes-card-summary">
               <time dateTime={note.updatedAt}>{noteDate(note.updatedAt)}</time><span>{notePreview(note.body)}</span>
             </span>
@@ -143,10 +139,24 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
         </div>
         <div className="notes-note-content">
           <div className="notes-title-row">
-            <h3 className="notes-title">{draft.title}</h3>
-            <button type="button" className="notes-title-edit" aria-label="Переименовать заметку" title="Переименовать заметку"
-              onClick={() => { setDiscardTitle(false); editor.beginRename(); }}>Переименовать</button>
+            <h3 className="notes-title" aria-label={draft.title}>
+              <input ref={eventTitleInput} className="notes-title-input" aria-label="Заголовок заметки" placeholder="Без названия" value={draft.title}
+                onFocus={() => editor.beginRename()}
+                onChange={event => editor.editTitle(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.blur(); }
+                  if (event.key === 'Escape') { event.preventDefault(); editor.cancelRename(); event.currentTarget.blur(); }
+                }}
+                onBlur={() => {
+                  if (!editor.getSnapshot().renaming) return;
+                  editor.saveTitle();
+                  if (editor.getSnapshot().error === 'Заголовок заметки не может быть пустым.') {
+                    requestAnimationFrame(() => eventTitleInput.current?.focus());
+                  }
+                }} />
+            </h3>
           </div>
+          {state.error && state.renaming && !state.writeFailed && !conflict && <p role="alert" className="notes-title-error">{state.error}</p>}
           <NoteTags note={draft.base} editor={editor} />
           {mode === 'text' ? <textarea ref={textarea} aria-label="Текст заметки" value={draft.body} spellCheck={false}
           onChange={event => editor.editBody(event.target.value)}
@@ -178,15 +188,6 @@ function NotesPanel({ widgetInstanceId, documentId, documentService, settings, u
       <p>{state.error}</p><p>Ввод остаётся в памяти до успешного применения или явного отказа.</p>
       <div className="notes-actions"><button type="button" onClick={() => editor.retry()}>Повторить</button>
         <button type="button" onClick={() => editor.discardInput()}>Отбросить мой ввод</button></div>
-    </NotesDialog> : state.renaming && draft ? <NotesDialog title="Заголовок заметки" onCancel={renameCancel}>
-      <form onSubmit={event => { event.preventDefault(); editor.saveTitle(); }}>
-        <label>Новый заголовок<input value={draft.title} onChange={event => { setDiscardTitle(false); editor.editTitle(event.target.value); }} /></label>
-        {state.error && <p role="alert">{state.error}</p>}
-        <div className="notes-actions"><button type="submit">Применить</button><button type="button" onClick={renameCancel}>Отмена</button></div>
-        {discardTitle && <div role="alert"><p>Отбросить введённый заголовок?</p>
-          <button type="button" onClick={() => { setDiscardTitle(false); editor.cancelRename(); }}>Отбросить изменения</button>
-          <button type="button" onClick={() => setDiscardTitle(false)}>Продолжить редактирование</button></div>}
-      </form>
     </NotesDialog> : deleteTarget ? <NotesDialog title="Удалить заметку?" onCancel={() => setDeleteTarget(undefined)}>
       <p>«{deleteTarget.title}» будет удалена без корзины и возможности восстановления.</p>
       <div className="notes-actions"><button type="button" onClick={() => { if (editor.remove(deleteTarget.id)) { setDeleteTarget(undefined); setMobileEditor(false); } }}>Удалить</button>

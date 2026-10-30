@@ -4,11 +4,11 @@ import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 async function rename(page: Page, pane: Locator, title: string) {
-  await pane.getByRole('button', { name: 'Переименовать заметку', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Заголовок заметки', exact: true });
-  await dialog.getByLabel('Новый заголовок').fill(title);
-  await dialog.getByRole('button', { name: 'Применить', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  const input = pane.getByLabel('Заголовок заметки', { exact: true });
+  await input.fill(title);
+  await input.press('Enter');
+  await expect(pane.getByRole('heading', { name: title, exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Заголовок заметки', exact: true })).toHaveCount(0);
 }
 async function prepare(page: Page, title = 'Блокнот') {
   await page.goto('/');
@@ -224,7 +224,7 @@ test('Markdown: конфликт блокирует просмотр и скач
   await expect(pane.getByLabel('Текст заметки', { exact: true })).toHaveValue('Сохранённый текст');
 });
 
-test('Markdown: ошибка записи и переименование блокируют просмотр до явного действия', async ({ page }) => {
+test('Markdown: ошибка записи блокирует просмотр; inline-переименование сохраняется при потере фокуса', async ({ page }) => {
   const { pane, documentId } = await prepare(page, 'Переходы');
   const before = await page.evaluate(id => window.__projectBoard!.readDocument(id)!, documentId);
   await page.evaluate(id => window.__projectBoard!.writeDocumentContent(id, { notes: 'broken' }), documentId);
@@ -241,29 +241,24 @@ test('Markdown: ошибка записи и переименование бло
   await expect(failed).toHaveCount(0);
   await page.waitForTimeout(100);
   expect(downloads).toBe(0);
-  await pane.getByRole('button', { name: 'Переименовать заметку', exact: true }).click();
-  const renameDialog = page.getByRole('dialog', { name: 'Заголовок заметки', exact: true });
-  await pane.getByRole('button', { name: 'Просмотр', exact: true }).evaluate(button => (button as HTMLButtonElement).click());
-  await expect(renameDialog).toBeVisible();
-  await expect(pane.getByRole('button', { name: 'Текст', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await renameDialog.getByRole('button', { name: 'Отмена', exact: true }).click();
-  await expect(pane.getByLabel('Просмотр заметки', { exact: true })).toHaveCount(0);
+  const title = pane.getByLabel('Заголовок заметки', { exact: true });
+  await title.fill('Переименовано по месту');
+  await pane.getByRole('button', { name: 'Просмотр', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Заголовок заметки', exact: true })).toHaveCount(0);
+  await expect(pane.getByLabel('Просмотр заметки', { exact: true })).toBeVisible();
+  await expect(pane.getByRole('heading', { name: 'Переименовано по месту', exact: true })).toBeVisible();
 });
 
-test('пустой заголовок, Escape и явная отмена формы не теряют ввод', async ({ page }) => {
+test('inline-переименование сохраняет по Enter, проверяет пустое имя и отменяется по Escape', async ({ page }) => {
   const { pane } = await prepare(page);
-  await pane.getByRole('button', { name: 'Переименовать заметку', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Заголовок заметки', exact: true });
-  await dialog.getByLabel('Новый заголовок').fill('');
-  await dialog.getByRole('button', { name: 'Применить', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toHaveText('Заголовок заметки не может быть пустым.');
-  await dialog.getByLabel('Новый заголовок').fill('Несохранённый заголовок');
+  const input = pane.getByLabel('Заголовок заметки', { exact: true });
+  await input.fill('');
+  await input.press('Enter');
+  await expect(pane.locator('.notes-title-error')).toHaveText('Заголовок заметки не может быть пустым.');
+  await input.fill('Несохранённый заголовок');
   await page.keyboard.press('Escape');
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel('Новый заголовок')).toHaveValue('Несохранённый заголовок');
-  await dialog.getByRole('button', { name: 'Продолжить редактирование' }).click();
-  await dialog.getByRole('button', { name: 'Применить', exact: true }).click();
-  await expect(pane.getByRole('heading', { name: 'Несохранённый заголовок', exact: true })).toBeVisible();
+  await expect(input).toHaveValue('Новая заметка');
+  await expect(pane.getByRole('dialog', { name: 'Заголовок заметки', exact: true })).toHaveCount(0);
 });
 
 for (const accept of [false, true]) {

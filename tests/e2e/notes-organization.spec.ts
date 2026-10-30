@@ -4,10 +4,11 @@ import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { storedWorkspace, persistedDocument } from './workspace-helper';
 
 async function rename(page: Page, pane: Locator, title: string) {
-  await pane.getByRole('button', { name: 'Переименовать заметку', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Заголовок заметки', exact: true });
-  await dialog.getByLabel('Новый заголовок').fill(title);
-  await dialog.getByRole('button', { name: 'Применить', exact: true }).click();
+  const input = pane.getByLabel('Заголовок заметки', { exact: true });
+  await input.fill(title);
+  await input.press('Enter');
+  await expect(pane.getByRole('heading', { name: title, exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Заголовок заметки', exact: true })).toHaveCount(0);
 }
 async function addTag(pane: Locator, tag: string) {
   await pane.getByLabel('Добавить тег', { exact: true }).fill(tag);
@@ -64,8 +65,7 @@ test('теги принимаются Enter, запятой, вставкой и
   await expect(input).toHaveCSS('border-top-width', '0px');
   expect(await input.evaluate(element => element.getBoundingClientRect().width)).toBeLessThan(140);
   await input.focus();
-  expect(await input.evaluate(element => getComputedStyle(element).borderBottomColor))
-    .toBe(await input.locator('xpath=..').evaluate(element => getComputedStyle(element).color));
+  await expect(input).toHaveCSS('border-bottom-width', '0px');
   await input.fill(' ##ИДЕЯ '); await input.press(',');
   await expect(input).toHaveValue('');
   const before = await raw(page, documentId);
@@ -99,8 +99,15 @@ test('изменение выдачи сохраняет редактор и car
   const pin = first.pane.getByRole('button', { name: 'Закрепить', exact: true }); await pin.click();
   await expect(first.pane.getByRole('button', { name: 'Открепить', exact: true })).toBeFocused();
   await expect(second.pane.getByRole('button', { name: 'Открепить', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const pinButtonColor = await first.pane.getByRole('button', { name: 'Открепить', exact: true }).locator('svg').evaluate(icon => getComputedStyle(icon).color);
+  const cardPinColor = await first.pane.locator('.notes-card-pin').evaluate(icon => getComputedStyle(icon).color);
+  expect(cardPinColor).not.toBe(pinButtonColor);
+  const neutralPinColor = await second.pane.getByRole('button', { name: 'Открепить', exact: true }).locator('svg').evaluate(icon => getComputedStyle(icon).color);
+  expect(neutralPinColor).toBe(pinButtonColor);
   await expect(second.pane.getByRole('navigation').getByRole('heading', { name: 'Закреплённые', exact: true })).toBeVisible();
   await first.pane.getByLabel('Добавить тег', { exact: true }).fill('первый');
+  await first.pane.getByLabel('Добавить тег', { exact: true }).focus();
+  await expect(first.pane.getByLabel('Добавить тег', { exact: true })).toHaveCSS('border-bottom-width', '0px');
   await first.pane.getByLabel('Добавить тег', { exact: true }).press('Enter'); await addTag(second.pane, 'второй');
   await expect(first.pane.getByRole('button', { name: 'Убрать тег второй', exact: true })).toBeVisible();
 });
