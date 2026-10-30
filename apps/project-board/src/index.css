@@ -926,7 +926,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 12px 14px;
   box-shadow: var(--shadow-float);
-  z-index: 30;
+  z-index: 50; /* Выше слоя развёрнутого окна (40). */
 }
 
 .dropdown-panel__title {
