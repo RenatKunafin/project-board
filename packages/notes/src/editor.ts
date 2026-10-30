@@ -46,6 +46,7 @@ export class NotesEditor {
     this.state = { ...this.state, ...patch };
     for (const listener of this.listeners) listener();
   }
+  reportError(error: unknown) { this.set({ error: messageOf(error) }); }
   start(): () => void {
     try { this.receive(this.service.get()); }
     catch (error) { this.set({ error: messageOf(error) }); }
