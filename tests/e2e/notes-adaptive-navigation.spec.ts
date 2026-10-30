@@ -127,6 +127,22 @@ test('два окна сохраняют независимую навигаци
   const file = await download;
   const buffer = await readFile((await file.path())!);
 
+  await dialog.getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await firstReloaded.getByRole('button', { name: 'Назад к списку', exact: true }).click();
+  await firstReloaded.getByLabel('Поиск заметок', { exact: true }).fill('изменение после копии');
+  const localRestore = await backups(page);
+  await localRestore.getByRole('button', { name: 'Восстановить', exact: true }).click();
+  const localReload = page.waitForNavigation();
+  await localRestore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
+  await localReload;
+  await expect(paneForInstance(page, first.instanceId).getByLabel('Просмотр заметки', { exact: true }))
+    .toContainText('Текст первой заметки');
+  const locallyRestored = await storedWorkspace(page);
+  expect(locallyRestored.documents).toEqual(beforeBackup.documents);
+  expect(locallyRestored.widgetInstances).toEqual(beforeBackup.widgetInstances);
+  expect(locallyRestored.settings.find(row => row.key === `view:${first.instanceId}`)?.value).toEqual(firstSettings);
+  expect(locallyRestored.settings.find(row => row.key === `view:${second.instanceId}`)?.value).toEqual(secondSettings);
+
   const clean = await browser.newContext({ viewport: { width: 1856, height: 1269 } });
   try {
     const target = await clean.newPage(); await target.goto('/');
