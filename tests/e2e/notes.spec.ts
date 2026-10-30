@@ -83,6 +83,7 @@ test('Markdown: независимый просмотр, безопасный HT
   const before = await page.evaluate(id => window.__projectBoard!.readDocument(id), first.documentId);
   const view = first.pane.getByLabel('Просмотр заметки', { exact: true });
   await expect(view).toBeFocused();
+  await expect(view).toHaveCSS('outline-width', '0px');
   await expect(view.locator('h1')).toHaveText('Заголовок');
   await expect(view.locator('strong')).toHaveText('Жирный');
   await expect(view.getByRole('link', { name: 'ссылка' })).toHaveAttribute('rel', 'noopener noreferrer');
@@ -102,6 +103,7 @@ test('Markdown: независимый просмотр, безопасный HT
   const restoredInput = first.pane.getByLabel('Текст заметки', { exact: true });
   await expect(restoredInput).toHaveValue(source);
   await expect(restoredInput).toBeFocused();
+  await expect(restoredInput).toHaveCSS('outline-width', '0px');
   await expect(footer).toHaveText(savedFooter!);
 
   const downloaded = page.waitForEvent('download');

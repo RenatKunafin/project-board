@@ -10,7 +10,7 @@
 .notes-list .notes-card { display: flex; flex-direction: column; width: 100%; text-align: left; margin-bottom: 4px; }
 .notes-widget button, .notes-dialog button { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--foreground); font: inherit; cursor: pointer; }
 .notes-widget button:hover, .notes-dialog button:hover { background: var(--accent); }
-.notes-widget button:focus-visible, .notes-dialog button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.notes-widget button:focus-visible, .notes-dialog button:focus-visible { outline: 1px solid var(--muted-foreground); outline-offset: 2px; }
 .notes-list button[aria-pressed='true'] { border-color: var(--primary); background: var(--accent); }
 .notes-editor { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
 .notes-heading { flex: none; gap: 4px; border-bottom: 1px solid var(--border); padding: 6px 8px; }
@@ -30,7 +30,7 @@
 .notes-footer { display: flex; flex: none; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding: 4px 12px; color: var(--muted-foreground); font: 11px var(--font-mono); }
 .notes-editor textarea, .notes-dialog textarea, .notes-dialog input { box-sizing: border-box; border: 1px solid var(--input); border-radius: var(--radius-sm); padding: 8px; background: var(--background); color: var(--foreground); }
 .notes-editor textarea { width: 100%; flex: 1; min-height: 100px; resize: none; font: 13px/1.6 var(--font-mono); }
-.notes-editor textarea:focus, .notes-dialog textarea:focus, .notes-dialog input:focus { outline: 2px solid var(--ring); outline-offset: -2px; }
+.notes-editor textarea:focus, .notes-dialog textarea:focus, .notes-dialog input:focus { outline: 0; border-color: var(--muted-foreground); }
 .notes-error, .notes-dialog [role='alert'] { color: var(--destructive); overflow-wrap: anywhere; }
 .notes-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; overflow: auto; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover); color: var(--foreground); box-shadow: var(--shadow-float); font: 14px/1.5 var(--font-sans); }
 .notes-dialog::backdrop { background: var(--overlay); }
@@ -45,7 +45,7 @@
 
 .notes-filters, .notes-search { flex: none; }
 .notes-search { box-sizing: border-box; min-width: 0; width: 100%; padding: 6px 8px; border: 1px solid var(--input); border-radius: var(--radius-sm); background: var(--background); color: var(--foreground); font: inherit; }
-.notes-search:focus { outline: 2px solid var(--ring); outline-offset: -2px; }
+.notes-search:focus { outline: 0; border-color: var(--muted-foreground); }
 .notes-filters, .notes-tag-chips { display: flex; gap: 4px; flex-wrap: wrap; max-height: 76px; overflow: auto; padding: 0; }
 .notes-filters button { overflow-wrap: anywhere; min-width: 0; }
 .notes-filters button[aria-pressed='true'] { border-color: var(--primary); background: var(--accent); }
@@ -61,11 +61,11 @@
 .notes-tags > .notes-error { flex: 1 0 100%; margin: 0; }
 .notes-tag-input { box-sizing: border-box; width: 100%; min-width: 0; padding: 2px 0; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: var(--foreground); font: inherit; }
 .notes-tag-input::placeholder { color: var(--muted-foreground); }
-.notes-tag-input:focus { outline: 0; border-bottom-color: var(--ring); }
+.notes-tag-input:focus { outline: 0; border-bottom-color: var(--muted-foreground); }
 .notes-mode { display: flex; gap: 4px; }
 .notes-mode button[aria-pressed='true'] { border-color: var(--primary); background: var(--accent); }
 .notes-markdown { min-width: 0; flex: 1; overflow-wrap: anywhere; color: color-mix(in oklch, var(--foreground) 90%, transparent); font-size: 14px; line-height: 1.55; }
-.notes-markdown:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
+.notes-markdown:focus { outline: 0; }
 .notes-markdown :where(p, h1, h2, h3, ul, ol, blockquote, pre) { max-width: 100%; }
 .notes-markdown :where(h1, h2, h3) { overflow-wrap: anywhere; }
 .notes-markdown h1 { margin-top: 8px; font-size: 18px; font-weight: 600; }

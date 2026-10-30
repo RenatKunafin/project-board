@@ -63,6 +63,9 @@ test('теги принимаются Enter, запятой, вставкой и
   await expect(input.locator('xpath=..')).toHaveClass(/notes-tag-entry/);
   await expect(input).toHaveCSS('border-top-width', '0px');
   expect(await input.evaluate(element => element.getBoundingClientRect().width)).toBeLessThan(140);
+  await input.focus();
+  expect(await input.evaluate(element => getComputedStyle(element).borderBottomColor))
+    .toBe(await input.locator('xpath=..').evaluate(element => getComputedStyle(element).color));
   await input.fill(' ##ИДЕЯ '); await input.press(',');
   await expect(input).toHaveValue('');
   const before = await raw(page, documentId);
