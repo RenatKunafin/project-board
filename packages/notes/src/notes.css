@@ -39,7 +39,7 @@
 .notes-title-error { margin: 0 0 8px; color: var(--destructive); font-size: 12px; }
 .notes-footer { display: flex; flex: none; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding: 4px 12px; color: var(--muted-foreground); font: 11px var(--font-mono); }
 .notes-editor textarea, .notes-dialog textarea, .notes-dialog input { box-sizing: border-box; border: 1px solid var(--input); border-radius: var(--radius-sm); padding: 8px; background: var(--background); color: var(--foreground); }
-.notes-editor textarea { width: 100%; flex: 1; min-height: 100px; resize: none; border: 0; border-radius: 0; padding: 0; background: transparent; font: 13px/1.6 var(--font-mono); }
+.notes-editor textarea { width: 100%; flex: 1; min-height: 100px; resize: none; border: 0; border-radius: 0; padding: 0; background: transparent; font: 13px/1.6 var(--font-mono); font-variant-ligatures: none; }
 .notes-editor textarea:focus, .notes-dialog textarea:focus, .notes-dialog input:focus { outline: 0; border-color: var(--muted-foreground); }
 .notes-error, .notes-dialog [role='alert'] { color: var(--destructive); overflow-wrap: anywhere; }
 .notes-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; overflow: auto; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--popover); color: var(--foreground); box-shadow: var(--shadow-float); font: 14px/1.5 var(--font-sans); }

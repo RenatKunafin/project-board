@@ -81,6 +81,31 @@ test('заметки: CRUD, независимый выбор двух окон,
   await expect(reopened.pane.getByText('В блокноте пока нет заметок. Создайте первую заметку.')).toBeVisible();
 });
 
+test('Markdown: текстовый редактор сохраняет визуальный исходник при вводе одинаковых символов', async ({ page }) => {
+  const { pane } = await prepare(page, 'Посимвольный ввод');
+  const input = pane.getByLabel('Текст заметки', { exact: true });
+  await expect(input).toHaveCSS('font-variant-ligatures', 'none');
+  await input.click();
+  await input.pressSequentially('#');
+  await expect(input).toHaveValue('#');
+  await input.pressSequentially('#');
+  await expect(input).toHaveValue('##');
+  await input.press('Space');
+  await input.pressSequentially('Заголовок');
+  await expect(input).toHaveValue('## Заголовок');
+  await persistedDocument(page, 'Посимвольный ввод', { notes: [{ title: 'Новая заметка', body: '## Заголовок' }] });
+
+  const liveSource = await input.screenshot({ caret: 'hide' });
+  await input.screenshot({ path: 'test-results/pbt-109-notes-editor-live-source.png', caret: 'hide' });
+  await pane.getByRole('button', { name: 'Просмотр', exact: true }).click();
+  const preview = pane.getByLabel('Просмотр заметки', { exact: true });
+  await expect(preview.locator('h2')).toHaveText('Заголовок');
+  await pane.getByRole('button', { name: 'Текст', exact: true }).click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue('## Заголовок');
+  expect(await input.screenshot({ caret: 'hide' })).toEqual(liveSource);
+});
+
 test('Markdown: независимый просмотр, безопасный HTML и скачивание исходника', async ({ page }) => {
   const first = await prepare(page, 'Markdown');
   await rename(page, first.pane, 'План');
