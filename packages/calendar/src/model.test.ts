@@ -42,6 +42,14 @@ describe('calendar document model', () => {
     expect(validateCalendarContent(content())).toEqual([]);
   });
 
+  it('validates every repeat rule and inclusive end-date semantics', () => {
+    for (const repeat of ['daily', 'weekly', 'monthly', 'yearly'] as const) {
+      expect(validateCalendarContent({ ...content(), events: [{ ...event, repeat, until: '2028-03-01' }] })).toEqual([]);
+    }
+    expect(validateCalendarContent({ ...content(), events: [{ ...event, repeat: 'none', until: '2028-03-01' }] }).map((issue) => issue.path)).toContain('events[0].until');
+    expect(validateCalendarContent({ ...content(), events: [{ ...event, repeat: 'weekly', until: '2028-02-28' }] }).map((issue) => issue.path)).toContain('events[0].until');
+  });
+
   it('reports invalid values without replacing the raw content', () => {
     const broken = { ...content(), events: [{ ...event, date: '2027-02-29', time: '25:00' }] };
     expect(() => parseCalendarContent(broken)).toThrow(CalendarValidationError);

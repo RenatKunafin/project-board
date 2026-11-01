@@ -9,7 +9,6 @@ import {
 } from './model';
 import {
   dateLabel,
-  eventsForDate,
   monthGrid,
   monthKey,
   monthLabel,
@@ -21,6 +20,8 @@ import {
   viewMode,
   yearLabel,
   yearMonths,
+  occurrencesForRange,
+  type CalendarOccurrence,
   type CalendarDayCell,
   type CalendarSize,
   type CalendarViewSettings,
@@ -95,25 +96,25 @@ function useToday(visible: boolean): string {
 }
 
 function EventDots({ content, date }: { readonly content: CalendarContent; readonly date: string }) {
-  const events = eventsForDate(content, date);
+  const occurrences = occurrencesForRange(content, date, date);
   const limit = 3;
-  return <span className="calendar-widget__dots" aria-hidden="true">{events.slice(0, limit).map((event) => { const type = content.types.find((item) => item.id === event.typeId); return <span key={event.id} className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} />; })}{events.length > limit && <span className="calendar-widget__overflow">+{events.length - limit}</span>}</span>;
+  return <span className="calendar-widget__dots" aria-hidden="true">{occurrences.slice(0, limit).map(({ event, key }) => { const type = content.types.find((item) => item.id === event.typeId); return <span key={key} className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} />; })}{occurrences.length > limit && <span className="calendar-widget__overflow">+{occurrences.length - limit}</span>}</span>;
 }
 
 function WeekdayHeader() {
   return <div className="calendar-widget__weekdays" aria-hidden="true">{['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, index) => <span key={day} className={index > 4 ? 'is-weekend' : undefined}>{day}</span>)}</div>;
 }
 
-function MonthGrid({ month, content, today, selectedDate, compact, onSelect }: { readonly month: string; readonly content: CalendarContent; readonly today: string; readonly selectedDate: string | null; readonly compact?: boolean; readonly onSelect: (date: string) => void }) {
-  return <section className={`calendar-month${compact ? ' calendar-month--compact' : ''}`} aria-label={monthLabel(month)}>{compact && <h3>{monthLabel(month)}</h3>}<WeekdayHeader /><div className="calendar-widget__grid">{monthGrid(month).map((cell, index) => <CalendarDay key={`${month}-${index}`} cell={cell} content={content} today={today} selectedDate={selectedDate} compact={compact} onSelect={onSelect} />)}</div></section>;
+function MonthGrid({ month, content, occurrences, today, selectedDate, compact, onSelect }: { readonly month: string; readonly content: CalendarContent; readonly occurrences: readonly CalendarOccurrence[]; readonly today: string; readonly selectedDate: string | null; readonly compact?: boolean; readonly onSelect: (date: string) => void }) {
+  return <section className={`calendar-month${compact ? ' calendar-month--compact' : ''}`} aria-label={monthLabel(month)}>{compact && <h3>{monthLabel(month)}</h3>}<WeekdayHeader /><div className="calendar-widget__grid">{monthGrid(month).map((cell, index) => <CalendarDay key={`${month}-${index}`} cell={cell} content={content} occurrences={occurrences} today={today} selectedDate={selectedDate} compact={compact} onSelect={onSelect} />)}</div></section>;
 }
 
-function CalendarDay({ cell, content, today, selectedDate, compact, onSelect }: { readonly cell: CalendarDayCell; readonly content: CalendarContent; readonly today: string; readonly selectedDate: string | null; readonly compact?: boolean; readonly onSelect: (date: string) => void }) {
+function CalendarDay({ cell, content, occurrences, today, selectedDate, compact, onSelect }: { readonly cell: CalendarDayCell; readonly content: CalendarContent; readonly occurrences: readonly CalendarOccurrence[]; readonly today: string; readonly selectedDate: string | null; readonly compact?: boolean; readonly onSelect: (date: string) => void }) {
   if (!cell.date) return <span className="calendar-widget__blank" aria-hidden="true" />;
-  const events = eventsForDate(content, cell.date);
+  const events = occurrences.filter(({ date }) => date === cell.date);
   const selected = selectedDate === cell.date;
   const current = today === cell.date;
-  return <button type="button" className={`calendar-widget__day${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${current ? ' is-today' : ''}`} aria-label={`${dateLabel(cell.date)}${events.length ? `, событий: ${events.length}` : ''}`} aria-pressed={selected} title={dateLabel(cell.date)} onClick={() => onSelect(cell.date as string)}><span>{cell.day}</span><EventDots content={content} date={cell.date} /></button>;
+  return <button type="button" className={`calendar-widget__day${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${current ? ' is-today' : ''}`} aria-label={`${dateLabel(cell.date)}${events.length ? `, событий: ${events.length}` : ''}`} aria-pressed={selected} title={dateLabel(cell.date)} onClick={() => onSelect(cell.date as string)}><span>{cell.day}</span><span className="calendar-widget__dots" aria-hidden="true">{events.slice(0, 3).map(({ event, key }) => { const type = content.types.find((item) => item.id === event.typeId); return <span key={key} className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} />; })}{events.length > 3 && <span className="calendar-widget__overflow">+{events.length - 3}</span>}</span></button>;
 }
 
 function readSize(size: CalendarSize | null): CalendarSize | null {
@@ -180,10 +181,16 @@ function CalendarPanel({ widgetInstanceId, documentId, documentService, settings
   const openNewEvent = (date: string) => { setDialogDate(null); setEventEditor({ date, event: null, snapshot }); };
   const openEvent = (event: CalendarEvent) => { setDialogDate(null); setEventEditor({ date: event.date, event, snapshot }); };
   const openTypes = () => setTypeDialogOpen(true);
+  const monthStart = `${view.month}-01`;
+  const parsedMonth = parseMonthKey(view.month) ?? new Date();
+  const monthEnd = `${parsedMonth.getFullYear()}-${String(parsedMonth.getMonth() + 1).padStart(2, '0')}-${String(new Date(parsedMonth.getFullYear(), parsedMonth.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+  const rangeOccurrences = mode === 'year'
+    ? occurrencesForRange(snapshot.content, `${parsedMonth.getFullYear()}-01-01`, `${parsedMonth.getFullYear()}-12-31`)
+    : occurrencesForRange(snapshot.content, monthStart, monthEnd);
   return <section className="calendar-widget" data-instance={widgetInstanceId} data-calendar-mode={mode} aria-label="Календарь">
     {mode === 'small' ? <><button type="button" className="calendar-widget__today-card" aria-label="Открыть сегодняшний день" onClick={() => selectDate(today)}><span className="calendar-widget__today-weekday">{dateLabel(today).split(', ')[0] ?? dateLabel(today)}</span><strong>{Number(today.slice(8, 10))}</strong><span>{monthLabel(today.slice(0, 7))}</span><EventDots content={snapshot.content} date={today} /></button><div className="calendar-widget__small-actions"><button type="button" className="calendar-editor__secondary-button" onClick={openTypes}>Типы событий</button></div></> : <>
       <header className="calendar-widget__toolbar"><button type="button" aria-label="Предыдущий период" title="Предыдущий период" onClick={() => movePeriod(-1)}><ChevronLeft aria-hidden="true" /></button><h2>{maximized ? yearLabel(view.month) : monthLabel(view.month)}</h2><button type="button" aria-label="Следующий период" title="Следующий период" onClick={() => movePeriod(1)}><ChevronRight aria-hidden="true" /></button><button type="button" className="calendar-widget__today-button" onClick={goToday}>Сегодня</button><button type="button" className="calendar-widget__today-button" onClick={openTypes}>Типы</button></header>
-      <div className="calendar-widget__body"><div className="calendar-widget__main">{maximized ? <div className="calendar-widget__year-grid">{yearMonths(view.month).map((month) => <MonthGrid key={month} month={month} content={snapshot.content} today={today} selectedDate={view.selectedDate} compact onSelect={selectDate} />)}</div> : <MonthGrid month={view.month} content={snapshot.content} today={today} selectedDate={view.selectedDate} onSelect={selectDate} />}</div>{maximized && view.selectedDate && <CalendarDayPanel snapshot={snapshot} date={view.selectedDate} onAdd={() => openNewEvent(view.selectedDate as string)} onEdit={openEvent} onManageTypes={openTypes} onClose={closeDay} />}</div>
+      <div className="calendar-widget__body"><div className="calendar-widget__main">{maximized ? <div className="calendar-widget__year-grid">{yearMonths(view.month).map((month) => <MonthGrid key={month} month={month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} compact onSelect={selectDate} />)}</div> : <MonthGrid month={view.month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} onSelect={selectDate} />}</div>{maximized && view.selectedDate && <CalendarDayPanel snapshot={snapshot} date={view.selectedDate} onAdd={() => openNewEvent(view.selectedDate as string)} onEdit={openEvent} onManageTypes={openTypes} onClose={closeDay} />}</div>
     </>}
     {dialogDate && mode !== 'year' && <CalendarDayDialog snapshot={snapshot} date={dialogDate} onAdd={() => openNewEvent(dialogDate)} onEdit={openEvent} onManageTypes={openTypes} onClose={closeDay} />}
     {typeDialogOpen && <CalendarTypeDialog snapshot={snapshot} save={save} onClose={() => setTypeDialogOpen(false)} />}
