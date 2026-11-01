@@ -41,3 +41,59 @@ test('два окна используют один календарь, а пр�
   await expect(windows.nth(0).locator('.calendar-widget')).toBeVisible();
   await expect(windows.nth(1).locator('.calendar-widget')).toBeVisible();
 });
+
+test('календарь сохраняет тип и одиночное событие, видимое во втором окне', async ({ page }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'События команды', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await expect(calendar).toHaveAttribute('data-calendar-mode', 'month');
+
+  await calendar.getByRole('button', { name: /Типы/ }).last().click();
+  const types = page.getByRole('dialog', { name: 'Типы событий' });
+  await types.getByRole('button', { name: 'Добавить тип', exact: true }).click();
+  await types.getByLabel('Название типа').fill('Работа');
+  await types.getByRole('button', { name: 'Зелёный', exact: true }).click();
+  await types.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(types).toBeHidden();
+
+  const day = calendar.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first();
+  await day.click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Командная встреча');
+  await eventDialog.getByLabel('Тип события').selectOption({ label: 'Работа' });
+  await eventDialog.getByLabel('Описание события').fill('Обсудить релиз');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(eventDialog).toBeHidden();
+  await expect.poll(async () => {
+    const stored = await storedWorkspace(page);
+    return (stored.documents.find((document) => document.title === 'События команды')?.content as { events?: { title: string }[] } | undefined)?.events?.[0]?.title;
+  }).toBe('Командная встреча');
+
+  await openDocumentWindow(page, 'Календарь', 'События команды');
+  const windows = page.getByRole('group', { name: 'Календарь · События команды', exact: true });
+  await expect(windows).toHaveCount(2);
+  await windows.nth(1).locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
+  await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Командная встреча');
+});
+
+test('одиночное событие календаря переживает reload в offline', async ({ page, context }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Offline календарь', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await context.setOffline(true);
+  await calendar.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Offline встреча');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Offline календарь')?.content as { events?: { title: string }[] } | undefined).toMatchObject({ events: [{ title: 'Offline встреча' }] });
+
+  await page.reload();
+  const reloaded = page.getByRole('group', { name: 'Календарь · Offline календарь', exact: true });
+  await expect(reloaded).toBeVisible();
+  await reloaded.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
+  await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Offline встреча');
+});

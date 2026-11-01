@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   CalendarValidationError,
   addCalendarEvent,
+  addCalendarType,
   createEmptyCalendarContent,
   parseCalendarContent,
+  removeCalendarEvent,
   removeCalendarType,
   setNonWorkingDay,
+  updateCalendarEvent,
+  updateCalendarType,
   validateCalendarContent,
   type CalendarContent,
 } from './model';
@@ -83,6 +87,16 @@ describe('calendar document model', () => {
     const after = removeCalendarType(content(), 'type-1');
     expect(after.types).toEqual([]);
     expect(after.events[0]?.typeId).toBe('');
+  });
+
+  it('creates, updates and removes independent event and type records', () => {
+    const withType = addCalendarType(createEmptyCalendarContent(), { id: 'type-2', name: 'Работа', color: 'teal' });
+    const withEvent = addCalendarEvent(withType, { id: 'event-2', title: 'Встреча', date: '2028-02-29', time: '', typeId: 'type-2', description: 'Описание', repeat: 'none', until: '' });
+    const renamed = updateCalendarType(withEvent, { id: 'type-2', name: 'Рабочее', color: 'green' });
+    const updated = updateCalendarEvent(renamed, { ...renamed.events[0]!, title: 'Важная встреча' });
+    expect(updated.types[0]).toEqual({ id: 'type-2', name: 'Рабочее', color: 'green' });
+    expect(updated.events[0]?.title).toBe('Важная встреча');
+    expect(removeCalendarEvent(updated, 'event-2').events).toEqual([]);
   });
 
   it('replaces a manual non-working date without mutating the input', () => {
