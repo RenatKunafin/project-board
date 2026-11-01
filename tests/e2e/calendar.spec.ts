@@ -320,3 +320,140 @@ test('одиночное событие календаря переживает 
   await reloaded.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Offline встреча');
 });
+
+test('PBT-116: календарь и ближайшие события проходят сквозную приёмку прототипа', async ({ page, context }, testInfo) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('pageerror', error => pageErrors.push(error.message));
+
+  const dateOffset = (offset: number) => {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  await page.goto('/');
+  await page.setViewportSize({ width: 1024, height: 778 });
+  await createDocumentWindow(page, 'Календарь', 'PBT-116 календарь', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await expect(calendar).toHaveAttribute('data-calendar-mode', 'month');
+  await expect(calendar.locator('.calendar-widget__day, .calendar-widget__blank')).toHaveCount(42);
+  await calendar.screenshot({ path: testInfo.outputPath('calendar-month-1024.png') });
+
+  // Проверяем production-режим минимального окна, как в прототипе.
+  const cascadeResizeHandle = page.locator('.cascade-layout__window').filter({ has: calendar }).locator('.cascade-resize-se');
+  const gridResizeHandle = page.locator('.tiled-grid__cell').filter({ has: calendar }).locator('.react-resizable-handle-se');
+  const resizeHandle = (await cascadeResizeHandle.count()) ? cascadeResizeHandle : gridResizeHandle;
+  if (await resizeHandle.count()) {
+    const box = await resizeHandle.boundingBox();
+    if (box) await page.mouse.move(box.x + 4, box.y + 4).then(() => page.mouse.down()).then(async () => {
+      await page.mouse.move(box.x - 330, box.y - 150, { steps: 8 });
+      await page.mouse.up();
+    });
+    await expect(calendar).toHaveAttribute('data-calendar-mode', 'small');
+    await calendar.screenshot({ path: testInfo.outputPath('calendar-small-1024.png') });
+    const restoreBox = await resizeHandle.boundingBox();
+    if (restoreBox) await page.mouse.move(restoreBox.x + 4, restoreBox.y + 4).then(() => page.mouse.down()).then(async () => {
+      await page.mouse.move(restoreBox.x + 340, restoreBox.y + 180, { steps: 8 });
+      await page.mouse.up();
+    });
+    await expect(calendar).toHaveAttribute('data-calendar-mode', 'month');
+  }
+
+  await calendar.getByRole('button', { name: /Типы/ }).click();
+  const types = page.getByRole('dialog', { name: 'Типы событий' });
+  await types.getByRole('button', { name: 'Добавить тип', exact: true }).click();
+  await types.getByLabel('Название типа').fill('Приёмка');
+  await types.getByRole('button', { name: 'Зелёный', exact: true }).click();
+  await types.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(types).toBeHidden();
+
+  const today = calendar.locator('.calendar-widget__day.is-today');
+  await expect(today).toHaveCount(1);
+  await today.click();
+  let dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await expect(dayDialog.getByRole('button', { name: 'Закрыть день' })).toBeFocused();
+  await expect(dayDialog).toContainText(/Сегодня|Через|Прошло/);
+  await page.keyboard.press('Escape');
+  await expect(dayDialog).toBeHidden();
+
+  await today.click();
+  dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Нерабочий день', exact: true }).click();
+  const nonWorking = page.getByRole('dialog', { name: 'Нерабочий день' });
+  await nonWorking.getByRole('combobox', { name: 'Вид нерабочего дня' }).selectOption('holiday');
+  await nonWorking.getByLabel('Причина нерабочего дня').fill('Приёмочный праздник');
+  await nonWorking.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(today).toHaveClass(/is-non-working/);
+  await expect(today).toHaveAttribute('title', 'Приёмочный праздник');
+
+  await today.click();
+  dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  let eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await expect(eventDialog.getByLabel('Название события')).toBeVisible();
+  await eventDialog.getByLabel('Название события').fill('Приёмка событие');
+  await eventDialog.getByLabel('Тип события').selectOption({ label: 'Приёмка' });
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(eventDialog).toBeHidden();
+
+  await today.click();
+  dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Приёмка серия');
+  await eventDialog.getByLabel('Тип события').selectOption({ label: 'Приёмка' });
+  await eventDialog.getByLabel('Повторение').selectOption('daily');
+  await eventDialog.getByLabel('Дата окончания повторения').fill(dateOffset(3));
+  await expect(eventDialog).toContainText('Изменения и удаление применяются ко всей серии.');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(eventDialog).toBeHidden();
+  await expect(today).toHaveAttribute('aria-label', /событий: 2/);
+
+  const window = page.getByRole('group', { name: 'Календарь · PBT-116 календарь', exact: true });
+  await window.getByRole('button', { name: /Развернуть на весь дашборд/ }).click();
+  await expect(calendar).toHaveAttribute('data-calendar-mode', 'year');
+  await expect(calendar.locator('.calendar-month')).toHaveCount(12);
+  await calendar.screenshot({ path: testInfo.outputPath('calendar-year-1024.png') });
+  await page.setViewportSize({ width: 1856, height: 1269 });
+  await calendar.screenshot({ path: testInfo.outputPath('calendar-year-wide.png') });
+  await window.getByRole('button', { name: /Вернуть прежний размер/ }).click();
+
+  await openDocumentWindow(page, 'Ближайшие события', 'PBT-116 календарь');
+  const upcomingWindow = page.getByRole('group', { name: 'Ближайшие события · PBT-116 календарь', exact: true });
+  const upcoming = upcomingWindow.locator('.calendar-upcoming-widget');
+  await expect(upcoming).toContainText('Ближайшие 7 дней');
+  await expect(upcoming.getByRole('button', { name: /Приёмка событие/ })).toBeVisible();
+  await expect(upcoming.getByRole('button', { name: /Приёмка серия/ }).first()).toBeVisible();
+  await upcoming.getByLabel('Фильтр типа события').selectOption({ label: 'Приёмка' });
+  await expect(upcoming.locator('.calendar-upcoming__event')).toHaveCount(5);
+  await upcoming.getByRole('button', { name: /Приёмка событие/ }).click();
+  eventDialog = page.getByRole('dialog', { name: 'Изменить событие' });
+  await eventDialog.getByLabel('Название события').fill('Приёмка событие исправлено');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(upcoming.getByRole('button', { name: /Приёмка событие исправлено/ })).toBeVisible();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find(document => document.title === 'PBT-116 календарь')?.content)
+    .toMatchObject({ events: expect.arrayContaining([expect.objectContaining({ title: 'Приёмка событие исправлено' })]) });
+
+  await page.reload();
+  await expect(page.getByRole('group', { name: 'Календарь · PBT-116 календарь', exact: true })).toBeVisible();
+  const reloadedUpcoming = page.getByRole('group', { name: 'Ближайшие события · PBT-116 календарь', exact: true });
+  await expect(reloadedUpcoming.getByRole('button', { name: /Приёмка событие исправлено/ })).toBeVisible();
+  await context.setOffline(true);
+  await expect(reloadedUpcoming.getByRole('button', { name: /Приёмка серия/ }).first()).toBeVisible();
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(reloadedUpcoming.getByRole('button', { name: /Приёмка событие исправлено/ })).toBeVisible();
+  await context.setOffline(false);
+
+  expect(consoleErrors, consoleErrors.join('\n')).toEqual([]);
+  expect(pageErrors, pageErrors.join('\n')).toEqual([]);
+});
