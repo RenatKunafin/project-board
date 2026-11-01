@@ -85,6 +85,69 @@ test('календарь сохраняет тип и одиночное соб�
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Командная встреча');
 });
 
+test('ближайшие события выбирают существующий календарь, фильтруются, редактируются и переживают reload offline', async ({ page, context, browser }, testInfo) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Общий список событий', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await calendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Ближайшая встреча');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Общий список событий')?.content)
+    .toMatchObject({ events: [{ title: 'Ближайшая встреча' }] });
+
+  const upcomingWindow = await openDocumentWindow(page, 'Ближайшие события', 'Общий список событий');
+  const upcoming = upcomingWindow.pane.locator('.calendar-upcoming-widget');
+  await expect(upcoming).toBeVisible();
+  await expect(upcoming.getByRole('button', { name: /Ближайшая встреча/ })).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 778 });
+  await upcoming.screenshot({ path: testInfo.outputPath('upcoming-1024.png') });
+  await page.setViewportSize({ width: 1856, height: 1269 });
+  await upcoming.screenshot({ path: testInfo.outputPath('upcoming-wide.png') });
+  await upcoming.getByRole('button', { name: /Ближайшая встреча/ }).click();
+  const editor = page.getByRole('dialog', { name: 'Изменить событие' });
+  await editor.getByLabel('Название события').fill('Изменённая встреча');
+  await editor.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Общий список событий')?.content)
+    .toMatchObject({ events: [{ title: 'Изменённая встреча' }] });
+
+  await page.reload();
+  const reloaded = page.getByRole('group', { name: 'Ближайшие события · Общий список событий', exact: true });
+  await expect(reloaded.locator('.calendar-upcoming__event')).toContainText('Изменённая встреча');
+  await context.setOffline(true);
+  await expect(reloaded.locator('.calendar-upcoming__event')).toContainText('Изменённая встреча');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(reloaded.locator('.calendar-upcoming__event')).toContainText('Изменённая встреча');
+
+  await context.setOffline(false);
+  const backupDialog = await backups(page);
+  await backupDialog.getByRole('button', { name: 'Создать копию', exact: true }).click();
+  const download = page.waitForEvent('download');
+  await backupDialog.getByRole('button', { name: 'Скачать', exact: true }).click();
+  const file = await download;
+  const buffer = await readFile((await file.path())!);
+  const clean = await browser.newContext();
+  try {
+    const target = await clean.newPage();
+    await target.goto('/');
+    const restore = await backups(target);
+    await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
+    await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
+    await restore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
+    await expect(target.getByRole('group', { name: 'Ближайшие события · Общий список событий', exact: true }).locator('.calendar-upcoming__event')).toContainText('Изменённая встреча');
+  } finally {
+    await clean.close();
+  }
+});
+
 test('календарь вычисляет серию в следующем дне и синхронизирует одну запись между окнами', async ({ page }, testInfo) => {
   await page.goto('/');
   await createDocumentWindow(page, 'Календарь', 'Серия команды', true);

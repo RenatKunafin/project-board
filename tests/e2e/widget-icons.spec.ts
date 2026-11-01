@@ -5,7 +5,7 @@ test('иконка типа согласована между каталогом
   await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
   const widgets = page.getByRole('dialog', { name: 'Каталог виджетов' });
   // Все встроенные карточки используют декоративные SVG; доступные имена не меняются.
-  await expect(widgets.locator('.widget-catalog__tile svg[aria-hidden="true"]')).toHaveCount(5);
+  await expect(widgets.locator('.widget-catalog__tile svg[aria-hidden="true"]')).toHaveCount(6);
   const planType = widgets.getByRole('button', { name: 'План', exact: true });
   const planGraphic = await planType.locator('svg').innerHTML();
   const resourceGraphic = await widgets.getByRole('button', { name: 'Ресурсы', exact: true }).locator('svg').innerHTML();

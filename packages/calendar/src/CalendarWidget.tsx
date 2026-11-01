@@ -47,7 +47,7 @@ interface CalendarDocumentState {
   readonly content: CalendarContent;
 }
 
-function useCalendarDocument(documentId: string, documentService: DocumentService): CalendarDocumentState | CalendarValidationError | undefined {
+export function useCalendarDocument(documentId: string, documentService: DocumentService): CalendarDocumentState | CalendarValidationError | undefined {
   const [document, setDocument] = useState(() => documentService.get(documentId));
   useEffect(() => {
     setDocument(documentService.get(documentId));
@@ -95,6 +95,32 @@ function useToday(visible: boolean): string {
     };
   }, [visible]);
   return today;
+}
+
+export function useCalendarNow(visible: boolean): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!visible) return undefined;
+    let timer: number | undefined;
+    const refresh = () => setNow(new Date());
+    const schedule = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      const current = new Date();
+      const next = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
+      timer = window.setTimeout(() => { refresh(); schedule(); }, Math.max(1000, next.getTime() - current.getTime() + 50));
+    };
+    const onVisibility = () => { if (document.visibilityState === 'visible') { refresh(); schedule(); } };
+    refresh();
+    schedule();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', refresh);
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [visible]);
+  return now;
 }
 
 function EventDots({ content, date }: { readonly content: CalendarContent; readonly date: string }) {
