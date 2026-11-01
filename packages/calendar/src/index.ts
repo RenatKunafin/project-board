@@ -31,10 +31,20 @@ export type { CalendarOccurrence } from './recurrence';
 export { countdown, formatCountdown, isNonWorkingDay } from './workday';
 export type { CalendarCountdown } from './workday';
 export { CalendarWidget } from './CalendarWidget';
+export { UpcomingWidget } from './UpcomingWidget';
+export { groupUpcomingOccurrences, normalizeUpcomingTypeFilter, upcomingOccurrences } from './upcoming';
 
 import { defineWidgetType } from '@project-board/widget-sdk';
 import { CalendarWidget } from './CalendarWidget';
+import { UpcomingWidget } from './UpcomingWidget';
 import { createEmptyCalendarContent } from './model';
+
+const calendarDocumentSupport = {
+  moduleId: 'calendar',
+  documentType: 'calendar',
+  schemaVersion: 1,
+  createContent: () => ({ ...createEmptyCalendarContent() }),
+} as const;
 
 export function createCalendarModule() {
   return {
@@ -46,12 +56,16 @@ export function createCalendarModule() {
       component: CalendarWidget,
       startSettings: {},
       sizeConstraints: { minWidth: 2, minHeight: 2 },
-      documentSupport: {
-        moduleId: 'calendar',
-        documentType: 'calendar',
-        schemaVersion: 1,
-        createContent: () => ({ ...createEmptyCalendarContent() }),
-      },
+      documentSupport: calendarDocumentSupport,
+    }), defineWidgetType({
+      id: 'upcoming-events',
+      title: 'Ближайшие события',
+      icon: 'lucide:calendar-clock',
+      description: 'Список ближайших событий календаря',
+      component: UpcomingWidget,
+      startSettings: { typeFilter: 'all' },
+      sizeConstraints: { minWidth: 2, minHeight: 2 },
+      documentSupport: calendarDocumentSupport,
     })],
   };
 }
