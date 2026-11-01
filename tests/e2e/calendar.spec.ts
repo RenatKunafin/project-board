@@ -85,7 +85,7 @@ test('календарь сохраняет тип и одиночное соб�
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Командная встреча');
 });
 
-test('календарь вычисляет серию в следующем дне и синхронизирует одну запись между окнами', async ({ page }) => {
+test('календарь вычисляет серию в следующем дне и синхронизирует одну запись между окнами', async ({ page }, testInfo) => {
   await page.goto('/');
   await createDocumentWindow(page, 'Календарь', 'Серия команды', true);
   const calendar = page.locator('.calendar-widget').last();
@@ -110,6 +110,7 @@ test('календарь вычисляет серию в следующем д�
   await secondCalendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Ежедневная синхронизация');
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Каждый день');
+  await page.screenshot({ path: testInfo.outputPath('calendar-recurring-day.png') });
 });
 
 test('серия календаря переносится общей копией и переживает offline reload', async ({ page, browser }) => {
