@@ -31,6 +31,7 @@
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.76 0.17 155);
   --warning: oklch(0.84 0.16 88);
+  --calendar-off: oklch(0.77 0.12 35);
 
   /* Линии и фокус. */
   --border: oklch(0.31 0.025 250);
