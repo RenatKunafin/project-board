@@ -2,6 +2,7 @@ import type { WidgetTypeDefinition } from '@project-board/widget-sdk';
 import { createChecklistModule } from '@project-board/checklist';
 import { createNotesModule } from '@project-board/notes';
 import { createGanttModule } from '@project-board/gantt';
+import { createCalendarModule } from '@project-board/calendar';
 
 // Единственная точка регистрации типов виджетов.
 // Приложение собирает комплектацию: подключение новых модулей — только здесь.
@@ -9,4 +10,5 @@ export const widgetTypes: readonly WidgetTypeDefinition[] = [
   ...createChecklistModule().widgetTypes,
   ...createGanttModule().widgetTypes,
   ...createNotesModule().widgetTypes,
+  ...createCalendarModule().widgetTypes,
 ];
