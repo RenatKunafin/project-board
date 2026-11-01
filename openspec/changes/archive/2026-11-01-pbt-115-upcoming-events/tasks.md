@@ -19,4 +19,4 @@
 - [x] 4.1 Выровнять UI списка по `UpcomingPrototype`: плотность, заголовки дат, точки/цвета типов, время/«Весь день», повторение, пустое состояние и футер «Ближайшие 7 дней»; приложить снимки 1024×778 и широкого viewport.
 - [x] 4.2 Добавить production browser-сценарии выбора календаря через каталог, фильтра, лимита/границы времени, редактирования из списка, reload/hidden/offline и backup/restore.
 - [x] 4.3 Выполнить `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `openspec validate pbt-115-upcoming-events --strict` и `openspec validate --all --strict`; зафиксировать результаты.
-- [ ] 4.4 Подготовить один PR PBT-115 в `develop`; после принятия архивировать change с sync specs и только после merge перевести задачу в Done.
+- [x] 4.4 Подготовить один PR PBT-115 в `develop`; после принятия архивировать change с sync specs и только после merge перевести задачу в Done.
