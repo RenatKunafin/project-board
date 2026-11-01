@@ -19,4 +19,4 @@
 - [x] 4.1 Покрыть component/unit сценарии совместимости события с нерабочей датой, доступных названий и счётчиков маркеров; проверить отсутствие изменений в данных при навигации.
 - [x] 4.2 Добавить production browser-сценарии ручного праздника/выходного, обеих сторон countdown, двух окон, reload/offline и backup/restore; приложить визуальный снимок.
 - [x] 4.3 Выполнить `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `openspec validate pbt-114-non-working-days --strict` и `openspec validate --all --strict`; зафиксировать результаты.
-- [ ] 4.4 Подготовить один PR PBT-114 в `develop`, проверить diff на отсутствие связи с Ганттом и внешних праздников; после принятия архивировать change с sync specs.
+- [x] 4.4 Подготовить один PR PBT-114 в `develop`, проверить diff на отсутствие связи с Ганттом и внешних праздников; после принятия архивировать change с sync specs.
