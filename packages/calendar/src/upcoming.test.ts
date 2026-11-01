@@ -19,8 +19,8 @@ describe('upcomingOccurrences', () => {
     expect(result.map((item) => item.event.id)).toEqual(['future', 'all-day']);
   });
 
-  it('uses an inclusive today plus 365 calendar-day boundary', () => {
-    const content = { ...empty, events: [event('boundary', '2027-11-01'), event('outside', '2027-11-02')] };
+  it('uses an inclusive seven-calendar-day boundary', () => {
+    const content = { ...empty, events: [event('boundary', '2026-11-07'), event('outside', '2026-11-08')] };
     expect(upcomingOccurrences(content, new Date(2026, 10, 1)).map((item) => item.event.id)).toEqual(['boundary']);
   });
 
@@ -30,7 +30,7 @@ describe('upcomingOccurrences', () => {
       types: [{ id: 'work', name: 'Работа', color: 'blue' as const }],
       events: [event('all-day', '2026-11-02', '', 'work'), event('late', '2026-11-02', '18:00', 'work'), event('early', '2026-11-02', '08:00', 'work'), event('other', '2026-11-02', '07:00')],
     };
-    expect(upcomingOccurrences(content, new Date(2026, 10, 1), 'work', 365, 2).map((item) => item.event.id)).toEqual(['early', 'late']);
+    expect(upcomingOccurrences(content, new Date(2026, 10, 1), 'work', 6, 2).map((item) => item.event.id)).toEqual(['early', 'late']);
   });
 
   it('expands repeated occurrences without changing the source content', () => {

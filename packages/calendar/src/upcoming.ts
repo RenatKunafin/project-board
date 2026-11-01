@@ -2,7 +2,8 @@ import type { CalendarContent } from './model';
 import { dateKey, parseDateKey } from './view';
 import { occurrencesForRange, type CalendarOccurrence } from './recurrence';
 
-export const UPCOMING_DAYS = 365;
+/** Number of days after today included in the seven-day window. */
+export const UPCOMING_DAYS = 6;
 export const UPCOMING_LIMIT = 100;
 export const ALL_UPCOMING_TYPES = 'all' as const;
 

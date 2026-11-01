@@ -66,7 +66,7 @@ function UpcomingPanel({ widgetInstanceId, documentId, documentService, settings
     <div className="calendar-upcoming__list" role="list" aria-label="Список ближайших событий">
       {groups.length === 0 ? <p className="calendar-widget__empty">Ближайших событий нет</p> : groups.map((group) => <section className="calendar-upcoming__group" key={group.date} aria-label={group.date === today ? 'Сегодня' : dateLabel(group.date)}><h3>{group.date === today ? 'Сегодня' : dateLabel(group.date)}</h3>{group.occurrences.map((occurrence) => <UpcomingEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onOpen={(event) => setEventEditor({ event, date: occurrence.date, snapshot })} />)}</section>)}
     </div>
-    <footer className="calendar-upcoming__footer">Ближайшие 12 месяцев · {occurrences.length} {occurrences.length === 1 ? 'событие' : 'событий'}</footer>
+    <footer className="calendar-upcoming__footer">Ближайшие 7 дней · {occurrences.length} {occurrences.length === 1 ? 'событие' : 'событий'}</footer>
     {eventEditor && <CalendarEventDialog snapshot={eventEditor.snapshot} event={eventEditor.event} date={eventEditor.date} save={(next, source) => saveDocument(documentService, documentId, next, source)} onClose={() => setEventEditor(null)} />}
   </section>;
 }

@@ -56,7 +56,7 @@ describe('UpcomingWidget', () => {
     });
     expect(rendered.rootElement.textContent).toContain('Встреча');
     expect(rendered.rootElement.textContent).toContain('понедельник, 2 ноября');
-    expect(rendered.rootElement.textContent).toContain('Ближайшие 12 месяцев');
+    expect(rendered.rootElement.textContent).toContain('Ближайшие 7 дней');
     expect(rendered.rootElement.querySelector('[aria-label="Фильтр типа события"]')).not.toBeNull();
     act(() => (rendered.rootElement.querySelector('[aria-label="Фильтр типа события"]') as HTMLSelectElement).value = 'work');
     act(() => rendered.rootElement.querySelector('[aria-label="Фильтр типа события"]')?.dispatchEvent(new Event('change', { bubbles: true })));

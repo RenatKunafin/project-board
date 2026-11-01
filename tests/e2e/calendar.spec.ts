@@ -102,6 +102,7 @@ test('ближайшие события выбирают существующи�
   const upcoming = upcomingWindow.pane.locator('.calendar-upcoming-widget');
   await expect(upcoming).toBeVisible();
   await expect(upcoming.getByRole('button', { name: /Ближайшая встреча/ })).toBeVisible();
+  await expect(upcoming).toContainText('Ближайшие 7 дней');
   await page.setViewportSize({ width: 1024, height: 778 });
   await upcoming.screenshot({ path: testInfo.outputPath('upcoming-1024.png') });
   await page.setViewportSize({ width: 1856, height: 1269 });
