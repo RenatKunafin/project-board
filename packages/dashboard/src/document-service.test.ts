@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DocumentConflictError,
+  DocumentFutureVersionError,
   type ManagedDocument,
 } from '@project-board/widget-sdk';
 import {
@@ -326,6 +327,53 @@ describe('автосохранение — конфликт двух окон', 
       expect.objectContaining({ revision: 5, content: 'other-window' }),
     );
     expect(service.get(doc.id)?.content).toBe('other-window');
+  });
+});
+
+describe('календарный документ — общая ссылка и будущая версия', () => {
+  it('сохраняет одно содержимое для двух представлений и запрещает запись будущей версии', async () => {
+    const store = new FakeStore();
+    const calendar = {
+      id: 'calendar-1',
+      moduleId: 'calendar',
+      documentType: 'calendar',
+      title: 'Календарь',
+      schemaVersion: 1,
+      revision: 1,
+      createdAt: '2026-11-01T10:00:00.000Z',
+      updatedAt: '2026-11-01T10:00:00.000Z',
+      content: { events: [], types: [], days: [] },
+    } satisfies ManagedDocument;
+    await store.save(calendar, 0);
+    const service = createDocumentService({
+      store,
+      saveDelayMs: SAVE_DELAY,
+      migrations: [{ moduleId: 'calendar', documentType: 'calendar', actualVersion: 1, steps: [] }],
+    });
+    const restored = await service.restoreAll();
+    expect(restored).toHaveLength(1);
+    const firstView = service.get('calendar-1');
+    const secondView = service.get('calendar-1');
+    expect(firstView).toBe(secondView);
+
+    service.update('calendar-1', 1, {
+      events: [{ id: 'event-1', title: 'Встреча', date: '2026-11-01', time: '', typeId: '', description: '', repeat: 'none', until: '' }],
+      types: [],
+      days: [],
+    });
+    expect(service.get('calendar-1')?.revision).toBe(2);
+    expect(service.get('calendar-1')?.content).toMatchObject({ events: [{ id: 'event-1' }] });
+
+    const future = { ...calendar, id: 'calendar-future', schemaVersion: 2, content: { events: [{ id: 'future' }] } } satisfies ManagedDocument;
+    await store.save(future, 0);
+    const futureService = createDocumentService({
+      store,
+      migrations: [{ moduleId: 'calendar', documentType: 'calendar', actualVersion: 1, steps: [] }],
+    });
+    await futureService.restoreAll();
+    expect(futureService.isFutureVersion('calendar-future')).toBe(true);
+    expect(() => futureService.update('calendar-future', 2, { events: [], types: [], days: [] })).toThrow(DocumentFutureVersionError);
+    expect(futureService.get('calendar-future')?.content).toEqual(future.content);
   });
 });
 
