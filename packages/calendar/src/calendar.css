@@ -24,7 +24,8 @@
 .calendar-widget__day.is-non-working:hover { color: var(--accent-foreground); background: var(--accent); }
 .calendar-widget__day.is-today { color: var(--primary); border-color: color-mix(in oklch, var(--primary) 60%, transparent); font-weight: 600; }
 .calendar-widget__day.is-selected { background: var(--accent); border-color: var(--primary); }
-.calendar-month--compact .calendar-widget__day { height: 30px; padding-top: 2px; font-size: 11px; }
+.calendar-month--compact .calendar-widget__day, .calendar-month--compact .calendar-widget__blank { height: 30px; }
+.calendar-month--compact .calendar-widget__day { padding-top: 2px; font-size: 11px; }
 .calendar-widget__dots { display: flex; align-items: center; justify-content: center; min-height: 8px; gap: 3px; }
 .calendar-widget__dot { display: inline-block; width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--event-color, var(--primary)); }
 .calendar-widget__overflow { color: var(--muted-foreground); font-size: 8px; line-height: 1; }
