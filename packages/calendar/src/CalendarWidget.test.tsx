@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DocumentService, WidgetProps } from '@project-board/widget-sdk';
+import { DocumentConflictError } from '@project-board/widget-sdk';
 import { CalendarWidget } from './CalendarWidget';
 import { createCalendarModule } from './index';
 
@@ -40,6 +41,12 @@ function renderCalendar(content: unknown, overrides: Partial<WidgetProps> = {}) 
   };
   act(() => root.render(<CalendarWidget {...props} />));
   return { root, rootElement, service, updateSettings, resize: (size: { width: number; height: number }) => act(() => resizeListener?.(size)) };
+}
+
+function setInputValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  setter?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 afterEach(() => {
@@ -84,6 +91,93 @@ describe('CalendarWidget', () => {
     expect(rendered.rootElement.querySelector('[role="dialog"]')).not.toBeNull();
     expect(rendered.rootElement.textContent).toContain('Демо');
     expect(rendered.service.update).not.toHaveBeenCalled();
+    act(() => rendered.root.unmount());
+  });
+
+  it('creates an event from the selected-day dialog and keeps cancellation local', () => {
+    const rendered = renderCalendar({ events: [], types: [], days: [] }, { settings: { calendarMonth: '2026-11' } });
+    const day = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('воскресенье, 1 ноября'));
+    act(() => day?.click());
+    const dialog = rendered.rootElement.querySelector('[role="dialog"]') as HTMLElement;
+    const add = [...dialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Добавить событие')) as HTMLButtonElement;
+    act(() => add.click());
+    const editor = rendered.rootElement.querySelector('[aria-labelledby="calendar-event-title"]') as HTMLDialogElement;
+    const title = editor.querySelector('[aria-label="Название события"]') as HTMLInputElement;
+    act(() => setInputValue(title, 'Планёрка'));
+    act(() => (editor.querySelector('form') as HTMLFormElement).requestSubmit());
+    expect(rendered.service.update).toHaveBeenCalledWith('calendar-1', 1, expect.objectContaining({ events: [expect.objectContaining({ title: 'Планёрка', repeat: 'none' })] }));
+    act(() => rendered.root.unmount());
+  });
+
+  it('edits type drafts and keeps them out of the document until save', () => {
+    const rendered = renderCalendar({ events: [], types: [], days: [] });
+    act(() => [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__today-button')].at(-1)?.click());
+    const dialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-types-title"]') as HTMLDialogElement;
+    expect(dialog).not.toBeNull();
+    const add = [...dialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Добавить тип')) as HTMLButtonElement;
+    act(() => add.click());
+    expect(rendered.service.update).not.toHaveBeenCalled();
+    const input = dialog.querySelector('[aria-label="Название типа"]') as HTMLInputElement;
+    act(() => setInputValue(input, 'Работа'));
+    act(() => [...dialog.querySelectorAll('button')].find((button) => button.textContent === 'Сохранить')?.click());
+    expect(rendered.service.update).toHaveBeenCalledWith('calendar-1', 1, expect.objectContaining({ types: [expect.objectContaining({ name: 'Работа' })] }));
+    act(() => rendered.root.unmount());
+  });
+
+  it('shows a revision conflict without clearing the event draft', () => {
+    const rendered = renderCalendar({ events: [], types: [], days: [] });
+    (rendered.service.update as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new DocumentConflictError('calendar-1', 2, 1); });
+    act(() => [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__today-button')].at(-1)?.click());
+    const typeDialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-types-title"]') as HTMLDialogElement;
+    const add = [...typeDialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Добавить тип')) as HTMLButtonElement;
+    act(() => add.click());
+    const input = typeDialog.querySelector('[aria-label="Название типа"]') as HTMLInputElement;
+    act(() => setInputValue(input, 'Черновик'));
+    act(() => [...typeDialog.querySelectorAll('button')].find((button) => button.textContent === 'Сохранить')?.click());
+    expect(typeDialog.textContent).toContain('Конфликт редакций');
+    expect((typeDialog.querySelector('[aria-label="Название типа"]') as HTMLInputElement).value).toBe('Черновик');
+    act(() => rendered.root.unmount());
+  });
+
+  it('removes a used type only after confirmation and leaves its event untyped', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const rendered = renderCalendar({
+      events: [{ id: 'event-1', title: 'Встреча', date: '2026-11-01', time: '', typeId: 'type-1', description: '', repeat: 'none', until: '' }],
+      types: [{ id: 'type-1', name: 'Работа', color: 'green' }], days: [],
+    });
+    act(() => [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__today-button')].at(-1)?.click());
+    const dialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-types-title"]') as HTMLDialogElement;
+    act(() => dialog.querySelector('[aria-label="Удалить тип Работа"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    act(() => [...dialog.querySelectorAll('button')].find((button) => button.textContent === 'Сохранить')?.click());
+    expect(rendered.service.update).toHaveBeenCalledWith('calendar-1', 1, expect.objectContaining({ types: [], events: [expect.objectContaining({ typeId: '' })] }));
+    confirm.mockRestore();
+    act(() => rendered.root.unmount());
+  });
+
+  it('offers event actions from the maximized day panel', () => {
+    const rendered = renderCalendar({
+      events: [{ id: 'event-1', title: 'Встреча', date: '2026-11-01', time: '', typeId: '', description: '', repeat: 'none', until: '' }],
+      types: [], days: [],
+    }, { maximized: true, settings: { calendarMonth: '2026-11' } });
+    rendered.resize({ width: 900, height: 700 });
+    const day = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('воскресенье, 1 ноября'));
+    act(() => day?.click());
+    const panel = rendered.rootElement.querySelector('.calendar-widget__day-panel') as HTMLElement;
+    expect(panel.textContent).toContain('Встреча');
+    act(() => (panel.querySelector('button[aria-label="Изменить событие Встреча"]') as HTMLButtonElement | null)?.click());
+    expect(rendered.rootElement.querySelector('[aria-labelledby="calendar-event-title"]')).not.toBeNull();
+    act(() => rendered.root.unmount());
+  });
+
+  it('shows three event markers and overflow for a busy day', () => {
+    const events = Array.from({ length: 4 }, (_, index) => ({ id: `event-${index}`, title: `Событие ${index}`, date: '2026-11-01', time: `${String(9 + index).padStart(2, '0')}:00`, typeId: '', description: '', repeat: 'none' as const, until: '' }));
+    const rendered = renderCalendar({ events, types: [], days: [] }, { settings: { calendarMonth: '2026-11' } });
+    const day = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('воскресенье, 1 ноября')) as HTMLButtonElement;
+    expect(day.querySelectorAll('.calendar-widget__dot')).toHaveLength(3);
+    expect(day.querySelector('.calendar-widget__overflow')?.textContent).toBe('+1');
     act(() => rendered.root.unmount());
   });
 });

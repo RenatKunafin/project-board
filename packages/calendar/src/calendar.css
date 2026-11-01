@@ -40,10 +40,16 @@
 .calendar-widget__day-panel-header button, .calendar-dialog__header button { display: grid; place-items: center; width: 28px; height: 28px; flex: none; padding: 0; border: 0; border-radius: 5px; color: var(--muted-foreground); background: transparent; cursor: pointer; }
 .calendar-event-row { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
 .calendar-event-row > div { min-width: 0; }
+.calendar-event-row__content { flex: 1; }
 .calendar-event-row strong, .calendar-event-row span { display: block; overflow-wrap: anywhere; }
 .calendar-event-row div > span { margin-top: 3px; color: var(--muted-foreground); font-size: 11px; }
+.calendar-event-row__content small { display: block; margin-top: 5px; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; }
+.calendar-event-row__edit { display: grid; place-items: center; width: 28px; height: 28px; flex: none; padding: 0; border: 0; border-radius: 5px; color: var(--muted-foreground); background: transparent; cursor: pointer; }
+.calendar-event-row__edit:hover { color: var(--foreground); background: var(--surface-raised); }
+.calendar-event-row__edit svg { width: 14px; height: 14px; }
 .calendar-widget__today-card { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 0; color: var(--foreground); background: transparent; cursor: pointer; }
 .calendar-widget__today-card:hover { background: var(--surface-raised); }
+.calendar-widget__small-actions { display: flex; justify-content: center; padding: 0 8px 8px; }
 .calendar-widget__today-weekday { color: var(--muted-foreground); font-size: 11px; text-transform: capitalize; }
 .calendar-widget__today-card strong { font-family: var(--font-mono); font-size: 40px; line-height: 1.05; }
 .calendar-widget__today-card > span:not(.calendar-widget__today-weekday):not(.calendar-widget__dots) { color: var(--muted-foreground); font-size: 12px; text-transform: capitalize; }
@@ -54,3 +60,36 @@
 .calendar-dialog:not([open]) { display: none; }
 .calendar-dialog__header h3 { text-transform: none; }
 .calendar-dialog__body { max-height: calc(min(680px, 88dvh) - 80px); overflow: auto; }
+.calendar-editor-dialog { width: min(600px, calc(100vw - 32px)); }
+.calendar-editor__body { min-height: 0; max-height: min(620px, 72dvh); overflow: auto; padding: 16px; }
+.calendar-editor__form { display: flex; min-height: 0; flex-direction: column; }
+.calendar-editor__field { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: var(--muted-foreground); font-size: 11px; }
+.calendar-editor__field--grow { flex: 1; }
+.calendar-editor__input { width: 100%; min-height: 34px; box-sizing: border-box; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; outline: 0; color: var(--foreground); background: var(--background); font: inherit; font-size: 13px; }
+.calendar-editor__input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 22%, transparent); }
+.calendar-editor__input:disabled { opacity: .55; }
+.calendar-editor__columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.calendar-editor__body > .calendar-editor__field, .calendar-editor__body > .calendar-editor__checkbox { margin-top: 12px; }
+.calendar-editor__checkbox { display: flex; align-items: center; gap: 8px; color: var(--foreground); font-size: 12px; }
+.calendar-editor__checkbox input { accent-color: var(--primary); }
+.calendar-editor__footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+.calendar-editor__footer-spacer { flex: 1; }
+.calendar-editor__primary-button, .calendar-editor__secondary-button, .calendar-editor__icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--foreground); background: var(--background); cursor: pointer; font: inherit; font-size: 12px; }
+.calendar-editor__primary-button { border-color: var(--primary); color: var(--primary-foreground); background: var(--primary); }
+.calendar-editor__secondary-button:hover, .calendar-editor__icon-button:hover { background: var(--surface-raised); }
+.calendar-editor__primary-button:hover { filter: brightness(.96); }
+.calendar-editor__primary-button svg, .calendar-editor__secondary-button svg { width: 14px; height: 14px; }
+.calendar-editor__icon-button { width: 32px; padding: 0; flex: none; }
+.calendar-editor__icon-button svg { width: 15px; height: 15px; }
+.calendar-editor__danger { color: var(--destructive); }
+.calendar-editor__error { margin: 12px 0 0; padding: 8px 10px; border-radius: 6px; color: var(--destructive); background: color-mix(in srgb, var(--destructive) 10%, var(--background)); font-size: 12px; }
+.calendar-type-editor { padding: 0 0 14px; border-bottom: 1px solid var(--border); }
+.calendar-type-editor + .calendar-type-editor { margin-top: 14px; }
+.calendar-type-editor__row { display: flex; align-items: flex-end; gap: 8px; }
+.calendar-type-editor__colors { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.calendar-editor__swatch { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 2px solid transparent; border-radius: 50%; color: white; background: var(--event-color); cursor: pointer; }
+.calendar-editor__swatch.is-selected { border-color: var(--foreground); box-shadow: 0 0 0 2px var(--surface); outline: 1px solid var(--foreground); }
+.calendar-editor__swatch svg { width: 14px; height: 14px; }
+.calendar-day-dialog__body { max-height: min(520px, 58dvh); overflow: auto; }
+.calendar-day-panel__actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+@container (max-width: 360px) { .calendar-editor__columns { grid-template-columns: 1fr; } .calendar-editor__footer { padding-inline: 10px; } .calendar-editor__body { padding-inline: 10px; } }
