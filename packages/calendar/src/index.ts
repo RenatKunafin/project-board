@@ -28,6 +28,8 @@ export type {
 export * from './view';
 export { CALENDAR_REPEAT_LABELS } from './recurrence';
 export type { CalendarOccurrence } from './recurrence';
+export { countdown, formatCountdown, isNonWorkingDay } from './workday';
+export type { CalendarCountdown } from './workday';
 export { CalendarWidget } from './CalendarWidget';
 
 import { defineWidgetType } from '@project-board/widget-sdk';

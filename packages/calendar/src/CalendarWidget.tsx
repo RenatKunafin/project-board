@@ -30,10 +30,12 @@ import {
   CalendarDayDialog,
   CalendarDayPanel,
   CalendarEventDialog,
+  CalendarNonWorkingDialog,
   CalendarTypeDialog,
   type CalendarDocumentSnapshot,
 } from './CalendarEditors';
 import './calendar.css';
+import { isNonWorkingDay } from './workday';
 
 interface CalendarWidgetProps extends WidgetProps {
   readonly documentId: string;
@@ -112,9 +114,12 @@ function MonthGrid({ month, content, occurrences, today, selectedDate, compact, 
 function CalendarDay({ cell, content, occurrences, today, selectedDate, compact, onSelect }: { readonly cell: CalendarDayCell; readonly content: CalendarContent; readonly occurrences: readonly CalendarOccurrence[]; readonly today: string; readonly selectedDate: string | null; readonly compact?: boolean; readonly onSelect: (date: string) => void }) {
   if (!cell.date) return <span className="calendar-widget__blank" aria-hidden="true" />;
   const events = occurrences.filter(({ date }) => date === cell.date);
+  const manual = content.days.find((day) => day.date === cell.date);
+  const nonWorking = isNonWorkingDay(content, cell.date);
   const selected = selectedDate === cell.date;
   const current = today === cell.date;
-  return <button type="button" className={`calendar-widget__day${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${current ? ' is-today' : ''}`} aria-label={`${dateLabel(cell.date)}${events.length ? `, событий: ${events.length}` : ''}`} aria-pressed={selected} title={dateLabel(cell.date)} onClick={() => onSelect(cell.date as string)}><span>{cell.day}</span><span className="calendar-widget__dots" aria-hidden="true">{events.slice(0, 3).map(({ event, key }) => { const type = content.types.find((item) => item.id === event.typeId); return <span key={key} className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} />; })}{events.length > 3 && <span className="calendar-widget__overflow">+{events.length - 3}</span>}</span></button>;
+  const dayLabel = `${dateLabel(cell.date)}${nonWorking ? ', Нерабочий день' : ''}${events.length ? `, событий: ${events.length}` : ''}`;
+  return <button type="button" className={`calendar-widget__day${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${current ? ' is-today' : ''}${nonWorking ? ' is-non-working' : ''}`} aria-label={dayLabel} aria-pressed={selected} title={manual?.name || (nonWorking ? 'Нерабочий день' : dateLabel(cell.date))} onClick={() => onSelect(cell.date as string)}><span>{cell.day}</span><span className="calendar-widget__dots" aria-hidden="true">{events.slice(0, 3).map(({ event, key }) => { const type = content.types.find((item) => item.id === event.typeId); return <span key={key} className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} />; })}{events.length > 3 && <span className="calendar-widget__overflow">+{events.length - 3}</span>}</span></button>;
 }
 
 function readSize(size: CalendarSize | null): CalendarSize | null {
@@ -127,6 +132,7 @@ function CalendarPanel({ widgetInstanceId, documentId, documentService, settings
   const [view, setView] = useState<CalendarViewSettings>(() => readCalendarViewSettings(settings));
   const [dialogDate, setDialogDate] = useState<string | null>(null);
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
+  const [nonWorkingEditor, setNonWorkingEditor] = useState<{ readonly date: string; readonly snapshot: CalendarDocumentSnapshot } | null>(null);
   const [eventEditor, setEventEditor] = useState<{ readonly date: string; readonly event: CalendarEvent | null; readonly snapshot: CalendarDocumentSnapshot } | null>(null);
   const documentState = useCalendarDocument(documentId, documentService);
   const today = useToday(visible);
@@ -181,6 +187,7 @@ function CalendarPanel({ widgetInstanceId, documentId, documentService, settings
   const openNewEvent = (date: string) => { setDialogDate(null); setEventEditor({ date, event: null, snapshot }); };
   const openEvent = (event: CalendarEvent) => { setDialogDate(null); setEventEditor({ date: event.date, event, snapshot }); };
   const openTypes = () => setTypeDialogOpen(true);
+  const openNonWorking = (date: string) => { setDialogDate(null); setNonWorkingEditor({ date, snapshot }); };
   const monthStart = `${view.month}-01`;
   const parsedMonth = parseMonthKey(view.month) ?? new Date();
   const monthEnd = `${parsedMonth.getFullYear()}-${String(parsedMonth.getMonth() + 1).padStart(2, '0')}-${String(new Date(parsedMonth.getFullYear(), parsedMonth.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
@@ -190,10 +197,11 @@ function CalendarPanel({ widgetInstanceId, documentId, documentService, settings
   return <section className="calendar-widget" data-instance={widgetInstanceId} data-calendar-mode={mode} aria-label="Календарь">
     {mode === 'small' ? <><button type="button" className="calendar-widget__today-card" aria-label="Открыть сегодняшний день" onClick={() => selectDate(today)}><span className="calendar-widget__today-weekday">{dateLabel(today).split(', ')[0] ?? dateLabel(today)}</span><strong>{Number(today.slice(8, 10))}</strong><span>{monthLabel(today.slice(0, 7))}</span><EventDots content={snapshot.content} date={today} /></button><div className="calendar-widget__small-actions"><button type="button" className="calendar-editor__secondary-button" onClick={openTypes}>Типы событий</button></div></> : <>
       <header className="calendar-widget__toolbar"><button type="button" aria-label="Предыдущий период" title="Предыдущий период" onClick={() => movePeriod(-1)}><ChevronLeft aria-hidden="true" /></button><h2>{maximized ? yearLabel(view.month) : monthLabel(view.month)}</h2><button type="button" aria-label="Следующий период" title="Следующий период" onClick={() => movePeriod(1)}><ChevronRight aria-hidden="true" /></button><button type="button" className="calendar-widget__today-button" onClick={goToday}>Сегодня</button><button type="button" className="calendar-widget__today-button" onClick={openTypes}>Типы</button></header>
-      <div className="calendar-widget__body"><div className="calendar-widget__main">{maximized ? <div className="calendar-widget__year-grid">{yearMonths(view.month).map((month) => <MonthGrid key={month} month={month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} compact onSelect={selectDate} />)}</div> : <MonthGrid month={view.month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} onSelect={selectDate} />}</div>{maximized && view.selectedDate && <CalendarDayPanel snapshot={snapshot} date={view.selectedDate} onAdd={() => openNewEvent(view.selectedDate as string)} onEdit={openEvent} onManageTypes={openTypes} onClose={closeDay} />}</div>
+      <div className="calendar-widget__body"><div className="calendar-widget__main">{maximized ? <div className="calendar-widget__year-grid">{yearMonths(view.month).map((month) => <MonthGrid key={month} month={month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} compact onSelect={selectDate} />)}</div> : <MonthGrid month={view.month} content={snapshot.content} occurrences={rangeOccurrences} today={today} selectedDate={view.selectedDate} onSelect={selectDate} />}</div>{maximized && view.selectedDate && <CalendarDayPanel snapshot={snapshot} date={view.selectedDate} today={today} onAdd={() => openNewEvent(view.selectedDate as string)} onEdit={openEvent} onManageTypes={openTypes} onManageNonWorking={() => openNonWorking(view.selectedDate as string)} onClose={closeDay} />}</div>
     </>}
-    {dialogDate && mode !== 'year' && <CalendarDayDialog snapshot={snapshot} date={dialogDate} onAdd={() => openNewEvent(dialogDate)} onEdit={openEvent} onManageTypes={openTypes} onClose={closeDay} />}
+    {dialogDate && mode !== 'year' && <CalendarDayDialog snapshot={snapshot} date={dialogDate} today={today} onAdd={() => openNewEvent(dialogDate)} onEdit={openEvent} onManageTypes={openTypes} onManageNonWorking={() => openNonWorking(dialogDate)} onClose={closeDay} />}
     {typeDialogOpen && <CalendarTypeDialog snapshot={snapshot} save={save} onClose={() => setTypeDialogOpen(false)} />}
+    {nonWorkingEditor && <CalendarNonWorkingDialog snapshot={nonWorkingEditor.snapshot} date={nonWorkingEditor.date} save={save} onClose={() => setNonWorkingEditor(null)} />}
     {eventEditor && <CalendarEventDialog snapshot={eventEditor.snapshot} event={eventEditor.event} date={eventEditor.date} save={save} onClose={() => setEventEditor(null)} />}
   </section>;
 }
