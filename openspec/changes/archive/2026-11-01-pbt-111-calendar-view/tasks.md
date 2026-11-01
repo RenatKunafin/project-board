@@ -20,5 +20,5 @@
 ## 4. Интеграционные проверки и PR
 
 - [x] 4.1 Проверить reload, resize, maximize/restore, скрытие/возврат, два окна общего документа и неизменность редакции; выполнить unit/component/e2e сценарии.
-- [ ] 4.2 Выполнить `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `openspec validate pbt-111-calendar-view --strict` и `openspec validate --all --strict`; результаты и визуальные артефакты приложить к PR.
-- [ ] 4.3 Подготовить один PR PBT-111 в `develop`, проверить diff на отсутствие редакторов событий, повторений, нерабочих дней и виджета ближайших событий; после принятия архивировать change с sync specs.
+- [x] 4.2 Выполнить `npm run verify:repository`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:browser`, `openspec validate pbt-111-calendar-view --strict` и `openspec validate --all --strict`; результаты и визуальные артефакты приложить к PR.
+- [x] 4.3 Подготовить один PR PBT-111 в `develop`, проверить diff на отсутствие редакторов событий, повторений, нерабочих дней и виджета ближайших событий; после принятия архивировать change с sync specs.
