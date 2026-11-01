@@ -25,3 +25,29 @@ export type {
   NonWorkingDay,
   NonWorkingDayKind,
 } from './model';
+export * from './view';
+export { CalendarWidget } from './CalendarWidget';
+
+import { defineWidgetType } from '@project-board/widget-sdk';
+import { CalendarWidget } from './CalendarWidget';
+import { createEmptyCalendarContent } from './model';
+
+export function createCalendarModule() {
+  return {
+    widgetTypes: [defineWidgetType({
+      id: 'calendar',
+      title: 'Календарь',
+      icon: 'lucide:calendar-range',
+      description: 'События, даты и календарный обзор',
+      component: CalendarWidget,
+      startSettings: {},
+      sizeConstraints: { minWidth: 2, minHeight: 2 },
+      documentSupport: {
+        moduleId: 'calendar',
+        documentType: 'calendar',
+        schemaVersion: 1,
+        createContent: () => ({ ...createEmptyCalendarContent() }),
+      },
+    })],
+  };
+}
