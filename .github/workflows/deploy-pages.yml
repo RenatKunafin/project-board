@@ -42,6 +42,9 @@ jobs:
           npm install -g @fission-ai/openspec@1.11.0
           openspec validate --all --strict
       - name: Сборка и проверка Pages
+        env:
+          VITE_YANDEX_METRIKA_ENABLED: 'true'
+          VITE_YANDEX_METRIKA_WEBVISOR: 'true'
         run: |
           npm run build:pages
           npm run verify:pages
