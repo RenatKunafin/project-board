@@ -7,6 +7,7 @@ import {
   parseCalendarContent,
   removeCalendarEvent,
   removeCalendarType,
+  removeNonWorkingDay,
   setNonWorkingDay,
   updateCalendarEvent,
   updateCalendarType,
@@ -112,5 +113,15 @@ describe('calendar document model', () => {
     const after = setNonWorkingDay(before, { date: '2028-01-01', kind: 'holiday', name: 'Праздник' });
     expect(before.days).toEqual([]);
     expect(after.days).toEqual([{ date: '2028-01-01', kind: 'holiday', name: 'Праздник' }]);
+  });
+
+  it('replaces and removes only one manual date immutably', () => {
+    const before = setNonWorkingDay(content(), { date: '2028-01-01', kind: 'holiday', name: 'Праздник' });
+    const replaced = setNonWorkingDay(before, { date: '2028-01-01', kind: 'off', name: 'Отдых' });
+    const removed = removeNonWorkingDay(replaced, '2028-01-01');
+    expect(before.days).toEqual([{ date: '2028-01-01', kind: 'holiday', name: 'Праздник' }]);
+    expect(replaced.days).toEqual([{ date: '2028-01-01', kind: 'off', name: 'Отдых' }]);
+    expect(removed.days).toEqual([]);
+    expect(removed.events).toEqual(before.events);
   });
 });

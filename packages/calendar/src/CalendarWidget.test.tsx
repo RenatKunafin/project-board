@@ -145,6 +145,68 @@ describe('CalendarWidget', () => {
     act(() => rendered.root.unmount());
   });
 
+  it('marks weekends independently from event markers and opens the non-working-day editor', () => {
+    const rendered = renderCalendar({
+      events: [{ id: 'event-1', title: 'Выходная встреча', date: '2026-11-01', time: '', typeId: '', description: '', repeat: 'none', until: '' }],
+      types: [], days: [],
+    }, { settings: { calendarMonth: '2026-11' } });
+    const weekend = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('воскресенье, 1 ноября')) as HTMLButtonElement;
+    expect(weekend.classList.contains('is-non-working')).toBe(true);
+    expect(weekend.getAttribute('aria-label')).toContain('Нерабочий день');
+    expect(weekend.querySelectorAll('.calendar-widget__dot')).toHaveLength(1);
+    act(() => weekend.click());
+    expect(rendered.rootElement.textContent).toMatch(/Сегодня|Через|Прошло/);
+    expect(rendered.rootElement.textContent).toContain('Выходная встреча');
+    act(() => rendered.root.unmount());
+  });
+
+  it('saves and cancels a manual non-working day without changing event data', () => {
+    const rendered = renderCalendar({
+      events: [{ id: 'event-1', title: 'Рабочая встреча', date: '2026-11-02', time: '', typeId: '', description: '', repeat: 'none', until: '' }],
+      types: [], days: [],
+    }, { settings: { calendarMonth: '2026-11' } });
+    const day = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('понедельник, 2 ноября'));
+    act(() => day?.click());
+    const dayDialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-day-title"]') as HTMLElement;
+    act(() => [...dayDialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Нерабочий день'))?.click());
+    const editor = rendered.rootElement.querySelector('[aria-labelledby="calendar-non-working-title"]') as HTMLDialogElement;
+    act(() => setInputValue(editor.querySelector('[aria-label="Причина нерабочего дня"]') as HTMLInputElement, 'Корпоративный выходной'));
+    act(() => (editor.querySelector('button.calendar-editor__secondary-button') as HTMLButtonElement | null)?.click());
+    expect(rendered.service.update).not.toHaveBeenCalled();
+    expect(rendered.rootElement.querySelector('[aria-labelledby="calendar-non-working-title"]')).toBeNull();
+
+    act(() => day?.click());
+    const reopenedDayDialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-day-title"]') as HTMLElement;
+    act(() => [...reopenedDayDialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Нерабочий день'))?.click());
+    const savedEditor = rendered.rootElement.querySelector('[aria-labelledby="calendar-non-working-title"]') as HTMLDialogElement;
+    act(() => setInputValue(savedEditor.querySelector('[aria-label="Причина нерабочего дня"]') as HTMLInputElement, 'Корпоративный выходной'));
+    act(() => (savedEditor.querySelector('button.calendar-editor__primary-button') as HTMLButtonElement | null)?.click());
+    expect(rendered.service.update).toHaveBeenCalledWith('calendar-1', 1, expect.objectContaining({
+      events: [expect.objectContaining({ title: 'Рабочая встреча' })],
+      days: [{ date: '2026-11-02', kind: 'off', name: 'Корпоративный выходной' }],
+    }));
+    act(() => rendered.root.unmount());
+  });
+
+  it('keeps a manual-day draft after a revision conflict', () => {
+    const rendered = renderCalendar({ events: [], types: [], days: [] }, { settings: { calendarMonth: '2026-11' } });
+    (rendered.service.update as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new DocumentConflictError('calendar-1', 2, 1); });
+    const day = [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__day')]
+      .find((button) => button.getAttribute('aria-label')?.startsWith('понедельник, 2 ноября'));
+    act(() => day?.click());
+    const dayDialog = rendered.rootElement.querySelector('[aria-labelledby="calendar-day-title"]') as HTMLElement;
+    act(() => [...dayDialog.querySelectorAll('button')].find((button) => button.textContent?.includes('Нерабочий день'))?.click());
+    const editor = rendered.rootElement.querySelector('[aria-labelledby="calendar-non-working-title"]') as HTMLDialogElement;
+    const reason = editor.querySelector('[aria-label="Причина нерабочего дня"]') as HTMLInputElement;
+    act(() => setInputValue(reason, 'Черновик выходного'));
+    act(() => (editor.querySelector('button.calendar-editor__primary-button') as HTMLButtonElement | null)?.click());
+    expect(editor.textContent).toContain('Конфликт редакций');
+    expect(reason.value).toBe('Черновик выходного');
+    act(() => rendered.root.unmount());
+  });
+
   it('edits type drafts and keeps them out of the document until save', () => {
     const rendered = renderCalendar({ events: [], types: [], days: [] });
     act(() => [...rendered.rootElement.querySelectorAll<HTMLButtonElement>('.calendar-widget__today-button')].at(-1)?.click());

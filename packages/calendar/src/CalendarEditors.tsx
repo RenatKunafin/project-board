@@ -6,13 +6,17 @@ import {
   addCalendarEvent,
   createCalendarId,
   removeCalendarEvent,
+  removeNonWorkingDay,
+  setNonWorkingDay,
   updateCalendarEvent,
   type CalendarColor,
   type CalendarContent,
   type CalendarEvent,
+  type NonWorkingDayKind,
 } from './model';
 import { dateLabel } from './view';
 import { CALENDAR_REPEAT_LABELS, occurrencesForDate, type CalendarOccurrence } from './recurrence';
+import { countdown, formatCountdown } from './workday';
 
 export interface CalendarDocumentSnapshot {
   readonly document: ManagedDocument;
@@ -144,6 +148,47 @@ export function CalendarTypeDialog({ snapshot, save, onClose }: CalendarTypeDial
   );
 }
 
+export interface CalendarNonWorkingDialogProps {
+  readonly snapshot: CalendarDocumentSnapshot;
+  readonly date: string;
+  readonly save: (nextContent: CalendarContent, snapshot: CalendarDocumentSnapshot) => CalendarSaveResult;
+  readonly onClose: () => void;
+}
+
+export function CalendarNonWorkingDialog({ snapshot, date, save, onClose }: CalendarNonWorkingDialogProps) {
+  const current = snapshot.content.days.find((day) => day.date === date);
+  const [kind, setKind] = useState<NonWorkingDayKind>(() => current?.kind ?? 'off');
+  const [name, setName] = useState(() => current?.name ?? '');
+  const [error, setError] = useState('');
+  const submit = () => {
+    const next = setNonWorkingDay(snapshot.content, { date, kind, name: name.trim() });
+    const result = save(next, snapshot);
+    if (result.ok) onClose();
+    else setError(result.message);
+  };
+  const remove = () => {
+    if (!current || !window.confirm('Снять отметку нерабочего дня?')) return;
+    const result = save(removeNonWorkingDay(snapshot.content, date), snapshot);
+    if (result.ok) onClose();
+    else setError(result.message);
+  };
+  return (
+    <DialogShell title="Нерабочий день" description={dateLabel(date)} labelledBy="calendar-non-working-title" onClose={onClose}>
+      <div className="calendar-editor__body">
+        <label className="calendar-editor__field"><span>Вид нерабочего дня</span><select aria-label="Вид нерабочего дня" className={inputClass} value={kind} onChange={(event) => setKind(event.target.value as NonWorkingDayKind)}><option value="holiday">Праздник</option><option value="off">Другой нерабочий день</option></select></label>
+        <label className="calendar-editor__field"><span>Название / причина</span><input aria-label="Причина нерабочего дня" className={inputClass} value={name} onChange={(event) => setName(event.target.value)} /></label>
+        {error && <p className="calendar-editor__error" role="alert">{error}</p>}
+      </div>
+      <footer className="calendar-editor__footer">
+        {current && <button type="button" className="calendar-editor__secondary-button calendar-editor__danger" onClick={remove}><Trash2 aria-hidden="true" />Снять отметку</button>}
+        <span className="calendar-editor__footer-spacer" />
+        <button type="button" className="calendar-editor__secondary-button" onClick={onClose}>Отмена</button>
+        <button type="button" className="calendar-editor__primary-button" onClick={submit}>Сохранить</button>
+      </footer>
+    </DialogShell>
+  );
+}
+
 function emptyEvent(date: string): CalendarEvent {
   return { id: createCalendarId('event'), title: '', date, time: '', typeId: '', description: '', repeat: 'none', until: '' };
 }
@@ -238,32 +283,42 @@ export function CalendarEventRow({ occurrence, content, onEdit }: CalendarEventR
 export interface CalendarDayDialogProps {
   readonly snapshot: CalendarDocumentSnapshot;
   readonly date: string;
+  readonly today: string;
   readonly onAdd: () => void;
   readonly onEdit: (event: CalendarEvent) => void;
   readonly onManageTypes: () => void;
+  readonly onManageNonWorking: () => void;
   readonly onClose: () => void;
 }
 
-export function CalendarDayDialog({ snapshot, date, onAdd, onEdit, onManageTypes, onClose }: CalendarDayDialogProps) {
+function CalendarDaySummary({ snapshot, date, today }: { readonly snapshot: CalendarDocumentSnapshot; readonly date: string; readonly today: string }) {
+  const manual = snapshot.content.days.find((day) => day.date === date);
+  return <div className="calendar-day-summary"><span className="calendar-day-summary__countdown">{formatCountdown(countdown(snapshot.content, today, date))}</span>{manual && <span className="calendar-day-summary__reason">{manual.name || (manual.kind === 'holiday' ? 'Праздник' : 'Другой нерабочий день')}</span>}</div>;
+}
+
+export function CalendarDayDialog({ snapshot, date, today, onAdd, onEdit, onManageTypes, onManageNonWorking, onClose }: CalendarDayDialogProps) {
   const events = occurrencesForDate(snapshot.content, date);
   return <DialogShell title="События дня" description={dateLabel(date)} labelledBy="calendar-day-title" closeLabel="Закрыть день" onClose={onClose}>
     <div className="calendar-dialog__body calendar-day-dialog__body">
+      <CalendarDaySummary snapshot={snapshot} date={date} today={today} />
       {events.length === 0 ? <p className="calendar-widget__empty">Событий нет</p> : events.map((occurrence) => <CalendarEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onEdit={onEdit} />)}
     </div>
-    <footer className="calendar-editor__footer"><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><span className="calendar-editor__footer-spacer" /><button type="button" className="calendar-editor__secondary-button" onClick={onClose}>Закрыть</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить событие</button></footer>
+    <footer className="calendar-editor__footer"><button type="button" className="calendar-editor__secondary-button" onClick={onManageNonWorking}>Нерабочий день</button><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><span className="calendar-editor__footer-spacer" /><button type="button" className="calendar-editor__secondary-button" onClick={onClose}>Закрыть</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить событие</button></footer>
   </DialogShell>;
 }
 
 export interface CalendarDayPanelProps {
   readonly snapshot: CalendarDocumentSnapshot;
   readonly date: string;
+  readonly today: string;
   readonly onAdd: () => void;
   readonly onEdit: (event: CalendarEvent) => void;
   readonly onManageTypes: () => void;
+  readonly onManageNonWorking: () => void;
   readonly onClose: () => void;
 }
 
-export function CalendarDayPanel({ snapshot, date, onAdd, onEdit, onManageTypes, onClose }: CalendarDayPanelProps) {
+export function CalendarDayPanel({ snapshot, date, today, onAdd, onEdit, onManageTypes, onManageNonWorking, onClose }: CalendarDayPanelProps) {
   const events = occurrencesForDate(snapshot.content, date);
-  return <aside className="calendar-widget__day-panel"><header className="calendar-widget__day-panel-header"><div><strong>{dateLabel(date)}</strong><span>{events.length ? `${events.length} событий` : 'Событий нет'}</span></div><button type="button" aria-label="Закрыть день" onClick={onClose}><X aria-hidden="true" /></button></header><div className="calendar-day-panel__actions"><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить</button></div>{events.map((occurrence) => <CalendarEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onEdit={onEdit} />)}</aside>;
+  return <aside className="calendar-widget__day-panel"><header className="calendar-widget__day-panel-header"><div><strong>{dateLabel(date)}</strong><span>{events.length ? `${events.length} событий` : 'Событий нет'}</span></div><button type="button" aria-label="Закрыть день" onClick={onClose}><X aria-hidden="true" /></button></header><CalendarDaySummary snapshot={snapshot} date={date} today={today} /><div className="calendar-day-panel__actions"><button type="button" className="calendar-editor__secondary-button" onClick={onManageNonWorking}>Нерабочий день</button><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить</button></div>{events.map((occurrence) => <CalendarEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onEdit={onEdit} />)}</aside>;
 }

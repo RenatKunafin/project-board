@@ -153,6 +153,90 @@ test('серия календаря переносится общей копие
   }
 });
 
+test('нерабочий день сохраняется рядом с событием и показывает countdown', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Нерабочие дни', true);
+  const calendar = page.locator('.calendar-widget').last();
+  const monday = calendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first();
+  await monday.click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await expect(dayDialog).toContainText(/Сегодня|Через|Прошло/);
+  await dayDialog.getByRole('button', { name: 'Нерабочий день', exact: true }).click();
+  const nonWorking = page.getByRole('dialog', { name: 'Нерабочий день' });
+  await nonWorking.getByLabel('Вид нерабочего дня').selectOption('holiday');
+  await nonWorking.getByLabel('Причина нерабочего дня').fill('Корпоративный выходной');
+  await nonWorking.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Нерабочие дни')?.content)
+    .toMatchObject({ days: [{ kind: 'holiday', name: 'Корпоративный выходной' }] });
+  await expect(monday).toHaveClass(/is-non-working/);
+  await expect(monday).toHaveAttribute('title', 'Корпоративный выходной');
+
+  await monday.click();
+  const selected = page.getByRole('dialog', { name: 'События дня' });
+  await expect(selected).toContainText('Корпоративный выходной');
+  await page.screenshot({ path: testInfo.outputPath('calendar-non-working-dialog.png') });
+  await selected.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Событие в выходной');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Нерабочие дни')?.content)
+    .toMatchObject({ events: [{ title: 'Событие в выходной' }], days: [{ name: 'Корпоративный выходной' }] });
+  await expect(monday).toHaveAttribute('aria-label', /событий: 1/);
+  await page.screenshot({ path: testInfo.outputPath('calendar-non-working-day.png') });
+});
+
+test('ручная отметка нерабочего дня переживает reload и offline', async ({ page, context }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Offline нерабочий день', true);
+  const calendar = page.locator('.calendar-widget').last();
+  const monday = calendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first();
+  await monday.click();
+  await page.getByRole('dialog', { name: 'События дня' }).getByRole('button', { name: 'Нерабочий день', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: 'Нерабочий день' });
+  await editor.getByLabel('Причина нерабочего дня').fill('Offline выходной');
+  await editor.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Offline нерабочий день')?.content)
+    .toMatchObject({ days: [{ name: 'Offline выходной' }] });
+  await page.reload();
+  const reloaded = page.getByRole('group', { name: 'Календарь · Offline нерабочий день', exact: true });
+  await expect(reloaded.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first()).toHaveClass(/is-non-working/);
+  await context.setOffline(true);
+  await reloaded.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
+  await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Offline выходной');
+});
+
+test('ручная отметка нерабочего дня переносится backup в чистый контекст', async ({ page, browser }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Backup нерабочий день', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await calendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
+  await page.getByRole('dialog', { name: 'События дня' }).getByRole('button', { name: 'Нерабочий день', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: 'Нерабочий день' });
+  await editor.getByLabel('Причина нерабочего дня').fill('Backup праздник');
+  await editor.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Backup нерабочий день')?.content)
+    .toMatchObject({ days: [{ name: 'Backup праздник' }] });
+  const dialog = await backups(page);
+  await dialog.getByRole('button', { name: 'Создать копию', exact: true }).click();
+  const download = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Скачать', exact: true }).click();
+  const file = await download;
+  const buffer = await readFile((await file.path())!);
+  const clean = await browser.newContext();
+  try {
+    const target = await clean.newPage();
+    await target.goto('/');
+    const restore = await backups(target);
+    await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
+    await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
+    await restore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
+    await expect.poll(async () => (await storedWorkspace(target)).documents.find((document) => document.title === 'Backup нерабочий день')?.content)
+      .toMatchObject({ days: [{ name: 'Backup праздник' }] });
+  } finally {
+    await clean.close();
+  }
+});
+
 test('одиночное событие календаря переживает reload в offline', async ({ page, context }) => {
   await page.goto('/');
   await createDocumentWindow(page, 'Календарь', 'Offline календарь', true);
