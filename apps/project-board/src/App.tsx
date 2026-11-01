@@ -147,6 +147,7 @@ function WidgetPane({
   documentService,
   documents,
   visible,
+  maximized,
   handlers,
   onPickDocument,
   onCreateDocument,
@@ -156,6 +157,7 @@ function WidgetPane({
   documentService: AutosavingDocumentService;
   documents: readonly ManagedDocument[];
   visible: boolean;
+  maximized: boolean;
   handlers: { readonly current: PaneHandlers };
   onPickDocument: (instanceId: string, documentId: string) => void;
   onCreateDocument: (instanceId: string) => void;
@@ -249,6 +251,7 @@ function WidgetPane({
         documentId={pane.documentId}
         documentService={documentService}
         visible={visible}
+        maximized={maximized}
         onResize={subscribeResize}
         // Переключение документа экземпляра по запросу виджета (PBT-051):
         // тот же механизм перепривязки, что и у замены недоступного документа.
@@ -496,6 +499,7 @@ export const TabSurface = memo(function TabSurface({
               visible={
                 visible && (!pane.collapsed || maximized) && !hiddenByMaximize
               }
+              maximized={maximized}
               handlers={handlers}
               onPickDocument={(instanceId, documentId) =>
                 handlers.current.replacePaneDocument(instanceId, documentId)
