@@ -10,6 +10,13 @@ const first = (page: Page) => page.getByRole('group', { name: 'Чек-лист �
 const offlineStatus = (page: Page) => page.getByRole('status', { name: 'Готовность к офлайн-работе' });
 const notification = (page: Page) => page.getByRole('status', { name: 'Обновление приложения', exact: true });
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Обновление Project Board' });
+
+test.beforeEach(async ({ context }) => {
+  // Release-артефакт содержит Метрику, но browser-проверки не должны создавать
+  // реальные визиты в production-счётчике.
+  await context.route('https://mc.yandex.ru/**', route => route.fulfill({ status: 204, body: '' }));
+});
+
 async function publish(request: APIRequestContext, version: string) {
   expect((await request.post(`${origin}/__pages/version?value=${version}`)).ok()).toBe(true);
 }

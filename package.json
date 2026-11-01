@@ -20,6 +20,7 @@
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
     "test:browser": "playwright test",
+    "test:analytics": "VITE_YANDEX_METRIKA_ENABLED=true VITE_YANDEX_METRIKA_WEBVISOR=true npm run build && playwright test --config=playwright.analytics.config.ts",
     "test:pwa-updates": "node tests/pwa-updates/build.mjs && playwright test --config=playwright.pwa.config.ts",
     "test:planning": "playwright test --config=playwright.planning.config.ts",
     "bench:release": "node tests/performance/run.mjs",
