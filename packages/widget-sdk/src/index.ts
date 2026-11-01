@@ -26,6 +26,8 @@ export interface WidgetProps {
    * сохраняя подписки на документ (ADR-6.5, PBT-027).
    */
   readonly visible: boolean;
+  /** True only while the platform has explicitly expanded this window to the whole dashboard. */
+  readonly maximized: boolean;
   /**
    * Подписка на размеры содержимого окна (design D2): регистрирует слушателя,
    * возвращает функцию отписки; платформа троттлит значения кадром.

@@ -7,16 +7,20 @@ import {
 } from './workspace-backup';
 import type { WorkspaceSnapshot } from './workspace-store';
 
-const doc = (id: string, moduleId = 'checklist'): ManagedDocument => ({
+const doc = (
+  id: string,
+  moduleId = 'checklist',
+  content: ManagedDocument['content'] = { id, nested: [{ active: true }] },
+): ManagedDocument => ({
   id,
   moduleId,
-  documentType: moduleId === 'gantt' ? 'plan' : 'list',
+  documentType: moduleId === 'gantt' ? 'plan' : moduleId === 'calendar' ? 'calendar' : 'list',
   title: id,
   schemaVersion: 1,
   revision: 3,
   createdAt: '2026-10-20T10:00:00.000Z',
   updatedAt: '2026-10-20T11:00:00.000Z',
-  content: { id, nested: [{ active: true }] },
+  content,
 });
 
 const workspace: WorkspaceSnapshot = {
@@ -59,6 +63,38 @@ describe('workspace-backup format v1', () => {
     if (!result.ok) return;
     expect(result.value).toMatchObject({ ...payload, createdAt });
     expect(result.issues).toEqual([]);
+  });
+
+  it('round-trips one calendar document referenced by two windows without shifting local values', () => {
+    const calendarContent = {
+      events: [{ id: 'event-1', title: 'Встреча', date: '2026-12-31', time: '09:30', typeId: '', description: '', repeat: 'none', until: '' }],
+      types: [],
+      days: [{ date: '2027-01-01', kind: 'holiday' as const, name: 'Праздник' }],
+    };
+    const calendarWorkspace: WorkspaceSnapshot = {
+      ...workspace,
+      tabs: workspace.tabs.map((tab) => ({ ...tab, mode: 'grid' as const, cascadeOrder: [] })),
+      instances: [
+        { ...workspace.instances[0], id: 'calendar-window-1', typeId: 'calendar', documentId: 'calendar-1' },
+        { ...workspace.instances[0], id: 'calendar-window-2', typeId: 'calendar', documentId: 'calendar-1' },
+      ],
+    };
+    const calendarPayload: WorkspaceBackupPayload = {
+      documents: [doc('calendar-1', 'calendar', calendarContent)],
+      workspace: calendarWorkspace,
+      viewSettings: {},
+    };
+    const result = deserializeWorkspaceBackup(
+      serialize(calendarPayload),
+      {
+        widgetTypeIds: ['calendar'],
+        documentTypes: [{ moduleId: 'calendar', documentType: 'calendar', schemaVersion: 1 }],
+      },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.documents[0]?.content).toEqual(calendarContent);
+    expect(result.value.workspace.instances.map((instance) => instance.documentId)).toEqual(['calendar-1', 'calendar-1']);
   });
 
   it('keeps a deleted-document reference and reports it as a warning', () => {

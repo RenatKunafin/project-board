@@ -15,6 +15,7 @@ import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
 import App, { type RestoredWorkspace } from './App';
 import { widgetTypes } from './widgets';
+import { initializeYandexMetrika } from './analytics/yandex-metrika';
 // Шрифты — локальная сборка @fontsource (офлайн-требование PWA, PBT-069):
 // внешних CDN-запросов нет, значения --font-sans/--font-mono в tokens.css.
 import '@fontsource/ibm-plex-sans/400.css';
@@ -101,6 +102,9 @@ if (window.location.hash === '#storage-selftest') {
 }
 
 async function bootstrap(): Promise<void> {
+  // Метрика загружается независимо от восстановления локальных данных и не
+  // должна блокировать запуск PWA при недоступности внешнего скрипта.
+  initializeYandexMetrika();
   // Сбой восстановления не выдаётся за пустой каталог: флаг доходит до App,
   // каталог показывает состояние ошибки загрузки (DoD PBT-025).
   let documentsLoadError = false;

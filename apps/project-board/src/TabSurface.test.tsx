@@ -42,12 +42,22 @@ class MockResizeObserver {
 }
 
 let renders = 0;
+let mounts = 0;
+let unmounts = 0;
 let lastVisible: boolean | null = null;
+let maximizedValues: boolean[] = [];
 const receivedSizes: WidgetSize[] = [];
 
-function CounterWidget({ visible, onResize }: WidgetProps): JSX.Element {
+function CounterWidget({ visible, maximized, onResize }: WidgetProps): JSX.Element {
   renders += 1;
   lastVisible = visible;
+  maximizedValues.push(maximized);
+  useEffect(() => {
+    mounts += 1;
+    return () => {
+      unmounts += 1;
+    };
+  }, []);
   useEffect(() => onResize?.((size) => receivedSizes.push(size)), [onResize]);
   return <div data-visible={String(visible)} />;
 }
@@ -89,13 +99,22 @@ function handlers(): { current: PaneHandlers } {
 
 let container: HTMLDivElement;
 let root: Root;
+const originalScrollTo = HTMLElement.prototype.scrollTo;
 
 beforeEach(() => {
   MockResizeObserver.instances = [];
   renders = 0;
+  mounts = 0;
+  unmounts = 0;
   lastVisible = null;
+  maximizedValues = [];
   receivedSizes.length = 0;
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(),
+  });
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -106,6 +125,11 @@ afterEach(() => {
     root.unmount();
   });
   container.remove();
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    writable: true,
+    value: originalScrollTo,
+  });
   vi.unstubAllGlobals();
 });
 
@@ -157,6 +181,20 @@ describe('TabSurface — жизненный цикл скрытых виджет
     expect(renders).toBe(2);
     expect(lastVisible).toBe(false);
     expect(container.querySelector('[data-visible="false"]')).toBeTruthy();
+  });
+
+  it('передаёт явную максимизацию и не выводит её из размера окна', () => {
+    renderSurface();
+    expect(maximizedValues).toEqual([false]);
+
+    renderSurface({ maximizedInstanceId: 'w-1' });
+    expect(maximizedValues).toEqual([false, true]);
+
+    // Большое обычное окно остаётся обычным до явного maximize.
+    renderSurface({ maximizedInstanceId: null });
+    expect(maximizedValues).toEqual([false, true, false]);
+    expect(mounts).toBe(1);
+    expect(unmounts).toBe(0);
   });
 
   it('размеры доставляются подписчику с троттлингом: серия триггеров — одно значение на кадр', async () => {
