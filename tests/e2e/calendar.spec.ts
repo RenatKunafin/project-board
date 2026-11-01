@@ -1,6 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { expect, test, type Page } from '@playwright/test';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { storedWorkspace } from './workspace-helper';
+
+async function backups(page: Page) {
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('button', { name: 'Резервные копии', exact: true }).click();
+  return page.getByRole('dialog', { name: 'Резервные копии', exact: true });
+}
 
 test('календарь показывает месяц, выбранный день и годовой вид при maximize', async ({ page }, testInfo) => {
   await page.goto('/');
@@ -76,6 +83,73 @@ test('календарь сохраняет тип и одиночное соб�
   await expect(windows).toHaveCount(2);
   await windows.nth(1).locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
   await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Командная встреча');
+});
+
+test('календарь вычисляет серию в следующем дне и синхронизирует одну запись между окнами', async ({ page }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Серия команды', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await calendar.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Ежедневная синхронизация');
+  await eventDialog.getByLabel('Повторение').selectOption('daily');
+  await expect(eventDialog).toContainText('Изменения и удаление применяются ко всей серии.');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(eventDialog).toBeHidden();
+  await expect.poll(async () => {
+    const stored = await storedWorkspace(page);
+    return (stored.documents.find((document) => document.title === 'Серия команды')?.content as { events?: { repeat?: string }[] } | undefined)?.events;
+  }).toMatchObject([{ repeat: 'daily' }]);
+
+  await openDocumentWindow(page, 'Календарь', 'Серия команды');
+  const windows = page.getByRole('group', { name: 'Календарь · Серия команды', exact: true });
+  await expect(windows).toHaveCount(2);
+  const secondCalendar = windows.nth(1).locator('.calendar-widget');
+  await secondCalendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
+  await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Ежедневная синхронизация');
+  await expect(page.getByRole('dialog', { name: 'События дня' })).toContainText('Каждый день');
+});
+
+test('серия календаря переносится общей копией и переживает offline reload', async ({ page, browser }) => {
+  await page.goto('/');
+  await createDocumentWindow(page, 'Календарь', 'Backup календарь', true);
+  const calendar = page.locator('.calendar-widget').last();
+  await calendar.locator('.calendar-widget__day').filter({ hasText: /^1/ }).first().click();
+  const dayDialog = page.getByRole('dialog', { name: 'События дня' });
+  await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
+  const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
+  await eventDialog.getByLabel('Название события').fill('Backup серия');
+  await eventDialog.getByLabel('Повторение').selectOption('monthly');
+  await eventDialog.getByLabel('Дата окончания повторения').fill('2030-12-31');
+  await eventDialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect.poll(async () => (await storedWorkspace(page)).documents.find((document) => document.title === 'Backup календарь')?.content)
+    .toMatchObject({ events: [{ title: 'Backup серия', repeat: 'monthly', until: '2030-12-31' }] });
+
+  const dialog = await backups(page);
+  await dialog.getByRole('button', { name: 'Создать копию', exact: true }).click();
+  const download = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Скачать', exact: true }).click();
+  const file = await download;
+  const buffer = await readFile((await file.path())!);
+  const clean = await browser.newContext();
+  try {
+    const target = await clean.newPage();
+    await target.goto('/');
+    const restore = await backups(target);
+    await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
+    await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
+    await restore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
+    await expect.poll(async () => (await storedWorkspace(target)).documents.find((document) => document.title === 'Backup календарь')?.content)
+      .toMatchObject({ events: [{ title: 'Backup серия', repeat: 'monthly', until: '2030-12-31' }] });
+    await target.waitForFunction(() => navigator.serviceWorker.controller !== null);
+    await clean.setOffline(true);
+    await target.reload();
+    await expect(target.getByRole('group', { name: 'Календарь · Backup календарь', exact: true })).toBeVisible();
+  } finally {
+    await clean.close();
+  }
 });
 
 test('одиночное событие календаря переживает reload в offline', async ({ page, context }) => {

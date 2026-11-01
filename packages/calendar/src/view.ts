@@ -1,4 +1,5 @@
 import type { CalendarContent, CalendarEvent } from './model';
+import { occurrencesForDate } from './recurrence';
 
 export const CALENDAR_COMPACT_WIDTH = 300;
 export const CALENDAR_COMPACT_HEIGHT = 280;
@@ -104,10 +105,11 @@ export function yearMonths(value: string): readonly string[] {
 }
 
 export function eventsForDate(content: CalendarContent, value: string): readonly CalendarEvent[] {
-  return content.events
-    .filter((event) => event.repeat === 'none' && event.date === value)
-    .sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
+  return occurrencesForDate(content, value).map(({ event }) => event);
 }
+
+export { occurrencesForDate, occurrencesForRange } from './recurrence';
+export type { CalendarOccurrence } from './recurrence';
 
 export function readCalendarViewSettings(settings: Record<string, unknown>, now = new Date()): CalendarViewSettings {
   const fallback = monthKey(now);

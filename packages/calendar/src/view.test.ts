@@ -43,7 +43,7 @@ describe('calendar view helpers', () => {
     expect(settings).toEqual({ month: '2026-05', selectedDate: null });
   });
 
-  it('shows only single events and sorts markers by time and title', () => {
+  it('shows single and recurring events and sorts markers by time and title', () => {
     let content = createEmptyCalendarContent();
     content = addCalendarEvent(content, {
       id: 'late', title: 'Б', date: '2026-11-03', time: '14:00', typeId: '', description: '', repeat: 'none', until: '',
@@ -54,7 +54,7 @@ describe('calendar view helpers', () => {
     content = addCalendarEvent(content, {
       id: 'repeat', title: 'Повтор', date: '2026-11-03', time: '', typeId: '', description: '', repeat: 'daily', until: '',
     });
-    expect(eventsForDate(content, '2026-11-03').map((event) => event.id)).toEqual(['early', 'late']);
+    expect(eventsForDate(content, '2026-11-03').map((event) => event.id)).toEqual(['repeat', 'early', 'late']);
     expect(dateKey(new Date(2026, 10, 3))).toBe('2026-11-03');
   });
 });

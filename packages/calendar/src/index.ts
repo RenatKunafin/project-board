@@ -26,6 +26,8 @@ export type {
   NonWorkingDayKind,
 } from './model';
 export * from './view';
+export { CALENDAR_REPEAT_LABELS } from './recurrence';
+export type { CalendarOccurrence } from './recurrence';
 export { CalendarWidget } from './CalendarWidget';
 
 import { defineWidgetType } from '@project-board/widget-sdk';

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Plus, Repeat2, Trash2, X } from 'lucide-react';
 import type { ManagedDocument } from '@project-board/widget-sdk';
 import {
   CALENDAR_COLORS,
@@ -12,6 +12,7 @@ import {
   type CalendarEvent,
 } from './model';
 import { dateLabel } from './view';
+import { CALENDAR_REPEAT_LABELS, occurrencesForDate, type CalendarOccurrence } from './recurrence';
 
 export interface CalendarDocumentSnapshot {
   readonly document: ManagedDocument;
@@ -170,8 +171,13 @@ export function CalendarEventDialog({ snapshot, event, date, save, onClose }: Ca
       setError('Выберите дату события.');
       return;
     }
+    if (draft.repeat !== 'none' && draft.until !== '' && draft.until < draft.date) {
+      setError('Окончание повторений должно быть не раньше даты начала.');
+      return;
+    }
     try {
-      const next = exists ? updateCalendarEvent(snapshot.content, { ...draft, title: draft.title.trim(), repeat: 'none', until: '' }) : addCalendarEvent(snapshot.content, { ...draft, title: draft.title.trim(), repeat: 'none', until: '' });
+      const nextEvent = { ...draft, title: draft.title.trim(), until: draft.repeat === 'none' ? '' : draft.until };
+      const next = exists ? updateCalendarEvent(snapshot.content, nextEvent) : addCalendarEvent(snapshot.content, nextEvent);
       const result = save(next, snapshot);
       if (result.ok) onClose();
       else setError(result.message);
@@ -181,14 +187,14 @@ export function CalendarEventDialog({ snapshot, event, date, save, onClose }: Ca
   };
 
   const remove = () => {
-    if (!exists || !window.confirm('Удалить событие?')) return;
+    if (!exists || !window.confirm(draft.repeat === 'none' ? 'Удалить событие?' : 'Удалить всю серию событий?')) return;
     const result = save(removeCalendarEvent(snapshot.content, draft.id), snapshot);
     if (result.ok) onClose();
     else setError(result.message);
   };
 
   return (
-    <DialogShell title={exists ? 'Изменить событие' : 'Новое событие'} description="Событие календаря" labelledBy="calendar-event-title" onClose={onClose}>
+    <DialogShell title={exists ? 'Изменить событие' : 'Новое событие'} description={draft.repeat === 'none' ? 'Событие календаря' : 'Повторяющееся событие · изменения применяются ко всей серии'} labelledBy="calendar-event-title" onClose={onClose}>
       <form className="calendar-editor__form" onSubmit={(eventSubmit) => { eventSubmit.preventDefault(); submit(); }}>
         <div className="calendar-editor__body">
           <label className="calendar-editor__field"><span>Название</span><input autoFocus required aria-label="Название события" className={inputClass} value={draft.title} onChange={(eventInput) => patch({ title: eventInput.target.value })} /></label>
@@ -197,6 +203,11 @@ export function CalendarEventDialog({ snapshot, event, date, save, onClose }: Ca
             <label className="calendar-editor__field"><span>Время</span><input type="time" aria-label="Время события" disabled={!draft.time} className={inputClass} value={draft.time} onChange={(eventInput) => patch({ time: eventInput.target.value })} /></label>
           </div>
           <label className="calendar-editor__checkbox"><input type="checkbox" checked={!draft.time} onChange={(eventInput) => patch({ time: eventInput.target.checked ? '' : '09:00' })} />Весь день</label>
+          <div className="calendar-editor__columns">
+            <label className="calendar-editor__field"><span>Повторение</span><select aria-label="Повторение" className={inputClass} value={draft.repeat} onChange={(eventInput) => patch({ repeat: eventInput.target.value as CalendarEvent['repeat'], until: eventInput.target.value === 'none' ? '' : draft.until })}>{Object.entries(CALENDAR_REPEAT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            {draft.repeat !== 'none' && <label className="calendar-editor__field"><span>Повторять до (включительно)</span><input type="date" aria-label="Дата окончания повторения" min={draft.date} className={inputClass} value={draft.until} onChange={(eventInput) => patch({ until: eventInput.target.value })} /></label>}
+          </div>
+          {draft.repeat !== 'none' && <p className="calendar-editor__series-note">Изменения и удаление применяются ко всей серии.</p>}
           <label className="calendar-editor__field"><span>Тип события</span><select aria-label="Тип события" className={inputClass} value={draft.typeId || 'none'} onChange={(eventInput) => patch({ typeId: eventInput.target.value === 'none' ? '' : eventInput.target.value })}><option value="none">Без типа</option>{snapshot.content.types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label>
           <label className="calendar-editor__field"><span>Описание</span><textarea aria-label="Описание события" className={inputClass} rows={4} value={draft.description} onChange={(eventInput) => patch({ description: eventInput.target.value })} /></label>
           {error && <p className="calendar-editor__error" role="alert">{error}</p>}
@@ -213,14 +224,15 @@ export function CalendarEventDialog({ snapshot, event, date, save, onClose }: Ca
 }
 
 export interface CalendarEventRowProps {
-  readonly event: CalendarEvent;
+  readonly occurrence: CalendarOccurrence;
   readonly content: CalendarContent;
   readonly onEdit?: (event: CalendarEvent) => void;
 }
 
-export function CalendarEventRow({ event, content, onEdit }: CalendarEventRowProps) {
+export function CalendarEventRow({ occurrence, content, onEdit }: CalendarEventRowProps) {
+  const { event } = occurrence;
   const type = content.types.find((item) => item.id === event.typeId);
-  return <div className="calendar-event-row"><span className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} aria-hidden="true" /><div className="calendar-event-row__content"><strong>{event.title}</strong><span>{event.time || 'Весь день'} · {type?.name ?? 'Без типа'}</span>{event.description && <small>{event.description}</small>}</div>{onEdit && <button type="button" className="calendar-event-row__edit" aria-label={`Изменить событие ${event.title}`} onClick={() => onEdit(event)}><Pencil aria-hidden="true" /></button>}</div>;
+  return <div className="calendar-event-row"><span className={`calendar-widget__dot calendar-color-${type?.color ?? 'blue'}`} aria-hidden="true" /><div className="calendar-event-row__content"><strong>{event.title}</strong><span>{event.time || 'Весь день'} · {type?.name ?? 'Без типа'}{event.repeat !== 'none' && <><span className="calendar-event-row__repeat" aria-label={`Повторяется: ${CALENDAR_REPEAT_LABELS[event.repeat]}`} title={`Повторяется: ${CALENDAR_REPEAT_LABELS[event.repeat]}`}><Repeat2 aria-hidden="true" />{CALENDAR_REPEAT_LABELS[event.repeat]}</span></>}</span>{event.description && <small>{event.description}</small>}</div>{onEdit && <button type="button" className="calendar-event-row__edit" aria-label={`Изменить событие ${event.title}`} onClick={() => onEdit(event)}><Pencil aria-hidden="true" /></button>}</div>;
 }
 
 export interface CalendarDayDialogProps {
@@ -233,10 +245,10 @@ export interface CalendarDayDialogProps {
 }
 
 export function CalendarDayDialog({ snapshot, date, onAdd, onEdit, onManageTypes, onClose }: CalendarDayDialogProps) {
-  const events = snapshot.content.events.filter((event) => event.repeat === 'none' && event.date === date).sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
+  const events = occurrencesForDate(snapshot.content, date);
   return <DialogShell title="События дня" description={dateLabel(date)} labelledBy="calendar-day-title" closeLabel="Закрыть день" onClose={onClose}>
     <div className="calendar-dialog__body calendar-day-dialog__body">
-      {events.length === 0 ? <p className="calendar-widget__empty">Событий нет</p> : events.map((event) => <CalendarEventRow key={event.id} event={event} content={snapshot.content} onEdit={onEdit} />)}
+      {events.length === 0 ? <p className="calendar-widget__empty">Событий нет</p> : events.map((occurrence) => <CalendarEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onEdit={onEdit} />)}
     </div>
     <footer className="calendar-editor__footer"><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><span className="calendar-editor__footer-spacer" /><button type="button" className="calendar-editor__secondary-button" onClick={onClose}>Закрыть</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить событие</button></footer>
   </DialogShell>;
@@ -252,6 +264,6 @@ export interface CalendarDayPanelProps {
 }
 
 export function CalendarDayPanel({ snapshot, date, onAdd, onEdit, onManageTypes, onClose }: CalendarDayPanelProps) {
-  const events = snapshot.content.events.filter((event) => event.repeat === 'none' && event.date === date).sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
-  return <aside className="calendar-widget__day-panel"><header className="calendar-widget__day-panel-header"><div><strong>{dateLabel(date)}</strong><span>{events.length ? `${events.length} событий` : 'Событий нет'}</span></div><button type="button" aria-label="Закрыть день" onClick={onClose}><X aria-hidden="true" /></button></header><div className="calendar-day-panel__actions"><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить</button></div>{events.map((event) => <CalendarEventRow key={event.id} event={event} content={snapshot.content} onEdit={onEdit} />)}</aside>;
+  const events = occurrencesForDate(snapshot.content, date);
+  return <aside className="calendar-widget__day-panel"><header className="calendar-widget__day-panel-header"><div><strong>{dateLabel(date)}</strong><span>{events.length ? `${events.length} событий` : 'Событий нет'}</span></div><button type="button" aria-label="Закрыть день" onClick={onClose}><X aria-hidden="true" /></button></header><div className="calendar-day-panel__actions"><button type="button" className="calendar-editor__secondary-button" onClick={onManageTypes}>Типы событий</button><button type="button" className="calendar-editor__primary-button" onClick={onAdd}><Plus aria-hidden="true" />Добавить</button></div>{events.map((occurrence) => <CalendarEventRow key={occurrence.key} occurrence={occurrence} content={snapshot.content} onEdit={onEdit} />)}</aside>;
 }
