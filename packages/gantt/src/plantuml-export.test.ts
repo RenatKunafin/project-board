@@ -165,7 +165,7 @@ describe('кодирование и края', () => {
     );
   });
 
-  it('дубли названий не рвут связи: алиасы уникальны', () => {
+  it('дубли получают разные подписи для PlantUML 1.2023.9, связи и даты сохраняются', () => {
     const plan: PlanContent = {
       ...createPlanContent('Дубли'),
       calendar: {
@@ -182,9 +182,42 @@ describe('кодирование и края', () => {
       ],
     };
     const result = serializePlanToPlantUml(plan);
-    expect(result.text).toContain('[Работа] as [T1] requires 2 days');
-    expect(result.text).toContain('[Работа] as [T2] requires 2 days');
+    expect(result.text).toContain('[Работа (T1)] as [T1] requires 2 days');
+    expect(result.text).toContain('[Работа (T2)] as [T2] requires 2 days');
     expect(result.text).toContain('[T1] -> [T2]');
+    expect(result.text).toContain('[T1] starts 2026/10/12');
+    expect(result.text).toContain('[T2] starts 2026/10/14');
+  });
+
+  it('различает кодированные названия, отпуска и занятые суффиксы без изменения плана', () => {
+    const titles = ['Работа [этап]', 'Работа (этап)', 'Работа (этап) (T1)', 'Отпуск — QA', 'T1', 'Уникальная'];
+    const plan: PlanContent = {
+      ...createPlanContent('Коллизии'),
+      resources: [{ id: 'qa', title: 'QA' }],
+      tasks: titles.map((title, index) => ({
+        id: `t${index}`, title, start: '2026-10-12', end: '2026-10-13', color: 'sapphire',
+      })),
+      unavailability: [
+        { id: 'u1', resourceId: 'qa', start: '2026-10-14', end: '2026-10-15' },
+        { id: 'u2', resourceId: 'qa', start: '2026-10-19', end: '2026-10-20' },
+      ],
+    };
+    const before = structuredClone(plan);
+    const { text } = serializePlanToPlantUml(plan);
+    const labels = [...text.matchAll(/^\[([^\]]+)\] as \[/gm)].map((match) => match[1]);
+    expect(labels).toHaveLength(8);
+    expect(new Set(labels).size).toBe(8);
+    expect(labels).toContain('Работа (этап) (T1-2)');
+    expect(labels).toContain('Работа (этап) (T1)');
+    expect(labels).toContain('Отпуск — QA (T4)');
+    expect(labels).toContain('Отпуск — QA (U1)');
+    expect(labels).toContain('Отпуск — QA (U2)');
+    expect(labels).toContain('T1 (T5)');
+    expect(labels).toContain('Уникальная');
+    expect(text).toContain('[T1] is colored in #3186e9/#3186e9');
+    expect(text).toContain('[U1] is colored in DarkGreen/DarkGreen');
+    expect(serializePlanToPlantUml(plan).text).toBe(text);
+    expect(plan).toEqual(before);
   });
 
   it('край полосы на нерабочем дне — заметка non-working-edge', () => {
