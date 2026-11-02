@@ -7,7 +7,7 @@ import { taskColor } from './task-colors';
  * Вид — по целевому примеру владельца (.context/examples/
  * plant-uml-example.plantuml): алиасы, requires/starts, отпуска
  * разделом, выходные заливкой, language ru.
- * Целевая версия рендера — PlantUML 1.2026.9beta4 (design D6).
+ * Совместимость публикации проверяется на PlantUML 1.2023.9.
  *
  * Цвет публикации (PBT-084): единственный источник — ручной цвет
  * задачи, переносится hex-значением палитры. Эвристика этапов по
@@ -58,6 +58,31 @@ export function encodePlantUmlTitle(title: string): string {
     .replace(/:/g, '—')
     .replace(/[\r\n\t]+/g, ' ')
     .trim();
+}
+
+/** До 1.2024.6 PlantUML объединяет одинаковые подписи даже при разных алиасах. */
+function createUniqueTitles(titles: readonly string[], aliases: readonly string[]) {
+  const counts = new Map<string, number>();
+  for (const title of titles) {
+    const encoded = encodePlantUmlTitle(title);
+    counts.set(encoded, (counts.get(encoded) ?? 0) + 1);
+  }
+  const reserved = new Set([...counts.keys(), ...aliases]);
+  const used = new Set(aliases);
+  return (title: string, alias: string): string => {
+    const encoded = encodePlantUmlTitle(title);
+    if (counts.get(encoded) === 1 && !used.has(encoded)) {
+      used.add(encoded);
+      return encoded;
+    }
+    let unique = `${encoded} (${alias})`;
+    let suffix = 2;
+    while (reserved.has(unique) || used.has(unique)) {
+      unique = `${encoded} (${alias}-${suffix++})`;
+    }
+    used.add(unique);
+    return unique;
+  };
 }
 
 /** Ручной цвет задачи → hex палитры для публикации (PBT-084). */
@@ -226,13 +251,22 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
     aliasByTaskId.set(task.id, `T${index + 1}`);
   });
 
+  const resourceTitle = new Map(plan.resources.map((r) => [r.id, r.title]));
+  const vacationTitles = plan.unavailability.map(
+    (entry) => `Отпуск — ${resourceTitle.get(entry.resourceId) ?? entry.resourceId}`,
+  );
+  const uniqueTitle = createUniqueTitles(
+    [...plan.tasks.map((task) => task.title), ...vacationTitles],
+    [...aliasByTaskId.values(), ...plan.unavailability.map((_, index) => `U${index + 1}`)],
+  );
+
   const emitTask = (task: PlanTask, alias: string): void => {
     const workingDaysCount = calendar.workingDaysBetween(task.start, task.end);
     // PBT-084: публикация красит только ручным цветом (hex палитры);
     // без ручного цвета — без явного цвета (решение владельца 2026-10-26).
     const block = taskRequiresBlock(
       alias,
-      task.title,
+      uniqueTitle(task.title, alias),
       task.start,
       workingDaysCount,
       manualColorHex(task),
@@ -270,12 +304,11 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
   if (plan.unavailability.length > 0) {
     lines.push('-- Отпуска --');
     lines.push('');
-    const resourceTitle = new Map(plan.resources.map((r) => [r.id, r.title]));
     plan.unavailability.forEach((entry, index) => {
       const alias = `U${index + 1}`;
-      const title = `Отпуск — ${resourceTitle.get(entry.resourceId) ?? entry.resourceId}`;
+      const title = vacationTitles[index];
       const workingDaysCount = calendar.workingDaysBetween(entry.start, entry.end);
-      const block = taskRequiresBlock(alias, title, entry.start, workingDaysCount, VACATION_COLOR);
+      const block = taskRequiresBlock(alias, uniqueTitle(title, alias), entry.start, workingDaysCount, VACATION_COLOR);
       lines.push(...block);
       lines.push('');
       if (
