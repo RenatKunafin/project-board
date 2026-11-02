@@ -70,6 +70,33 @@ async function prepare(page: Page): Promise<void> {
   await expect(pane.locator('[data-task-count]')).toHaveText('Задач: 3');
 }
 
+test('экспорт сохраняет отдельные подписи одинаковых задач и отпусков для старого PlantUML', async ({ page }) => {
+  await prepare(page);
+  const pane = page.getByRole('group', { name: 'План · Публикация' }).first();
+  const documentId = await pane.locator('[data-document-id]').getAttribute('data-document-id');
+  const content = {
+    ...planContent,
+    tasks: planContent.tasks.map((task, index) => ({ ...task, title: index === 2 ? 'Работа (T1)' : 'Работа' })),
+    unavailability: [
+      { id: 'u1', resourceId: 'r1', start: '2026-10-12', end: '2026-10-13' },
+      { id: 'u2', resourceId: 'r1', start: '2026-10-19', end: '2026-10-20' },
+    ],
+  };
+  await page.evaluate(
+    ({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value),
+    { id: documentId, value: content },
+  );
+  await pane.locator('[data-plan-menu]').click();
+  await page.getByRole('menuitem', { name: 'Экспорт PlantUML' }).click();
+  const text = await page.getByRole('dialog', { name: 'Экспорт PlantUML' }).locator('[data-plantuml-text]').textContent();
+  expect(text).toContain('[Работа (T1-2)] as [T1]');
+  expect(text).toContain('[Работа (T2)] as [T2]');
+  expect(text).toContain('[Работа (T1)] as [T3]');
+  expect(text).toContain('[Отпуск — Разработчик R1 (U1)] as [U1]');
+  expect(text).toContain('[Отпуск — Разработчик R1 (U2)] as [U2]');
+  expect(text).toContain('[T1] -> [T2]');
+});
+
 test('предпросмотр: текст диаграммы и ограничения; скачивание совпадает', async ({
   page,
 }) => {
