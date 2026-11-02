@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * PBT-049: фильтры и настройки представлений. Минимальный набор фильтров —
@@ -121,6 +121,98 @@ async function rtPaneIds(page: Page, expected: number): Promise<string[]> {
 
 const pane = (page: Page, instanceId: string) =>
   page.locator(`[data-widget-instance="${instanceId}"]`);
+
+async function resizeTable(page: Page, view: Locator, delta: number): Promise<void> {
+  const box = await view.locator('.wx-resizer-left').boundingBox();
+  expect(box).not.toBeNull();
+  const x = box!.x + box!.width / 2;
+  const y = box!.y + box!.height * 0.75;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + delta, y, { steps: 12 });
+  await page.mouse.up();
+}
+
+test('разделитель таблицы сохраняет ширину при пересоздании, reload и в независимых окнах', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const documentId = await createPlan(page, 'Состояния');
+  await loadPlan(page, documentId);
+  const [id] = await planPaneIds(page, 1);
+  const first = pane(page, id);
+  const windowPane = page.getByRole('group', { name: 'План · Состояния', exact: true }).first();
+  await windowPane.getByRole('button', { name: /^Развернуть на весь дашборд/ }).click();
+  const table = first.locator('[data-gantt-section="grid"]');
+  const width = () => table.evaluate(element => element.clientWidth);
+  await expect.poll(width).toBe(712);
+  const revision = await revisionOf(page, documentId);
+  await resizeTable(page, first, -300);
+  await expect.poll(width).toBeLessThan(500);
+  const chosenWidth = await width();
+  await first.getByRole('button', { name: 'Дни', exact: true }).click();
+  await expect.poll(width).toBeCloseTo(chosenWidth, 0);
+  await page.evaluate(({ id, value }) => window.__projectBoard?.writeDocumentContent(id, value), {
+    id: documentId, value: { ...planContent, title: 'Обновлённый план' },
+  });
+  await expect.poll(width).toBeCloseTo(chosenWidth, 0);
+  await windowPane.getByRole('button', { name: /^Вернуть прежний размер/ }).click();
+  await page.getByRole('button', { name: 'Виджеты', exact: true }).click();
+  const catalog = page.getByRole('dialog', { name: 'Каталог виджетов' });
+  await catalog.getByRole('button', { name: 'План', exact: true }).click();
+  await catalog.getByRole('button', { name: 'Состояния', exact: true }).click();
+  const ids = await planPaneIds(page, 2);
+  const secondId = ids.find(value => value !== id)!;
+  const secondWidth = () => pane(page, secondId).locator('[data-gantt-section="grid"]').evaluate(element => element.clientWidth);
+  await expect.poll(secondWidth).toBe(712);
+  expect(await revisionOf(page, documentId)).toBe(revision + 1);
+  await page.waitForTimeout(600); // штатный debounce сохранения рабочего пространства
+  await page.reload();
+  await planPaneIds(page, 2);
+  await expect.poll(width).toBeCloseTo(chosenWidth, 0);
+  await expect.poll(secondWidth).toBe(712);
+  expect(await revisionOf(page, documentId)).toBe(revision + 1);
+});
+
+test('скрытая таблица переживает смену масштаба и reload, раскрытие возвращает ширину', async ({ page }, testInfo) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+  const documentId = await createPlan(page, 'Состояния');
+  await loadPlan(page, documentId);
+  const [id] = await planPaneIds(page, 1);
+  const view = pane(page, id);
+  const windowPane = page.getByRole('group', { name: 'План · Состояния', exact: true }).first();
+  await windowPane.getByRole('button', { name: /^Развернуть на весь дашборд/ }).click();
+  const revision = await revisionOf(page, documentId);
+  const resizer = view.locator('.wx-resizer-left');
+  const width = () => view.locator('[data-gantt-section="grid"]').evaluate(element => element.clientWidth);
+  await expect.poll(width).toBe(712);
+  await resizeTable(page, view, -250);
+  await expect.poll(width).toBeLessThan(500);
+  const chosenWidth = await width();
+  await resizer.hover();
+  await resizer.locator('.wx-button-expand-left i').click();
+  await expect(resizer).toHaveClass(/wx-resizer-layout-end/);
+  await view.getByRole('button', { name: 'Дни', exact: true }).click();
+  await expect(resizer).toHaveClass(/wx-resizer-layout-end/);
+  await page.waitForTimeout(600);
+  await page.reload();
+  await planPaneIds(page, 1);
+  await expect(resizer).toHaveClass(/wx-resizer-layout-end/);
+  await page.screenshot({ path: testInfo.outputPath('gantt-table-hidden.png') });
+  await resizer.locator('.wx-button-expand-right i').click();
+  await expect(resizer).toHaveClass(/wx-resizer-layout-both/);
+  await expect.poll(width).toBeCloseTo(chosenWidth, 0);
+  // Второй край разделителя: пользователь оставляет только таблицу.
+  await resizer.hover();
+  await resizer.locator('.wx-button-expand-right i').click();
+  await expect(resizer).toHaveClass(/wx-resizer-layout-start/);
+  await view.getByRole('button', { name: 'Недели', exact: true }).click();
+  await expect(resizer).toHaveClass(/wx-resizer-layout-start/);
+  expect(await revisionOf(page, documentId)).toBe(revision);
+  expect(errors).toEqual([]);
+});
 
 test('проектный вид: фильтры и раскрытие групп экземпляров независимы, переживают перезапуск, ревизия не меняется', async ({
   page,
