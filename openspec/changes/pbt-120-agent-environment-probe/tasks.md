@@ -16,5 +16,5 @@
 
 ## 4. Проверки и PR
 
-- [ ] 4.1 Прогнать применимые проверки: `npm run verify:repository`, `openspec validate pbt-120-agent-environment-probe --strict`, `openspec validate --all --strict`; продуктовый код не меняется.
-- [ ] 4.2 Подготовить PR в develop с фактическим перечнем выполненного и ограничений.
+- [x] 4.1 Прогнать применимые проверки: `npm run verify:repository`, `openspec validate pbt-120-agent-environment-probe --strict`, `openspec validate --all --strict`; продуктовый код не меняется.
+- [x] 4.2 Подготовить PR в develop с фактическим перечнем выполненного и ограничений.
