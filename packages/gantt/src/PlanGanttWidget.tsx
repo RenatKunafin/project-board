@@ -192,6 +192,19 @@ export default function PlanGanttWidget({
     normalizeGanttZoom(settings.ganttZoom),
   );
   const zoomCellWidth = ZOOM_SCALE[ganttZoom];
+  // Положение разделителя — настройка окна, не общего документа (PBT-119).
+  const [tableLayout, setTableLayout] = useState<{
+    width: number;
+    mode: 'all' | 'grid' | 'chart';
+  }>(() => ({
+    width: typeof settings.ganttGridWidth === 'number' &&
+      Number.isFinite(settings.ganttGridWidth) && settings.ganttGridWidth >= 0
+      ? settings.ganttGridWidth : 712,
+    mode: settings.ganttDisplayMode === 'grid' || settings.ganttDisplayMode === 'chart'
+      ? settings.ganttDisplayMode : 'all',
+  }));
+  const tableLayoutRef = useRef(tableLayout);
+  tableLayoutRef.current = tableLayout;
   // Локаль SVAR с началом недели в понедельник (PBT-076, design D2.3):
   // Gantt берёт weekStart из i18n-контекста;.Provider ниже оборачивает
   // чарт (null — деградация до дефолта библиотеки, см. svar-locale.ts).
@@ -656,6 +669,27 @@ export default function PlanGanttWidget({
       });
       return undefined;
     });
+    // События API живут вместе с экземпляром SVAR. После пересоздания
+    // отложенный обработчик старого API не должен менять настройки.
+    const rememberTableLayout = () => queueMicrotask(() => {
+      if (apiRef.current !== instance) return;
+      const state = instance.getState();
+      const width = state.gridWidth;
+      if (!Number.isFinite(width) || width < 0) return;
+      const mode = state.displayMode.includes('grid')
+        ? state.displayMode.includes('chart') ? 'all' : 'grid'
+        : 'chart';
+      const previous = tableLayoutRef.current;
+      if (previous.width === width && previous.mode === mode) return;
+      const next = { width, mode } as const;
+      tableLayoutRef.current = next;
+      setTableLayout(next);
+      updateSettingsRef.current?.({ ganttGridWidth: width, ganttDisplayMode: mode });
+    });
+    instance.on('resize-grid', (event) => {
+      if (!event.inProgress && (!event.section || event.section === 'grid')) rememberTableLayout();
+    });
+    instance.on('set-display-mode', rememberTableLayout);
   }, []);
 
   // Двойной клик по строке открывает форму: задачи — редактирование
@@ -2093,7 +2127,8 @@ export default function PlanGanttWidget({
                   tasks={tasks}
                   links={links}
                   columns={columns}
-                  gridWidth={712}
+                  gridWidth={tableLayout.width}
+                  displayMode={tableLayout.mode}
                   inclusiveEnd={true}
                   cellWidth={zoomCellWidth}
                   cellHeight={36}
