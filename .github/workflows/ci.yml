@@ -32,6 +32,12 @@ jobs:
       - name: Unit-тесты
         run: npm test
 
+      - name: Серверные тесты стенда agent-integration
+        run: npm run test:agent-probe
+
+      - name: Typecheck стенда agent-integration
+        run: npm run typecheck:agent-probe
+
       - name: Production-сборка
         run: npm run build
 

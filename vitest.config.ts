@@ -8,6 +8,7 @@ export default defineConfig({
       'tests/**/*.test.{ts,tsx}',
       'examples/**/*.test.{ts,tsx}',
     ],
+    exclude: ['tests/agent-integration/server/**'],
     setupFiles: ['tests/vitest-setup.ts'],
   },
 });
