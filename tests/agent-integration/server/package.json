@@ -1,0 +1,28 @@
+{
+  "name": "project-board-agent-probe-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PBT-121: изолированный MCP stdio + loopback HTTP компонент синтетической пробы агента. Исследовательский стенд, не продуктовая интеграция.",
+  "type": "module",
+  "bin": {
+    "project-board-agent-probe": "dist/cli.js"
+  },
+  "main": "dist/run.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.10.2",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}
