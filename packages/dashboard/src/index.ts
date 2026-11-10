@@ -64,6 +64,12 @@ export type {
 } from './cascade-layout';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
+export { createDeferredSnapshotWriter } from './deferred-snapshot-writer';
+export type {
+  DeferredSnapshotWriter,
+  DeferredSnapshotWriterOptions,
+  DeferredWriterTimers,
+} from './deferred-snapshot-writer';
 export {
   collectDocumentMigrations,
   DocumentFutureVersionError,

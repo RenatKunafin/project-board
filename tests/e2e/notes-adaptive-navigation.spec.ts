@@ -149,7 +149,9 @@ test('два окна сохраняют независимую навигаци
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
+    const importedReload = target.waitForNavigation();
     await restore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
+    await importedReload;
     await expect.poll(async () => (await storedWorkspace(target)).documents).toEqual(beforeBackup.documents);
     expect((await storedWorkspace(target)).widgetInstances).toEqual(beforeBackup.widgetInstances);
     const restoredFirst = paneForInstance(target, first.instanceId);
