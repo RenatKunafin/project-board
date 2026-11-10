@@ -4,7 +4,7 @@
  * Чистый профиль (tmp), production preview приложения, серии жестких убийств
  * браузера с последующей проверкой выживших документов и вскрытием хранилища.
  *
- * Использование: node tests/persistence-crash/diagnose.mjs [--series A|B|C] [--iters N] [--base URL]
+ * Использование: CRASH_BASE=http://localhost:4173 node tests/persistence-crash/diagnose.mjs [--series A|B|C|D] [--iters N]
  * Требует: собранного приложения (npm run build) и запущенного preview на 4173.
  */
 import { chromium } from 'playwright-core';
@@ -112,7 +112,9 @@ async function main() {
   log({ event: 'start', series: SERIES, iters: ITERS, base: BASE });
   const profile = profileDir();
 
-  // Серия D: тяжёлая БД — много документов с пунктами, затем kill во время записи.
+  let seedSession = null;
+  let failed = false;
+  // Серия D: первый kill в той же сессии, где создан workspace, без graceful close.
   if (SERIES === 'D') {
     const seed = await openApp(profile, 'D-seed');
     for (let doc = 1; doc <= D_DOCS; doc += 1) {
@@ -126,7 +128,7 @@ async function main() {
       }
       log({ event: 'seed-doc', series: 'D', title, items: D_ITEMS });
     }
-    await seed.browser.close().catch(() => undefined);
+    seedSession = seed;
     log({ event: 'seed-done', series: 'D', docs: D_DOCS, idb: idbSnapshot(profile) });
   }
 
@@ -137,8 +139,13 @@ async function main() {
     const before = idbSnapshot(profile);
 
     // Открыть приложение (первый раз — чистый профиль), создать документ серии.
-    const session = await openApp(profile, title);
-    const survivedBeforeCreate = await visibleDocuments(session.page, SERIES === 'D' ? 'D' : SERIES);
+    const session = seedSession ?? await openApp(profile, title);
+    const firstSeed = seedSession !== null;
+    seedSession = null;
+    // Не давать debounce искусственную паузу перед первым kill серии D.
+    const survivedBeforeCreate = firstSeed
+      ? await session.page.getByRole('group', { name: /^Чек-лист · D-/ }).count()
+      : await visibleDocuments(session.page, SERIES === 'D' ? 'D' : SERIES);
     let created = 0;
     if (SERIES !== 'D') {
       await createChecklist(session.page, title);
@@ -150,23 +157,28 @@ async function main() {
     if (SERIES === 'C') await session.page.waitForTimeout(350); // на грани debounce (250 мс)
 
     const afterBeforeKill = idbSnapshot(profile);
+    const survivedBeforeKill = SERIES === 'D'
+      ? await session.page.getByRole('group', { name: /^Чек-лист · D-/ }).count()
+      : undefined;
     let kill;
-    if (SERIES === 'B') {
+    if (SERIES === 'B' || SERIES === 'D') {
       // Kill во время активной записи пунктов чек-листа.
       const pane = session.page.getByRole('group', { name: `Чек-лист · ${title}`, exact: true });
       const input = pane.getByPlaceholder('Новая задача…');
       let writing = true;
+      let inputError;
       const writer = (async () => {
         for (let item = 1; item <= 200 && writing; item += 1) {
           await input.fill(`пункт ${item}`);
           await input.press('Enter');
           await session.page.waitForTimeout(150);
         }
-      })().catch(() => undefined);
+      })().catch(error => { if (writing) inputError = error; });
       await session.page.waitForTimeout(1500);
+      writing = false; // закрытие страницы теперь ожидаемо для текущего UI-вызова
       kill = killChrome(profile);
-      writing = false;
       await writer;
+      if (inputError) throw inputError;
     } else {
       kill = killChrome(profile);
     }
@@ -177,6 +189,7 @@ async function main() {
     const restart = await openApp(profile, `${title}-restart`);
     const survived = await visibleDocuments(restart.page, SERIES === 'D' ? 'D' : SERIES);
     const expected = SERIES === 'D' ? expectedDocs : index;
+    if (survived !== expected || kill.killed.length === 0) failed = true;
     // Глубокая проверка серии D: фактическое содержимое БД против DOM.
     let deep = null;
     if (SERIES === 'D') {
@@ -204,6 +217,8 @@ async function main() {
           };
         } finally { db.close(); }
       });
+      if (deep.widgetInstances !== expectedDocs || deep.domWindows !== expectedDocs
+        || deep.documents.length !== expectedDocs || deep.tabs !== 1) failed = true;
     }
     const internals = await restart.page
       .goto('chrome://indexeddb-internals')
@@ -218,10 +233,11 @@ async function main() {
       title,
       created,
       survivedBeforeCreate,
+      survivedBeforeKill,
       survivedAfterRestart: survived,
       expected,
       verdict:
-        survived === index ? 'survived' : survived === 0 ? 'total-loss' : 'partial-loss',
+        survived === expected ? 'survived' : survived === 0 ? 'total-loss' : 'partial-loss',
       killedPids: kill.killed.length,
       idbBefore: before.length,
       idbBeforeKill: afterBeforeKill.length,
@@ -235,7 +251,8 @@ async function main() {
   }
 
   rmSync(profile, { recursive: true, force: true });
-  log({ event: 'done', series: SERIES });
+  log({ event: 'done', series: SERIES, passed: !failed });
+  if (failed) process.exitCode = 1;
 }
 
 await main();

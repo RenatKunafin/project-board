@@ -1,7 +1,11 @@
 import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';
 import { createDocumentWindow } from '../e2e/document-ui';
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
-import { readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+
+const releaseNotes = JSON.parse(await readFile(new URL('../../apps/project-board/src/release-notes.json', import.meta.url), 'utf8')) as {
+  releases: { version: string; summary: string; changes: string[] }[];
+};
 
 const notification = (page: Page) => page.getByRole('status', { name: 'Обновление приложения', exact: true });
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'Обновление Project Board' });
@@ -61,8 +65,10 @@ test('A → B сохраняет свежую правку, workspace/settings, 
   await expect(page.getByRole('status', { name: 'Состояние сохранения' })).toHaveText('Сохранено');
   await detect(page, request);
   await notification(page).getByRole('button', { name: 'Обновить', exact: true }).click();
-  await expect(dialog(page).getByText('v1.0.2 · Управляйте резервными копиями и работайте с планами удобнее.')).toBeVisible();
-  await expect(dialog(page).getByText(/Создавайте, скачивайте и восстанавливайте резервные копии/)).toBeVisible();
+  const latest = releaseNotes.releases[0];
+  await expect(dialog(page).getByRole('region', { name: `Изменения ${latest.version}` }))
+    .toContainText(`${latest.version} · ${latest.summary}`);
+  await expect(dialog(page).getByText(latest.changes[0])).toBeVisible();
   await dialog(page).getByRole('button', { name: 'Отмена', exact: true }).click();
   await list(page).getByPlaceholder('Новая задача…').fill('Последняя правка перед обновлением');
   await list(page).getByRole('button', { name: 'Добавить', exact: true }).click();

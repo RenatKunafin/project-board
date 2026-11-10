@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createDocumentWindow, openDocumentWindow, openPlanMenu } from './document-ui';
+import { persistedDocument } from './workspace-helper';
 
 const longPlan = {
   calendar: { workingDays: [1, 2, 3, 4, 5], holidays: [], workingExceptions: [] },
@@ -118,6 +119,10 @@ for (const viewport of [{ width: 1024, height: 778 }, { width: 1856, height: 126
     await page.goto('/');
     const { pane, documentId } = await createDocumentWindow(page, 'План', 'Панели');
     await page.evaluate(({ id, content }) => window.__projectBoard!.writeDocumentContent(id, content), { id: documentId, content: withTasks });
+    // Проверяем панели на уже заполненном плане. Запись workspace больше
+    // не служит неявной паузой для первичной инициализации пустого Гантта.
+    await persistedDocument(page, 'Панели', withTasks);
+    await page.reload();
     const revision = await page.evaluate(id => window.__projectBoard!.readDocument(id)!.revision, documentId);
     for (const mode of ['Каскад', 'Сетка', 'Разворот']) {
       if (mode === 'Разворот') await pane.getByRole('button', { name: 'Развернуть на весь дашборд План · Панели', exact: true }).click();

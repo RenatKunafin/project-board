@@ -41,6 +41,8 @@ import {
   type WorkspaceSnapshot,
   type WorkspaceBackupCompatibility,
   WorkspaceBackupStore,
+  createDeferredSnapshotWriter,
+  type DeferredSnapshotWriter,
 } from '@project-board/dashboard';
 import {
   useCallback,
@@ -562,6 +564,10 @@ export const TabSurface = memo(function TabSurface({
   );
 }, tabSurfaceAreEqual);
 
+function reportWorkspaceSaveError(error: unknown): void {
+  console.error('workspace save failed', error);
+}
+
 export default function App({
   widgetRegistry,
   documentService,
@@ -680,6 +686,7 @@ export default function App({
     : 'cascade';
 
   const setLayoutMode = (mode: 'grid' | 'cascade'): void => {
+    structuralRef.current = true; // структурная операция (PBT-139): немедленная запись
     if (activeTab) {
       setModeByTab((previous) => ({ ...previous, [activeTab.id]: mode }));
     }
@@ -701,6 +708,7 @@ export default function App({
     if (!activeTab) {
       return;
     }
+    structuralRef.current = true;
     const instanceId = crypto.randomUUID();
     const label = documentId
       ? `${type.title} · ${title ?? 'Без названия'}`
@@ -857,6 +865,7 @@ export default function App({
   };
 
   const closePane = (instanceId: string): void => {
+    structuralRef.current = true; // структурная операция (PBT-139): немедленная запись
     liveInstanceIdsRef.current.delete(instanceId);
     collapsedHeights.current.delete(instanceId);
     const views = { ...viewStatesRef.current };
@@ -925,6 +934,7 @@ export default function App({
 
   const closeTab = (tabId: string): void => {
     if (workspace.tabs.length <= 1 || !workspace.tabs.some((tab) => tab.id === tabId)) return;
+    structuralRef.current = true;
     const instanceIds = new Set((panesByTab[tabId] ?? []).map((pane) => pane.instanceId));
     const views = { ...viewStatesRef.current };
     for (const id of instanceIds) {
@@ -952,9 +962,22 @@ export default function App({
 
   // Снапшот рабочего пространства записывается с отложенной серией:
   // многократные изменения (например, перетаскивание) дают одну запись
-  // итогового состояния (PBT-024).
+  // итогового состояния (PBT-024). Потолок ожидания и немедленная запись
+  // структурных операций не дают серии откладывать запись бесконечно (PBT-139).
   const snapshotRef = useRef<WorkspaceSnapshot | null>(null);
-  const saveTimerRef = useRef<number | null>(null);
+  const writerRef = useRef<DeferredSnapshotWriter<WorkspaceSnapshot> | null>(null);
+  if (writerRef.current === null) {
+    writerRef.current = createDeferredSnapshotWriter<WorkspaceSnapshot>({
+      save: (snapshot) => workspaceStore.save(snapshot),
+      onError: reportWorkspaceSaveError,
+    });
+  }
+  const writer = writerRef.current;
+  // Явная метка структурной операции: следующий снапшот пишется немедленно.
+  // Выставляется обработчиками (создание/удаление окон и вкладок, режим,
+  // переименование, замена документа окна). Максимализация не входит в
+  // workspace-снапшот и меткой не помечается.
+  const structuralRef = useRef(false);
 
   useEffect(() => {
     const snapshot: WorkspaceSnapshot = {
@@ -981,34 +1004,30 @@ export default function App({
       activeTabId: workspace.activeId,
     };
     snapshotRef.current = snapshot;
-    if (saveTimerRef.current !== null) {
-      window.clearTimeout(saveTimerRef.current);
+    writer.schedule(snapshot);
+    if (structuralRef.current) {
+      structuralRef.current = false;
+      void writer.commitNow().catch(reportWorkspaceSaveError);
     }
-    saveTimerRef.current = window.setTimeout(() => {
-      saveTimerRef.current = null;
-      const pending = snapshotRef.current;
-      if (pending) {
-        void workspaceStore
-          .save(pending)
-          .catch((error) => console.error('workspace save failed', error));
-      }
-    }, 300);
-  });
+  }, [workspace, panesByTab, modeByTab, areasByTab, cascadeByTab, writer]);
 
   useEffect(() => {
+    // Выгрузка страницы и уход вкладки в фон форсируют запись отложенного
+    // снапшота: фоновое вытеснение не обещает pagehide (PBT-139).
     const flush = (): void => {
-      if (saveTimerRef.current !== null) {
-        window.clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
-      const pending = snapshotRef.current;
-      if (pending) {
-        void workspaceStore.save(pending).catch((error) => console.error('workspace flush failed', error));
-      }
+      void writerRef.current?.commitNow().catch(reportWorkspaceSaveError);
+    };
+    const onVisibility = (): void => {
+      if (document.visibilityState === 'hidden') flush();
     };
     window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
-  }, [workspaceStore]);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+      writerRef.current?.dispose();
+    };
+  }, []);
 
   const prepareForUpdate = async (): Promise<void> => {
     // Модальное окно блокирует ввод; завершившийся callback виджета всё же
@@ -1016,10 +1035,7 @@ export default function App({
     let snapshot: WorkspaceSnapshot | null;
     let views: Record<string, Record<string, unknown>>;
     do {
-      if (saveTimerRef.current !== null) {
-        window.clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
+      await writerRef.current?.commitNow();
       snapshot = snapshotRef.current;
       views = viewStatesRef.current;
       if (!snapshot) throw new Error('Рабочее пространство ещё не готово к сохранению.');
@@ -1165,6 +1181,7 @@ export default function App({
 
   /** Создание документа того же типа из состояния «документ недоступен». */
   const createDocumentForPane = (instanceId: string): void => {
+    structuralRef.current = true; // структурная операция (PBT-139): немедленная запись
     const pane = Object.values(panesByTab)
       .flat()
       .find((entry) => entry.instanceId === instanceId);
@@ -1223,6 +1240,7 @@ export default function App({
       : [];
 
   const commitRename = (tabId: string, title: string) => {
+    structuralRef.current = true; // структурная операция (PBT-139): немедленная запись
     dispatch({ type: 'rename', tabId, title });
     setRenamingTabId(null);
   };
@@ -1332,7 +1350,7 @@ export default function App({
             type="button"
             className="tablist__add"
             aria-label="Новая вкладка"
-            onClick={() => dispatch({ type: 'add' })}
+            onClick={() => { structuralRef.current = true; dispatch({ type: 'add' }); }}
           >
             +
           </button>
