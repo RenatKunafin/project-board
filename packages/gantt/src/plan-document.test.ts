@@ -142,6 +142,105 @@ describe('parsePlanContent — корректные документы', () => {
   });
 });
 
+describe('parsePlanContent — особые даты (PBT-141)', () => {
+  it('валидный раздел меток принимается', () => {
+    const result = parsePlanContent({
+      ...validPlan(),
+      dateMarks: [
+        { date: '2026-10-17', color: 'coral' },
+        { date: '2026-10-14', color: 'jade' },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.dateMarks).toEqual([
+        { date: '2026-10-17', color: 'coral' },
+        { date: '2026-10-14', color: 'jade' },
+      ]);
+    }
+  });
+
+  it('план без раздела меток валиден', () => {
+    const result = parsePlanContent(validPlan());
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect('dateMarks' in result.plan).toBe(false);
+    }
+  });
+
+  it('несуществующая дата метки отклоняется', () => {
+    const result = parsePlanContent({
+      ...validPlan(),
+      dateMarks: [{ date: '2026-02-30', color: 'coral' }],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const issue = result.issues.find((entry) => entry.path === 'dateMarks[0].date');
+      expect(issue?.code).toBe('invalid-date');
+    }
+  });
+
+  it('не-ISO дата метки отклоняется', () => {
+    const result = parsePlanContent({
+      ...validPlan(),
+      dateMarks: [{ date: '17.10.2026', color: 'coral' }],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.issues.some((entry) => entry.path === 'dateMarks[0].date'),
+      ).toBe(true);
+    }
+  });
+
+  it('неизвестный цвет метки отклоняется с путём', () => {
+    for (const color of ['#F05653', 'crimson', 'turquoise']) {
+      const result = parsePlanContent({
+        ...validPlan(),
+        dateMarks: [{ date: '2026-10-14', color }],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        const issue = result.issues.find(
+          (entry) => entry.path === 'dateMarks[0].color',
+        );
+        expect(issue?.code).toBe('invalid-structure');
+        expect(issue?.message).toContain('палитры');
+      }
+    }
+  });
+
+  it('повторяющаяся дата метки отклоняется', () => {
+    const result = parsePlanContent({
+      ...validPlan(),
+      dateMarks: [
+        { date: '2026-10-14', color: 'coral' },
+        { date: '2026-10-14', color: 'jade' },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const issue = result.issues.find(
+        (entry) => entry.code === 'duplicate-id' && entry.path === 'dateMarks',
+      );
+      expect(issue?.message).toContain('2026-10-14');
+    }
+  });
+
+  it('раздел не массивом отклоняется', () => {
+    const result = parsePlanContent({
+      ...validPlan(),
+      dateMarks: 'нет',
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(
+        result.issues.some((entry) => entry.path === 'dateMarks'),
+      ).toBe(true);
+    }
+  });
+});
+
 describe('parsePlanContent — повреждённые документы', () => {
   it('не-объект отклоняется с диагностикой структуры', () => {
     const result = parsePlanContent('нет');

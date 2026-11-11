@@ -1,3 +1,4 @@
+import { isDateMarkColor } from './date-mark-colors';
 import { isTaskColor } from './task-colors';
 
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -51,6 +52,13 @@ export interface PlanUnavailability {
   readonly end: string;
 }
 
+/** Цветовая метка даты (PBT-141): декоративная подсветка дня шкалы. */
+export interface PlanDateMark {
+  readonly date: string;
+  /** Идентификатор палитры меток; отсутствие — невозможно, поле обязательно. */
+  readonly color: string;
+}
+
 export interface PlanContent {
   readonly title?: string;
   readonly calendar: PlanCalendar;
@@ -60,6 +68,8 @@ export interface PlanContent {
   readonly tasks: readonly PlanTask[];
   readonly dependencies: readonly PlanDependency[];
   readonly unavailability: readonly PlanUnavailability[];
+  /** Особые даты (PBT-141); отсутствие раздела — меток нет. */
+  readonly dateMarks?: readonly PlanDateMark[];
 }
 
 export const PLAN_MODULE_ID = 'gantt';
@@ -321,6 +331,55 @@ export function parsePlanContent(value: unknown): PlanValidation {
         path: 'calendar',
         message: 'Календарь без рабочих дней и рабочих исключений недопустим.',
       });
+    }
+  }
+
+  if (value.dateMarks !== undefined) {
+    const marks = value.dateMarks;
+    if (!Array.isArray(marks)) {
+      issues.push({
+        code: 'invalid-structure',
+        path: 'dateMarks',
+        message: 'Особые даты задаются массивом меток.',
+      });
+    } else {
+      const dates: string[] = [];
+      marks.forEach((entry, index) => {
+        const entryPath = `dateMarks[${index}]`;
+        if (!isRecord(entry)) {
+          issues.push({
+            code: 'invalid-structure',
+            path: entryPath,
+            message: 'Метка даты должна быть объектом.',
+          });
+          return;
+        }
+        if (isIsoDate(entry.date)) {
+          dates.push(entry.date);
+        } else {
+          issues.push({
+            code: 'invalid-date',
+            path: `${entryPath}.date`,
+            message: 'Дата метки должна быть в формате ISO YYYY-MM-DD.',
+          });
+        }
+        if (!isDateMarkColor(entry.color)) {
+          issues.push({
+            code: 'invalid-structure',
+            path: `${entryPath}.color`,
+            message: 'Цвет метки — неизвестный идентификатор палитры.',
+          });
+        }
+      });
+      for (const date of new Set(
+        dates.filter((date, index) => dates.indexOf(date) !== index),
+      )) {
+        issues.push({
+          code: 'duplicate-id',
+          path: 'dateMarks',
+          message: `Повторяющаяся дата метки «${date}».`,
+        });
+      }
     }
   }
 

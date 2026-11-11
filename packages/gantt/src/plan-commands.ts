@@ -1,4 +1,4 @@
-import type { PlanContent, PlanTask } from './plan-document';
+import type { PlanContent, PlanDateMark, PlanTask } from './plan-document';
 import type {
   GroupCreateInput,
   GroupUpdatePatch,
@@ -46,6 +46,7 @@ import {
   createWorkingCalendar,
   type WorkingCalendar,
 } from './working-calendar';
+import { isDateMarkColor } from './date-mark-colors';
 import { isTaskColor } from './task-colors';
 
 export type PlanCommandErrorCode =
@@ -61,6 +62,7 @@ export type PlanCommandErrorCode =
   | 'invalid-lag'
   | 'invalid-color'
   | 'invalid-calendar'
+  | 'invalid-date-marks'
   | 'circular-group'
   | 'circular-dependency'
   | 'duplicate-dependency';
@@ -175,6 +177,10 @@ export type PlanCommand =
       readonly workingDays: readonly number[];
       readonly holidays: readonly string[];
       readonly workingExceptions: readonly string[];
+    }
+  | {
+      readonly type: 'updateDateMarks';
+      readonly marks: readonly { readonly date: string; readonly color: string }[];
     }
   | {
       readonly type: 'updateDependency';
@@ -522,6 +528,50 @@ export function updateCalendar(
   };
 }
 
+/**
+ * Замена набора цветовых меток дат (PBT-141): атомарная валидация и
+ * замена всего раздела. Метки декоративны — календарь и прочие разделы
+ * не меняются. Отклоняются: не-ISO/несуществующие даты, повторяющиеся
+ * даты, неизвестные идентификаторы палитры меток. Пустой набор удаляет
+ * раздел (отсутствие поля — меток нет, прецедент опустевших множеств
+ * PBT-034).
+ */
+export function updateDateMarks(
+  plan: PlanContent,
+  marks: readonly { readonly date: string; readonly color: string }[],
+): PlanCommandResult {
+  const seen = new Set<string>();
+  for (const mark of marks) {
+    if (!ISO_DATE.test(mark.date) || Number.isNaN(Date.parse(`${mark.date}T00:00:00Z`))) {
+      return fail(
+        'invalid-date-marks',
+        `Дата метки должна быть в формате YYYY-MM-DD: "${mark.date}".`,
+      );
+    }
+    if (seen.has(mark.date)) {
+      return fail(
+        'invalid-date-marks',
+        `Дата «${mark.date}» не может иметь две метки.`,
+      );
+    }
+    seen.add(mark.date);
+    if (!isDateMarkColor(mark.color)) {
+      return fail(
+        'invalid-date-marks',
+        `Цвет метки «${mark.color}» — неизвестный идентификатор палитры.`,
+      );
+    }
+  }
+  const sorted: readonly PlanDateMark[] = [...marks]
+    .map((mark) => ({ date: mark.date, color: mark.color }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (sorted.length === 0) {
+    const { dateMarks: _removed, ...rest } = plan;
+    return { ok: true, plan: rest };
+  }
+  return { ok: true, plan: { ...plan, dateMarks: sorted } };
+}
+
 export function applyPlanCommand(
   plan: PlanContent,
   command: PlanCommand,
@@ -587,5 +637,7 @@ export function applyPlanCommand(
         command.holidays,
         command.workingExceptions,
       );
+    case 'updateDateMarks':
+      return updateDateMarks(plan, command.marks);
   }
 }

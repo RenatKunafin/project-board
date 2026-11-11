@@ -1,13 +1,13 @@
 ## 1. Модель и палитра
 
-- [ ] 1.1 Создать `packages/gantt/src/date-mark-colors.ts` (6 идентификаторов из `task-colors.ts`: coral/pumpkin/ochre/jade/sapphire/plum, hex не дублируется, `DateMarkColor`/`isDateMarkColor`) и генерацию классов заливки `color-mix(<hex> ~32%, var(--surface))` по образцу `ganttBarColorRules`; проверить unit-тестом состав палитры и классы заливки
-- [ ] 1.2 Добавить `PlanDateMark` и опциональное `dateMarks` в `PlanContent` (`plan-document.ts`), валидацию в `parsePlanContent` (ISO, существующая дата, уникальность, известный цвет) с диагностикой; фабрика поле не пишет; unit-тесты: валидный раздел, каждая из некорректных меток, план без раздела (проверка: `npm test -- plan-document`)
-- [ ] 1.3 Реализовать команду `updateDateMarks` в `plan-commands.ts` (union `PlanCommand`, диспетчер `applyPlanCommand`, код `invalid-date-marks`, атомарная замена с сортировкой); unit-тесты: замена набора, дубликат даты, неизвестный цвет, не-ISO, календарь/задачи не меняются
-- [ ] 1.4 Unit-тесты декоративности: метки не влияют на `dayKind`, рабочую длительность, `dependencyViolations`, `resourceConflicts` (проверка: `npm test` зелёный)
+- [x] 1.1 Создать `packages/gantt/src/date-mark-colors.ts` (6 идентификаторов из `task-colors.ts`: coral/pumpkin/ochre/jade/sapphire/plum, hex не дублируется, `DateMarkColor`/`isDateMarkColor`) и генерацию классов заливки `color-mix(<hex> ~32%, var(--surface))` по образцу `ganttBarColorRules`; проверить unit-тестом состав палитры и классы заливки
+- [x] 1.2 Добавить `PlanDateMark` и опциональное `dateMarks` в `PlanContent` (`plan-document.ts`), валидацию в `parsePlanContent` (ISO, существующая дата, уникальность, известный цвет) с диагностикой; фабрика поле не пишет; unit-тесты: валидный раздел, каждая из некорректных меток, план без раздела (проверка: `npm test -- plan-document`)
+- [x] 1.3 Реализовать команду `updateDateMarks` в `plan-commands.ts` (union `PlanCommand`, диспетчер `applyPlanCommand`, код `invalid-date-marks`, атомарная замена с сортировкой); unit-тесты: замена набора, дубликат даты, неизвестный цвет, не-ISO, календарь/задачи не меняются
+- [x] 1.4 Unit-тесты декоративности: метки не влияют на `dayKind`, рабочую длительность, `dependencyViolations`, `resourceConflicts` (проверка: `npm test` зелёный)
 
 ## 2. Отображение в проектном Гантте
 
-- [ ] 2.1 Добавить помощник `dateMarkColor(plan, iso)` (Map из `dateMarks` в `useMemo`) и статические классы `.plan-gantt .gantt-date-mark-<id>` в `gantt.css` с `data-gantt-day-mark` на полосах слоя; проверить unit-тестом приоритет метка > праздник > выходной
+- [ ] 2.1 Добавить помощник `dateMarkColor(plan, iso)` (Map из `dateMarks` в `useMemo`), классы заливки `gantt-date-mark-<id>` через генерацию `dateMarkColorRules()` (design D2) с `data-gantt-day-mark` на полосах слоя; проверить unit-тестом приоритет метка > праздник > выходной
 - [ ] 2.2 Режим «Дни»: `highlightTime` возвращает класс метки при её наличии; режим «Недели»: слой `.wx-gantt-holidays` рисует полосы меток с дневной точностью, слияние только одинаковых цветов; проверить unit-тестами адаптера (если применимо) и e2e из задачи 4
 - [ ] 2.3 Проверить перенос `dateMarks` производными копиями плана (`filterPlanForView` и другие): раздел не теряется при активных фильтрах; добавить регресс-unit/e2e на метку при включённом фильтре
 - [ ] 2.4 Убедиться, что ресурсный вид не отображает метки и не изменён (кроме возможного переноса поля в копиях плана); e2e-сценарий «ресурсное представление метки не отображает»
