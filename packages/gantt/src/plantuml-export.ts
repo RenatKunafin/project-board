@@ -1,6 +1,10 @@
 import { type PlanContent, type PlanTask } from './plan-document';
 import { addCalendarDays, createWorkingCalendar } from './working-calendar';
 import { taskColor } from './task-colors';
+import {
+  DATE_MARK_COLORS,
+  plantUmlDateMarkColor,
+} from './date-mark-colors';
 
 /**
  * Генерация PlantUML Gantt для публикации плана (PBT-055).
@@ -354,7 +358,7 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
       }
     }
     if (weekendDates.length > 0) {
-      lines.push("' Выходные — серые (перекрывают всё, идут последними)");
+      lines.push("' Выходные — серые (перекрывают календарь плана)");
       for (const [from, to] of groupConsecutive(weekendDates)) {
         lines.push(
           from === to
@@ -363,6 +367,55 @@ function serialize(plan: PlanContent): PlantUmlExportPrivateResult {
         );
       }
       lines.push('');
+    }
+  }
+
+  // Особые даты (PBT-141): заливка дня осветлённым к белу hex палитры
+  // меток — без is closed, длительности не меняются. Идут ПОСЛЕ
+  // выходных: цветная строка перекрывает серую (приоритет как в
+  // представлении: метка > праздник > выходной; эталон владельца —
+  // наблюдение «поздние строки перекрывают ранние»). Порядок цветов —
+  // по палитре, соседние даты одного цвета сливаются в диапазон.
+  const dateMarks = plan.dateMarks ?? [];
+  if (dateMarks.length > 0) {
+    const inHorizon =
+      horizon === undefined
+        ? []
+        : dateMarks.filter(
+            (mark) => mark.date >= horizon.min && mark.date <= horizon.max,
+          );
+    const byColor = new Map<string, string[]>();
+    for (const mark of inHorizon) {
+      const dates = byColor.get(mark.color) ?? [];
+      dates.push(mark.date);
+      byColor.set(mark.color, dates);
+    }
+    const markLines: string[] = [];
+    for (const color of DATE_MARK_COLORS) {
+      const dates = byColor.get(color.id);
+      if (dates === undefined) {
+        continue;
+      }
+      const hex = plantUmlDateMarkColor(color.id);
+      for (const [from, to] of groupConsecutive([...dates].sort())) {
+        markLines.push(
+          from === to
+            ? `${pumlDate(from)} is colored in ${hex}`
+            : `${pumlDate(from)} to ${pumlDate(to)} are colored in ${hex}`,
+        );
+      }
+    }
+    if (markLines.length > 0) {
+      lines.push("' Особые даты — цветные метки (перекрывают выходные, идут последними)");
+      lines.push(...markLines);
+      lines.push('');
+    }
+    const outsideCount = dateMarks.length - inHorizon.length;
+    if (outsideCount > 0) {
+      report.push({
+        topic: 'date-marks-horizon',
+        message: `Особые даты за пределами горизонта плана (${outsideCount}) не отображаются: масштаб диаграммы определяется задачами.`,
+      });
     }
   }
 
