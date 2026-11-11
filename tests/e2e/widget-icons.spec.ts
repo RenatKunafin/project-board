@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 test('иконка типа согласована между каталогом, пикером, рамкой и выбором представления', async ({ page }) => {
   await page.goto('/');

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<title>PBT-140 · проверка папки</title>
+<style>
+  body { font: 16px system-ui; max-width: 48rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; }
+  button { font: inherit; padding: .6rem 1rem; margin-right: .5rem; }
+  output { display: block; white-space: pre-wrap; margin-top: 1rem; padding: 1rem; background: #eee; }
+</style>
+<h1>PBT-140 · проверка доступа к папке</h1>
+<p>Создайте пустую папку для пробы. Здесь используется только файл <code>pbt-140-folder-probe.txt</code> в выбранной папке; данные дашборда не затрагиваются.</p>
+<ol>
+  <li>Нажмите «Записать» и выберите пустую папку.</li>
+  <li>Убедитесь, что показано содержимое записанного файла.</li>
+  <li>Очистите данные сайта только для этого адреса через DevTools → Application → Storage → Clear site data, затем обновите страницу.</li>
+  <li>Нажмите «Прочитать» и снова выберите ту же папку. Содержимое файла должно остаться прежним.</li>
+</ol>
+<button id="write" type="button">Записать в папку</button>
+<button id="read" type="button">Прочитать из папки</button>
+<output id="result" role="status">Ожидание проверки.</output>
+<script type="module">
+  const result = document.querySelector('#result');
+  const fileName = 'pbt-140-folder-probe.txt';
+  function report(value) { result.textContent = value; }
+  async function choose() {
+    if (typeof window.showDirectoryPicker !== 'function') {
+      throw new Error('showDirectoryPicker недоступен в этом Chrome или запрещён политикой.');
+    }
+    return window.showDirectoryPicker({ mode: 'readwrite' });
+  }
+  document.querySelector('#write').addEventListener('click', async () => {
+    try {
+      const directory = await choose();
+      const file = await directory.getFileHandle(fileName, { create: true });
+      const writer = await file.createWritable();
+      await writer.write(`PBT-140: ${crypto.randomUUID()}\n`);
+      await writer.close();
+      report(`Запись завершена в папку «${directory.name}».\n${await (await file.getFile()).text()}`);
+    } catch (error) { report(`Ошибка записи: ${error.name}: ${error.message}`); }
+  });
+  document.querySelector('#read').addEventListener('click', async () => {
+    try {
+      const directory = await choose();
+      const file = await directory.getFileHandle(fileName);
+      report(`Файл прочитан из папки «${directory.name}».\n${await (await file.getFile()).text()}`);
+    } catch (error) { report(`Ошибка чтения: ${error.name}: ${error.message}`); }
+  });
+</script>
+</html>

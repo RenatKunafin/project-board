@@ -1,5 +1,5 @@
 import { createDocumentWindow } from './document-ui';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from './app-test';
 import { readdir, readFile } from 'node:fs/promises';
 
 const ready = (page: Page) => page.getByRole('status', { name: 'Готовность к офлайн-работе' });

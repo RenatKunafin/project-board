@@ -26,6 +26,10 @@ export { CascadeLayout } from './CascadeLayout';
 export type { CascadeItemInput, CascadeLayoutProps } from './CascadeLayout';
 export { WorkspaceStore } from './workspace-store';
 export { WorkspaceBackupStore, MAX_WORKSPACE_BACKUPS } from './workspace-backup-store';
+export { RecoverySnapshotStore } from './recovery-snapshot-store';
+export type { RecoverySnapshot, RecoveryLookup } from './recovery-snapshot-store';
+export { RecoverySnapshotCoordinator } from './recovery-snapshot-coordinator';
+export type { RecoveryProtectionStatus, RecoveryCoordinatorTimers } from './recovery-snapshot-coordinator';
 export type { StoredWorkspaceBackup, WorkspaceBackupCapture, WorkspaceBackupKind } from './workspace-backup-store';
 export type {
   WorkspaceSnapshot,
@@ -64,6 +68,12 @@ export type {
 } from './cascade-layout';
 export { StorageSelfTest } from './StorageSelfTest';
 export { createDocumentService } from './document-service';
+export { createDeferredSnapshotWriter } from './deferred-snapshot-writer';
+export type {
+  DeferredSnapshotWriter,
+  DeferredSnapshotWriterOptions,
+  DeferredWriterTimers,
+} from './deferred-snapshot-writer';
 export {
   collectDocumentMigrations,
   DocumentFutureVersionError,

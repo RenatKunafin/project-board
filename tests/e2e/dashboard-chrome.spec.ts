@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 // Спека PBT-072: каркас дашборда — топ-бар с индикатором сохранения,
 // карточки каталога виджетов с описаниями, счётчик открытых окон в каталоге

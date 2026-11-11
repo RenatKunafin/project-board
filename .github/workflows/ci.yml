@@ -32,6 +32,15 @@ jobs:
       - name: Unit-тесты
         run: npm test
 
+      - name: Серверные тесты стенда agent-integration
+        working-directory: tests/agent-integration/server
+        run: |
+          npm install --no-fund --no-audit
+          npm test
+
+      - name: Typecheck стенда agent-integration
+        run: npm run typecheck:agent-probe
+
       - name: Production-сборка
         run: npm run build
 

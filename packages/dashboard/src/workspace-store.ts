@@ -80,7 +80,7 @@ export class WorkspaceStore {
   private generation = 0;
   private writes: Promise<void> = Promise.resolve();
 
-  constructor(name: string) {
+  constructor(name: string, private readonly onPersistedChange?: () => void) {
     this.db = new Dexie(name);
     this.db.version(1).stores(SCHEMA_V1_DECLARATIONS);
     this.db.version(2).stores(SCHEMA_V2_DECLARATIONS);
@@ -94,6 +94,9 @@ export class WorkspaceStore {
     this.db.close();
     this.opened = false;
   }
+
+  /** Дожидается уже поставленных в очередь записей настроек и пространства. */
+  async waitForPendingWrites(): Promise<void> { await this.writes; }
 
   async load(): Promise<WorkspaceSnapshot> {
     await this.openOnce();
@@ -183,6 +186,7 @@ export class WorkspaceStore {
         }
       },
     );
+    this.onPersistedChange?.();
   }
 
   /**
@@ -219,6 +223,7 @@ export class WorkspaceStore {
         await this.assertGeneration();
         await this.settings.put({ key: `view:${instanceId}`, value });
       });
+      this.onPersistedChange?.();
     });
   }
 
@@ -229,6 +234,7 @@ export class WorkspaceStore {
         await this.assertGeneration();
         await this.settings.bulkDelete(instanceIds.map((id) => `view:${id}`));
       });
+      this.onPersistedChange?.();
     });
   }
 

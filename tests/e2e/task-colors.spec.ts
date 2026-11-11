@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { createDocumentWindow, openDocumentWindow, openPlanMenu } from './document-ui';
 import { storedPlan } from '../planning/helpers';
 

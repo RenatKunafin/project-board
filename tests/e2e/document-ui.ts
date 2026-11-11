@@ -14,6 +14,10 @@ export async function createDocumentWindow(page: Page, type: string, title: stri
   expect(documentId).toBeTruthy();
   await expect.poll(async () => (await storedWorkspace(page)).widgetInstances
     .some(row => row.documentId === documentId)).toBe(true);
+  // Документ тоже должен быть записан: структурная запись экземпляра теперь
+  // не гарантирует паузы, за которую автосейв документа успевал пройти (PBT-139).
+  await expect.poll(async () => (await storedWorkspace(page)).documents
+    .some(row => row.id === documentId)).toBe(true);
   const instanceId = (await storedWorkspace(page)).widgetInstances.find(row => row.documentId === documentId)!.id;
   return { pane: windowForInstance(page, instanceId), documentId: documentId!, instanceId };
 }

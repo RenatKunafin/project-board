@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 test('рабочее пространство восстанавливается после перезапуска', async ({
   page,

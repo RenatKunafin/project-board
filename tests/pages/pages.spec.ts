@@ -1,5 +1,5 @@
 import { createDocumentWindow } from '../e2e/document-ui';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '../app-test';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';

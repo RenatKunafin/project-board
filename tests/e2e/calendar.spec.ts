@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { storedWorkspace } from './workspace-helper';
 
@@ -89,7 +89,14 @@ test('ближайшие события выбирают существующи�
   await page.goto('/');
   await createDocumentWindow(page, 'Календарь', 'Общий список событий', true);
   const calendar = page.locator('.calendar-widget').last();
-  await calendar.locator('.calendar-widget__day').filter({ hasText: /^2/ }).first().click();
+  // Событие нужно внутри окна «ближайших 7 дней» (сегодня … сегодня+6, upcoming.ts).
+  // Дата вычисляется от «сегодня»: +2 дня, а на стыке месяцев — сегодня
+  // (событие сегодняшнего дня без времени окном включается). Сетка содержит
+  // только дни текущего месяца (monthGrid), поэтому число дня в ней уникально.
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const targetDay = now.getDate() + 2 <= daysInMonth ? now.getDate() + 2 : now.getDate();
+  await calendar.locator('.calendar-widget__day').filter({ hasText: new RegExp(`^\\s*${targetDay}\\s*$`) }).first().click();
   const dayDialog = page.getByRole('dialog', { name: 'События дня' });
   await dayDialog.getByRole('button', { name: 'Добавить событие', exact: true }).click();
   const eventDialog = page.getByRole('dialog', { name: 'Новое событие' });
@@ -139,6 +146,7 @@ test('ближайшие события выбирают существующи�
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
@@ -202,6 +210,7 @@ test('серия календаря переносится общей копие
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
@@ -290,6 +299,7 @@ test('ручная отметка нерабочего дня переносит
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();

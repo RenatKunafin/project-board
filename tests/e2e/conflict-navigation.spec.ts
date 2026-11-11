@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
+import { persistedDocument } from './workspace-helper';
 
 const title = 'Навигация конфликтов';
 function fixture(nested = false) {
@@ -36,6 +37,10 @@ async function setup(page: Page, nested = false) {
   const pane = page.getByRole('group', { name: `План · ${title}`, exact: true }).first();
   const id = (await pane.locator('[data-document-id]').getAttribute('data-document-id'))!;
   await page.evaluate(({ id, content }) => window.__projectBoard!.writeDocumentContent(id, content), { id, content: fixture(nested) });
+  // Навигация проверяется в загруженном плане, после завершения подготовки
+  // данных; первичная инициализация пустой диаграммы не часть сценария.
+  await persistedDocument(page, title, fixture(nested));
+  await page.reload();
   await expect(pane.locator('[data-issues]')).toContainText('(1)');
   return { pane, id };
 }
@@ -59,12 +64,38 @@ async function expectTarget(pane: Locator) {
   })).toBe(true);
   await expect(row).toHaveClass(/wx-selected/);
 }
+/** Ждём завершения перехода сетки и её последнего resize-события. */
+async function stableWindowLayout(page: Page) {
+  await page.evaluate(async () => {
+    const windows = [...document.querySelectorAll<HTMLElement>('.react-grid-item')];
+    await Promise.all(windows.flatMap(item => item.getAnimations().map(animation => animation.finished)));
+    await new Promise<void>((resolve, reject) => {
+      let idle = 0;
+      const observer = new ResizeObserver(() => {
+        clearTimeout(idle);
+        idle = window.setTimeout(done, 500);
+      });
+      const deadline = window.setTimeout(() => {
+        observer.disconnect();
+        clearTimeout(idle);
+        reject(new Error('Сетка не завершила изменение размеров'));
+      }, 3000);
+      const done = () => {
+        observer.disconnect();
+        clearTimeout(deadline);
+        resolve();
+      };
+      windows.forEach(item => observer.observe(item));
+    });
+  });
+}
 
 for (const zoom of ['days', 'weeks']) {
   test(`переход закрывает модалку и показывает далёкую строку и начало полосы (${zoom})`, async ({ page }) => {
     const { pane, id } = await setup(page);
     await pane.getByRole('button', { name: /^Развернуть на весь дашборд/ }).click();
     await pane.locator(`[data-zoom-${zoom}]`).click();
+    await stableWindowLayout(page);
     const before = await page.evaluate(id => window.__projectBoard!.readDocument(id), id);
     await pane.locator('[data-issues]').click();
     const action = pane.locator('[data-issue-show]');
@@ -83,6 +114,7 @@ for (const key of ['Enter', 'Space']) {
     const { pane, id } = await setup(page, true);
     await addView(page);
     const second = page.getByRole('group', { name: `План · ${title}`, exact: true }).nth(1);
+    await stableWindowLayout(page);
     await second.locator('[data-gantt-filter-query]').fill('Обычная');
     await second.locator('[data-gantt-filter-resource]').selectOption('other');
     const neighbour = await second.locator('.wx-chart').evaluate(chart => ({ left: chart.scrollLeft, top: chart.scrollTop }));
