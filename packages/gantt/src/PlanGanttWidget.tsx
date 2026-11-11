@@ -53,10 +53,12 @@ import {
 import {
   ganttDate,
   ganttDayIso,
-  nonWorkingDayKind,
+  dayHighlight,
+  dateMarkColorIndex,
   planToGanttLinks,
   planToGanttTasks,
 } from './svar-adapter';
+import { dateMarkColorRules } from './date-mark-colors';
 import { moveTask, setTaskDates, updateTask } from './plan-commands';
 import { createGroup, deleteGroup, updateGroup } from './plan-hierarchy';
 import { addCalendarDays } from './working-calendar';
@@ -1141,6 +1143,12 @@ export default function PlanGanttWidget({
     return next;
     // rangeTick — принудительный пересчёт после расширения из жестов.
   }, [source, rangeTick]);
+  // PBT-141: индекс цветовых меток дат полного плана (метки не зависят
+  // от фильтров; используется подсветкой дневного и недельного режимов).
+  const marksIndex = useMemo(
+    () => (source ? dateMarkColorIndex(source.plan) : undefined),
+    [source],
+  );
   // ─── Подсветка нерабочих дней в недельном режиме (PBT-076, D2.3) ──
   // highlightTime SVAR не срабатывает для week-клеток (сторож в
   // react-gantt: только day/hour) — блоки нерабочих дней рисуем сами
@@ -1150,6 +1158,10 @@ export default function PlanGanttWidget({
   // Дневная точность: x/ширина из пикселей дня шкалы (lengthUnitWidth),
   // границы блока — подряд идущие дни одного вида (выходные парами,
   // праздники отдельно — различимость сохраняется).
+  // PBT-141: цветовые метки дат — тем же слоем, класс
+  // gantt-date-mark-<цвет>; слияние только одинаковых видов и цветов
+  // (приоритет dayHighlight: метка > праздник > выходной), полоса
+  // помеченного дня одна.
   useEffect(() => {
     if (ganttZoom !== 'weeks' || source === null) {
       return;
@@ -1168,33 +1180,51 @@ export default function PlanGanttWidget({
     const dayMs = 86400000;
     const startMs = startDay.getTime();
     const totalDays = Math.round((endDay.getTime() - startMs) / dayMs) + 1;
+    const highlightOf = (offset: number) => {
+      const date = new Date(startMs + offset * dayMs);
+      return dayHighlight(source.plan, ganttDayIso(date), marksIndex);
+    };
+    const blockKey = (highlight: NonNullable<ReturnType<typeof highlightOf>>): string =>
+      highlight.kind === 'mark' ? `mark-${highlight.color}` : highlight.kind;
+    const blockClassName = (
+      highlight: NonNullable<ReturnType<typeof highlightOf>>,
+    ): string =>
+      highlight.kind === 'mark'
+        ? `gantt-date-mark-${highlight.color}`
+        : highlight.kind === 'holiday'
+          ? 'gantt-holiday'
+          : 'gantt-weekend';
     const blocks: HTMLElement[] = [];
     let index = 0;
     while (index < totalDays) {
-      const date = new Date(startMs + index * dayMs);
-      const kind = nonWorkingDayKind(source.plan, ganttDayIso(date));
-      if (kind === undefined) {
+      const highlight = highlightOf(index);
+      if (highlight === undefined) {
         index += 1;
         continue;
       }
+      const key = blockKey(highlight);
       let length = 1;
       while (index + length < totalDays) {
-        const next = new Date(startMs + (index + length) * dayMs);
-        if (nonWorkingDayKind(source.plan, ganttDayIso(next)) !== kind) {
+        const next = highlightOf(index + length);
+        if (next === undefined || blockKey(next) !== key) {
           break;
         }
         length += 1;
       }
       const stripe = window.document.createElement('div');
-      stripe.className = kind === 'holiday' ? 'gantt-holiday' : 'gantt-weekend';
+      stripe.className = blockClassName(highlight);
       stripe.style.left = `${Math.round(index * pxPerDay)}px`;
       stripe.style.width = `${Math.max(1, Math.round(length * pxPerDay))}px`;
-      stripe.setAttribute('data-gantt-nonworking', kind);
+      if (highlight.kind === 'mark') {
+        stripe.setAttribute('data-gantt-day-mark', highlight.color);
+      } else {
+        stripe.setAttribute('data-gantt-nonworking', highlight.kind);
+      }
       blocks.push(stripe);
       index += length;
     }
     layer.replaceChildren(...blocks);
-  }, [ganttZoom, source, chartRange, rangeTick, widgetInstanceId]);
+  }, [ganttZoom, source, marksIndex, chartRange, rangeTick, widgetInstanceId]);
 
   // ─── Позиция прокрутки шкалы (PBT-073, design D6; техдолг D8 PBT-071) ──
   // SVAR при скачке ширины контейнера пересобирает шкалу и сбрасывает
@@ -1564,6 +1594,9 @@ export default function PlanGanttWidget({
     () => ganttBarColorRules((filteredPlan ?? plan)?.tasks ?? [], ':'),
     [filteredPlan, plan],
   );
+  // PBT-141: статичные классы заливки палитры меток (инжект рядом с
+  // правилами цветов задач ниже).
+  const markRules = useMemo(() => dateMarkColorRules(), []);
   // Быстрая смена цвета (правый клик на полосе задачи, PBT-084):
   // собственная запись с пометкой ревизии — чарт не пересобирается.
   const [colorMenu, setColorMenu] = useState<TaskColorMenuState | null>(null);
@@ -1835,13 +1868,17 @@ export default function PlanGanttWidget({
       if (unit !== 'day' || source === null) {
         return '';
       }
-      const kind = nonWorkingDayKind(source.plan, ganttDayIso(date));
-      if (kind === 'holiday') {
-        return 'gantt-holiday';
+      // PBT-141: приоритет заливки — метка > праздник > выходной.
+      const highlight = dayHighlight(source.plan, ganttDayIso(date), marksIndex);
+      if (highlight === undefined) {
+        return '';
       }
-      return kind === 'weekend' ? 'gantt-weekend' : '';
+      if (highlight.kind === 'mark') {
+        return `gantt-date-mark-${highlight.color}`;
+      }
+      return highlight.kind === 'holiday' ? 'gantt-holiday' : 'gantt-weekend';
     },
-    [source],
+    [source, marksIndex],
   );
 
   if (!documentId || !documentService) {
@@ -2098,6 +2135,7 @@ export default function PlanGanttWidget({
           ) : null}
           <div className="plan-gantt__chart" onDoubleClick={onChartDoubleClick} onContextMenu={onChartContextMenu}>
             {colorRules ? <style dangerouslySetInnerHTML={{ __html: colorRules }} /> : null}
+            {markRules ? <style dangerouslySetInnerHTML={{ __html: markRules }} /> : null}
             {colorMenu && colorMenuTask !== undefined && (
               <TaskColorMenu
                 state={colorMenu}

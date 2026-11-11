@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { PlanCommandError } from './plan-commands';
-import type { PlanContent, Weekday } from './plan-document';
+import type { PlanContent, PlanDateMark, Weekday } from './plan-document';
 import { addCalendarDays } from './working-calendar';
+import {
+  DATE_MARK_COLORS,
+  dateMarkColorInfo,
+  dateMarkFill,
+  isDateMarkColor,
+} from './date-mark-colors';
 
 const WEEKDAYS: readonly { value: Weekday; label: string }[] = [
   { value: 1, label: 'Пн' },
@@ -19,14 +25,19 @@ export interface CalendarInputs {
   readonly holidayTo: string;
   readonly exceptionFrom: string;
   readonly exceptionTo: string;
+  readonly markFrom: string;
+  readonly markTo: string;
+  readonly markColor: string;
 }
 
 export const EMPTY_CALENDAR_INPUTS: CalendarInputs = {
   holidayFrom: '', holidayTo: '', exceptionFrom: '', exceptionTo: '',
+  markFrom: '', markTo: '', markColor: DATE_MARK_COLORS[0].id,
 };
 
 interface PlanCalendarSectionProps {
   readonly calendar: PlanContent['calendar'];
+  readonly dateMarks: readonly PlanDateMark[];
   readonly inputs: CalendarInputs;
   readonly onInputsChange: (inputs: CalendarInputs) => void;
   /** Применяет полную замену календаря; возвращает ошибку ядра по месту. */
@@ -35,22 +46,32 @@ interface PlanCalendarSectionProps {
     holidays: readonly string[],
     workingExceptions: readonly string[],
   ) => PlanCommandError | undefined;
+  /** Применяет полную замену набора особых дат (PBT-141). */
+  readonly onApplyMarks: (
+    marks: readonly { readonly date: string; readonly color: string }[],
+  ) => PlanCommandError | undefined;
 }
 
 /**
  * Секция «Календарь» (PBT-044): рабочие дни недели, праздники (день или
  * диапазон), рабочие исключения. Добавление праздника убирает дату из
  * исключений и наоборот — дата не может быть в обоих списках.
+ * PBT-141: особые даты — цветовые метки любого дня шкалы (день или
+ * диапазон, цвет из палитры меток); повторное добавление даты
+ * перекрашивает её, метки не влияют на рабочую семантику.
  */
 export default function PlanCalendarSection({
   calendar,
+  dateMarks,
   onApply,
+  onApplyMarks,
   inputs,
   onInputsChange,
 }: PlanCalendarSectionProps) {
-  const { holidayFrom, holidayTo, exceptionFrom, exceptionTo } = inputs;
+  const { holidayFrom, holidayTo, exceptionFrom, exceptionTo, markFrom, markTo, markColor } = inputs;
   const changeInput = (field: keyof CalendarInputs, value: string) => onInputsChange({ ...inputs, [field]: value });
   const [error, setError] = useState<string | null>(null);
+  const colorGroupName = useId();
 
   const apply = (
     workingDays: readonly number[],
@@ -127,6 +148,47 @@ export default function PlanCalendarSection({
     const holidays = calendar.holidays.filter((date) => !dates.includes(date));
     if (apply(calendar.workingDays, holidays, exceptions)) {
       onInputsChange({ ...inputs, exceptionFrom: '', exceptionTo: '' });
+    }
+  };
+
+  /** PBT-141: полная замена набора меток; ошибка ядра — по месту. */
+  const applyMarks = (
+    marks: readonly { readonly date: string; readonly color: string }[],
+  ): boolean => {
+    const error = onApplyMarks(marks);
+    if (error !== undefined) {
+      setError(error.message);
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
+  const addMarks = () => {
+    if (markFrom === '') {
+      setError('Укажите дату особой даты.');
+      return;
+    }
+    if (!isDateMarkColor(markColor)) {
+      setError('Выберите цвет метки из палитры.');
+      return;
+    }
+    const dates = expandRange(markFrom, markTo);
+    if (dates === null) {
+      return;
+    }
+    // Повторное добавление существующей даты перекрашивает её
+    // (последний выбор выигрывает), дубли невозможны по построению.
+    const byDate = new Map(dateMarks.map((mark) => [mark.date, mark.color]));
+    for (const date of dates) {
+      byDate.set(date, markColor);
+    }
+    if (
+      applyMarks(
+        [...byDate.entries()].map(([date, color]) => ({ date, color })),
+      )
+    ) {
+      onInputsChange({ ...inputs, markFrom: '', markTo: '' });
     }
   };
 
@@ -254,6 +316,94 @@ export default function PlanCalendarSection({
           >
             Сделать рабочим
           </button>
+        </div>
+      </div>
+      <div className="catalog__sub">
+        <h5 className="catalog__section-title">Особые даты</h5>
+        {dateMarks.length === 0 && (
+          <p className="task-editor__preview">
+            Особых дат нет — выделение декоративное и не влияет на планирование.
+          </p>
+        )}
+        <ul className="catalog__list">
+          {dateMarks.map((mark) => (
+            <li key={mark.date} className="catalog__row">
+              <span
+                className="plan-settings__mark-swatch"
+                style={{ background: dateMarkFill(mark.color) }}
+                aria-hidden="true"
+              />
+              <span className="catalog__title">{mark.date}</span>
+              <span className="task-editor__preview">
+                {dateMarkColorInfo(mark.color)?.label ?? mark.color}
+              </span>
+              <button
+                type="button"
+                className="task-editor__button plan-settings__remove"
+                title={`Удалить ${mark.date}`}
+                aria-label={`Удалить особую дату ${mark.date}`}
+                data-calendar-remove-mark={mark.date}
+                onClick={() =>
+                  applyMarks(dateMarks.filter((entry) => entry.date !== mark.date))
+                }
+              >
+                <Trash2 size={16} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="catalog__add">
+          <input
+            type="date"
+            value={markFrom}
+            aria-label="Особые даты: с"
+            data-calendar-mark-from
+            onChange={(event) => changeInput('markFrom', event.target.value)}
+          />
+          <input
+            type="date"
+            value={markTo}
+            aria-label="Особые даты: по"
+            data-calendar-mark-to
+            title="По (необязательно — диапазон)"
+            onChange={(event) => changeInput('markTo', event.target.value)}
+          />
+          <button
+            type="button"
+            className="task-editor__button"
+            data-calendar-add-mark
+            onClick={addMarks}
+          >
+            Добавить особую дату
+          </button>
+        </div>
+        <div
+          className="plan-settings__mark-colors"
+          role="radiogroup"
+          aria-label="Цвет особой даты"
+        >
+          {DATE_MARK_COLORS.map((color) => (
+            <label
+              key={color.id}
+              className="plan-settings__mark-option"
+              title={color.label}
+            >
+              <input
+                type="radio"
+                name={colorGroupName}
+                value={color.id}
+                checked={markColor === color.id}
+                aria-label={color.label}
+                data-calendar-mark-color={color.id}
+                onChange={() => changeInput('markColor', color.id)}
+              />
+              <span
+                className="plan-settings__mark-swatch"
+                style={{ background: dateMarkFill(color.id) }}
+                aria-hidden="true"
+              />
+            </label>
+          ))}
         </div>
       </div>
       {error !== null && (

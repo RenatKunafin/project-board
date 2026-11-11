@@ -158,6 +158,67 @@ describe('serializePlanToPlantUml — контрольный план', () => {
   });
 });
 
+describe('особые даты в публикации (PBT-141)', () => {
+  const marked = () => ({
+    ...controlPlan(),
+    dateMarks: [
+      { date: '2026-11-05', color: 'coral' },  // рабочий день внутри задач
+      { date: '2026-10-17', color: 'coral' },  // суббота — перекрывает серое
+      { date: '2026-10-21', color: 'jade' },
+      { date: '2026-10-22', color: 'jade' },   // соседние — диапазон
+      { date: '2026-12-24', color: 'plum' },   // вне горизонта
+    ],
+  });
+
+  it('заливка осветлённым hex палитры, соседние даты — диапазоном', () => {
+    const { text } = serializePlanToPlantUml(marked());
+    expect(text).toContain('2026/11/05 is colored in #f8b3b2');
+    expect(text).toContain('2026/10/17 is colored in #f8b3b2');
+    expect(text).toContain('2026/10/21 to 2026/10/22 are colored in #a1e3c7');
+    expect(text).not.toContain('2026/12/24');
+  });
+
+  it('строки меток идут после серых выходных и не закрывают день', () => {
+    const { text } = serializePlanToPlantUml(marked());
+    const lastWeekend = text.lastIndexOf('are colored in lightgray');
+    const firstMark = text.indexOf('is colored in #f8b3b2');
+    expect(lastWeekend).toBeGreaterThan(0);
+    expect(firstMark).toBeGreaterThan(lastWeekend);
+    // Метка — только цвет, день не объявляется закрытым.
+    expect(text).not.toContain('2026/11/05 is closed');
+    expect(text).not.toContain('2026/10/17 is closed');
+  });
+
+  it('длительности задач не меняются от меток', () => {
+    const withMarks = serializePlanToPlantUml(marked());
+    const without = serializePlanToPlantUml(controlPlan());
+    const stripMarks = (value: string): string =>
+      value
+        .split('\n')
+        .filter(
+          (line) =>
+            line.trim() !== '' &&
+            !line.includes('is colored in #') &&
+            !line.includes('are colored in #') &&
+            !line.includes('Особые даты'),
+        )
+        .join('\n');
+    expect(stripMarks(withMarks.text)).toBe(stripMarks(without.text));
+  });
+
+  it('метки вне горизонта перечисляются в отчёте', () => {
+    const { report } = serializePlanToPlantUml(marked());
+    const note = report.find((entry) => entry.topic === 'date-marks-horizon');
+    expect(note?.message).toContain('(1)');
+  });
+
+  it('план без меток не содержит блока и заметок', () => {
+    const { text, report } = serializePlanToPlantUml(controlPlan());
+    expect(text).not.toContain('Особые даты');
+    expect(topics(report)).not.toContain('date-marks-horizon');
+  });
+});
+
 describe('кодирование и края', () => {
   it('квадратные скобки и двоеточия заменяются, кавычки остаются', () => {
     expect(encodePlantUmlTitle('Задача [срочно]: «фаза 1»')).toBe(

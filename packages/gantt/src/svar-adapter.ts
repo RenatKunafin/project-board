@@ -1,4 +1,5 @@
 import type { PlanContent, PlanGroup } from './plan-document';
+import type { DateMarkColor } from './date-mark-colors';
 import { addCalendarDays } from './working-calendar';
 import { calendarView, type NonWorkingDayKind } from './calendar-view';
 
@@ -115,6 +116,49 @@ export function planToGanttLinks(plan: PlanContent): GanttLink[] {
 }
 
 export type { NonWorkingDayKind } from './calendar-view';
+
+/**
+ * Вид подсветки дня шкалы проектного Гантта: особая дата приоритетнее
+ * праздника и выходного (PBT-141, решение владельца 2026-11-11).
+ */
+export type GanttDayHighlight =
+  | { readonly kind: 'mark'; readonly color: DateMarkColor }
+  | { readonly kind: 'weekend' }
+  | { readonly kind: 'holiday' };
+
+/**
+ * Индекс цветовых меток дат плана (PBT-141): дата → цвет. Строится
+ * реактивно по плану; план обязан пройти валидацию parsePlanContent
+ * (цвета меток — известные идентификаторы палитры).
+ */
+export function dateMarkColorIndex(
+  plan: PlanContent,
+): ReadonlyMap<string, DateMarkColor> {
+  return new Map(
+    (plan.dateMarks ?? []).map((mark) => [
+      mark.date,
+      mark.color as DateMarkColor,
+    ]),
+  );
+}
+
+/**
+ * Видимого дня шкалы: метка → праздник → выходной; рабочий день без
+ * метки — без подсветки (undefined). Единая точка приоритета для
+ * дневного и недельного режимов (PBT-141 design D4).
+ */
+export function dayHighlight(
+  plan: PlanContent,
+  isoDate: string,
+  index?: ReadonlyMap<string, DateMarkColor>,
+): GanttDayHighlight | undefined {
+  const mark = (index ?? dateMarkColorIndex(plan)).get(isoDate);
+  if (mark !== undefined) {
+    return { kind: 'mark', color: mark };
+  }
+  const kind = calendarView(plan.calendar).dayKind(isoDate);
+  return kind === undefined ? undefined : { kind };
+}
 
 /**
  * Вид нерабочего дня календаря плана: праздник различим среди выходных;

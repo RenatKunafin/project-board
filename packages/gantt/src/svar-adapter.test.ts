@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createPlanContent, type PlanContent } from './plan-document';
 import {
+  dateMarkColorIndex,
+  dayHighlight,
   ganttDayIso,
   nonWorkingDayKind,
   planToGanttLinks,
@@ -252,6 +254,55 @@ describe('nonWorkingDayKind — подсветка нерабочих дней',
 
   it('рабочий день не подсвечивается', () => {
     expect(nonWorkingDayKind(plan, '2026-10-12')).toBeUndefined();
+  });
+});
+
+describe('dayHighlight — приоритет заливки дня (PBT-141)', () => {
+  const plan: PlanContent = {
+    ...createPlanContent(),
+    calendar: {
+      workingDays: [1, 2, 3, 4, 5],
+      holidays: ['2026-10-14'], // среда
+      workingExceptions: [],
+    },
+    dateMarks: [
+      { date: '2026-10-14', color: 'coral' }, // праздник
+      { date: '2026-10-17', color: 'jade' },  // суббота
+      { date: '2026-10-15', color: 'plum' },  // рабочий день
+    ],
+  };
+
+  it('метка приоритетнее праздника и выходного', () => {
+    expect(dayHighlight(plan, '2026-10-14')).toEqual({ kind: 'mark', color: 'coral' });
+    expect(dayHighlight(plan, '2026-10-17')).toEqual({ kind: 'mark', color: 'jade' });
+  });
+
+  it('метка на рабочем дне и обычные дни без меток', () => {
+    expect(dayHighlight(plan, '2026-10-15')).toEqual({ kind: 'mark', color: 'plum' });
+    expect(dayHighlight(plan, '2026-10-16')).toBeUndefined();
+    expect(dayHighlight(plan, '2026-10-18')).toEqual({ kind: 'weekend' });
+  });
+
+  it('непомеченный праздник остаётся праздником; план без меток — прежнее поведение', () => {
+    const holidayOnly: PlanContent = {
+      ...plan,
+      calendar: {
+        workingDays: [1, 2, 3, 4, 5],
+        holidays: ['2026-10-14'],
+        workingExceptions: [],
+      },
+    };
+    delete (holidayOnly as { dateMarks?: unknown }).dateMarks;
+    expect(dayHighlight(holidayOnly, '2026-10-14')).toEqual({ kind: 'holiday' });
+  });
+
+  it('индекс меток переиспользуется между вызовами', () => {
+    const index = dateMarkColorIndex(plan);
+    expect(dayHighlight(plan, '2026-10-15', index)).toEqual({
+      kind: 'mark',
+      color: 'plum',
+    });
+    expect(index.get('2026-10-14')).toBe('coral');
   });
 });
 
