@@ -566,8 +566,9 @@ export function updateDateMarks(
     .map((mark) => ({ date: mark.date, color: mark.color }))
     .sort((a, b) => a.date.localeCompare(b.date));
   if (sorted.length === 0) {
-    const { dateMarks: _removed, ...rest } = plan;
-    return { ok: true, plan: rest };
+    const copy = { ...plan };
+    delete (copy as Record<string, unknown>).dateMarks;
+    return { ok: true, plan: copy };
   }
   return { ok: true, plan: { ...plan, dateMarks: sorted } };
 }
