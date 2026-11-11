@@ -185,6 +185,52 @@
 .plan-gantt .plan-settings__calendar .catalog__add {
   flex-wrap: wrap;
 }
+
+/* ─── Особые даты (PBT-141): свотчи и палитра выбора цвета ─────────── */
+
+.plan-gantt .plan-settings__mark-colors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-gantt .plan-settings__mark-option {
+  display: inline-flex;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.plan-gantt .plan-settings__mark-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+}
+
+.plan-gantt .plan-settings__mark-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  flex: none;
+}
+
+.plan-gantt .catalog__row .plan-settings__mark-swatch {
+  width: 12px;
+  height: 12px;
+}
+
+.plan-gantt .plan-settings__mark-option:has(input:checked) {
+  border-color: var(--primary);
+}
+
+.plan-gantt .plan-settings__mark-option:has(input:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
 .plan-gantt .plan-settings__notice {
   flex: none;
   padding: 12px 24px;

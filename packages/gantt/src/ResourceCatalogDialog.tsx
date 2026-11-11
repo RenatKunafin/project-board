@@ -690,6 +690,7 @@ function SettingsEditor({
                 {issueText('calendar', 'pending')}
                 <PlanCalendarSection
                   calendar={plan.calendar}
+                  dateMarks={plan.dateMarks ?? []}
                   inputs={calendarInputs}
                   onInputsChange={(value) => {
                     setCalendarInputs(value);
@@ -702,6 +703,9 @@ function SettingsEditor({
                       holidays,
                       workingExceptions,
                     })
+                  }
+                  onApplyMarks={(marks) =>
+                    apply({ type: 'updateDateMarks', marks })
                   }
                 />
               </>
