@@ -107,7 +107,16 @@ function SettingsEditor({
   const fields = useRef(new Map<string, HTMLInputElement>());
   const panels = useRef(new Map<SettingsSection, HTMLElement>());
   const stale = revision !== baseRevision || saveError?.kind === 'conflict';
-  const calendarPending = Object.values(calendarInputs).some(Boolean);
+  // Выбор цвета метки — не пользовательский ввод: дефолтный свотч не
+  // блокирует сохранение (PBT-141); незаполненными считаются только даты.
+  const calendarPending = [
+    calendarInputs.holidayFrom,
+    calendarInputs.holidayTo,
+    calendarInputs.exceptionFrom,
+    calendarInputs.exceptionTo,
+    calendarInputs.markFrom,
+    calendarInputs.markTo,
+  ].some((value) => value !== '');
   const hasChanges =
     JSON.stringify(plan) !== JSON.stringify(initial) ||
     plan.resources.some(
