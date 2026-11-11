@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('план создаётся через каталог, переживает перезагрузку и открывается по документу', async ({

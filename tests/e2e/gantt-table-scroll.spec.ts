@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { createDocumentWindow } from './document-ui';
 
 const ids = Array.from({ length: 120 }, (_, index) => `scroll-${index}`);

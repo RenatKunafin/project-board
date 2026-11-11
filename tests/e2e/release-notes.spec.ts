@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 test('журнал выпусков открывается из настроек и содержит архивные версии', async ({ page }) => {
   await page.goto('/');

@@ -5,6 +5,9 @@ import {
   createDocumentService,
   createIndexedDbDocumentStore,
   createWidgetRegistry,
+  PersistenceError,
+  RecoverySnapshotCoordinator,
+  RecoverySnapshotStore,
   WorkspaceBackupStore,
   StorageSelfTest,
   WorkspaceStore,
@@ -14,6 +17,7 @@ import {
 import { checklistTitle } from '@project-board/checklist';
 import { planTitle } from '@project-board/gantt';
 import App, { type RestoredWorkspace } from './App';
+import { RecoveryStartup } from './RecoveryStartup';
 import { widgetTypes } from './widgets';
 import { initializeYandexMetrika } from './analytics/yandex-metrika';
 // Шрифты — локальная сборка @fontsource (офлайн-требование PWA, PBT-069):
@@ -41,18 +45,26 @@ declare global {
 }
 
 const store = createIndexedDbDocumentStore('project-board');
+const recoveryCoordinatorRef: { current: RecoverySnapshotCoordinator | null } = { current: null };
 // Поддержка миграций собирается приложением из зарегистрированных типов
 // (design D1): сервис остаётся независимым от реестра.
 const documentService = createDocumentService({
   store,
   migrations: collectDocumentMigrations(widgetTypes),
+  onPersistedChange: () => recoveryCoordinatorRef.current?.markPersistedChange(),
 });
-const workspaceStore = new WorkspaceStore('project-board');
+const workspaceStore = new WorkspaceStore('project-board', () => recoveryCoordinatorRef.current?.markPersistedChange());
 const backupStore = new WorkspaceBackupStore('project-board');
 const backupCompatibility = {
   widgetTypeIds: widgetTypes.map((type) => type.id),
   documentTypes: widgetTypes.flatMap((type) => type.documentSupport ? [{ moduleId: type.documentSupport.moduleId, documentType: type.documentSupport.documentType, schemaVersion: type.documentSupport.schemaVersion }] : []),
 };
+const recoveryStore = new RecoverySnapshotStore(backupCompatibility);
+const recoveryCoordinator = new RecoverySnapshotCoordinator(recoveryStore, async () => {
+  await Promise.all([documentService.flushAll(), workspaceStore.waitForPendingWrites()]);
+  return (await backupStore.readCapture()).payload;
+});
+recoveryCoordinatorRef.current = recoveryCoordinator;
 
 // Отложенные правки записываются при закрытии/перезагрузке страницы (PBT-010).
 window.addEventListener('pagehide', () => {
@@ -102,17 +114,24 @@ if (window.location.hash === '#storage-selftest') {
 }
 
 async function bootstrap(): Promise<void> {
+  const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
   // Метрика загружается независимо от восстановления локальных данных и не
   // должна блокировать запуск PWA при недоступности внешнего скрипта.
   initializeYandexMetrika();
   // Сбой восстановления не выдаётся за пустой каталог: флаг доходит до App,
   // каталог показывает состояние ошибки загрузки (DoD PBT-025).
   let documentsLoadError = false;
+  let documentLoadFailure: unknown;
   try {
     await documentService.restoreAll();
   } catch (error) {
     documentsLoadError = true;
+    documentLoadFailure = error;
     console.error('document restore failed', error);
+  }
+  if (documentLoadFailure instanceof PersistenceError && documentLoadFailure.code === 'schema-version-unsupported') {
+    root.render(<main className="recovery-startup"><section className="recovery-startup__card" role="alert"><h1>Не удалось открыть локальные данные</h1><p>{documentLoadFailure.message}</p><p>Данные не заменены пустым пространством.</p></section></main>);
+    return;
   }
   // Проблемы миграций доступны приложению (spec PBT-026): документ остаётся
   // нетронутым в хранилище, показываем диагностику в консоли.
@@ -123,10 +142,19 @@ async function bootstrap(): Promise<void> {
         (issue.detail ? ` — ${issue.detail}` : ''),
     );
   }
-  const saved = await workspaceStore.load();
-  // Состояния представлений экземпляров (PBT-049, ключи `view:*`) —
-  // до рендера: панели монтируются со снапшотами настроек.
-  const initialViewStates = await workspaceStore.loadViewSettings();
+  let saved: Awaited<ReturnType<WorkspaceStore['load']>>;
+  let initialViewStates: Awaited<ReturnType<WorkspaceStore['loadViewSettings']>>;
+  let emptyCapture: Awaited<ReturnType<WorkspaceBackupStore['readCapture']>> | undefined;
+  try {
+    saved = await workspaceStore.load();
+    // Состояния представлений экземпляров (PBT-049) нужны до рендера.
+    initialViewStates = await workspaceStore.loadViewSettings();
+    if (!documentsLoadError) emptyCapture = await backupStore.readCapture();
+  } catch (error) {
+    console.error('workspace restore failed', error);
+    root.render(<main className="recovery-startup"><section className="recovery-startup__card" role="alert"><h1>Не удалось открыть локальные данные</h1><p>{error instanceof Error ? error.message : String(error)}</p><p>Данные не заменены пустым пространством.</p></section></main>);
+    return;
+  }
 
   const widgetRegistry = createWidgetRegistry(widgetTypes);
 
@@ -135,39 +163,45 @@ async function bootstrap(): Promise<void> {
   // (composition root) вычисляет его зарегистрированными функциями модулей.
   fixupDocumentTitles(widgetRegistry);
 
-  // Восстановление сохранённого рабочего пространства: вкладки, окна,
-  // раскладки и режимы. Документы уже в сервисе (restoreAll).
-  if (saved.tabs.length > 0) {
-    const restored = restoreWorkspace(saved);
-    ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-      <React.StrictMode>
-        <App
-          widgetRegistry={widgetRegistry}
-          documentService={documentService}
-          workspaceStore={workspaceStore}
-          restored={restored}
-          initialViewStates={initialViewStates}
-          documentsLoadError={documentsLoadError}
-          backupStore={backupStore}
-          backupCompatibility={backupCompatibility}
-        />
-      </React.StrictMode>,
-    );
-    return;
-  }
+  const renderApp = (): void => {
+    recoveryCoordinator.setEnabled(!documentsLoadError);
+    root.render(<React.StrictMode><App
+      widgetRegistry={widgetRegistry}
+      documentService={documentService}
+      workspaceStore={workspaceStore}
+      restored={saved.tabs.length > 0 ? restoreWorkspace(saved) : undefined}
+      initialViewStates={initialViewStates}
+      documentsLoadError={documentsLoadError}
+      backupStore={backupStore}
+      backupCompatibility={backupCompatibility}
+      recoveryCoordinator={recoveryCoordinator}
+    /></React.StrictMode>);
+  };
 
-  ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-    <React.StrictMode>
-      <App
-        widgetRegistry={widgetRegistry}
-        documentService={documentService}
-        workspaceStore={workspaceStore}
-        documentsLoadError={documentsLoadError}
+  const empty = !!emptyCapture && emptyCapture.payload.documents.length === 0 &&
+    emptyCapture.payload.workspace.tabs.length === 0 && emptyCapture.payload.workspace.instances.length === 0 &&
+    Object.keys(emptyCapture.payload.viewSettings).length === 0;
+  try {
+    const lookup = await recoveryCoordinator.refresh();
+    if (empty) {
+      root.render(<React.StrictMode><RecoveryStartup
+        initialLookup={lookup}
+        coordinator={recoveryCoordinator}
         backupStore={backupStore}
-        backupCompatibility={backupCompatibility}
-      />
-    </React.StrictMode>,
-  );
+        emptyCapture={emptyCapture!}
+        prepareDocuments={(documents) => documentService.prepareDocumentsForRestore(documents)}
+        onContinue={renderApp}
+      /></React.StrictMode>);
+      return;
+    }
+  } catch (error) {
+    console.error('recovery folder check failed', error);
+    if (empty) {
+      root.render(<main className="recovery-startup"><section className="recovery-startup__card" role="alert"><h1>Не удалось проверить папку с копиями</h1><p>{error instanceof Error ? error.message : String(error)}</p><button type="button" onClick={() => window.location.reload()}>Повторить</button></section></main>);
+      return;
+    }
+  }
+  renderApp();
 }
 
 const DOCUMENT_TITLE_BY_MODULE: Record<string, (content: unknown) => string> = {

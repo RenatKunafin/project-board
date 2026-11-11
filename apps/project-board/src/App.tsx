@@ -41,6 +41,7 @@ import {
   type WorkspaceSnapshot,
   type WorkspaceBackupCompatibility,
   WorkspaceBackupStore,
+  type RecoverySnapshotCoordinator,
   createDeferredSnapshotWriter,
   type DeferredSnapshotWriter,
 } from '@project-board/dashboard';
@@ -101,6 +102,7 @@ interface AppProps {
   documentsLoadError?: boolean;
   backupStore?: WorkspaceBackupStore;
   backupCompatibility?: WorkspaceBackupCompatibility;
+  recoveryCoordinator?: RecoverySnapshotCoordinator;
 }
 
 type CascadeByTab = { readonly [tabId: string]: CascadeLayoutState };
@@ -577,6 +579,7 @@ export default function App({
   documentsLoadError = false,
   backupStore,
   backupCompatibility = { widgetTypeIds: [], documentTypes: [] },
+  recoveryCoordinator,
 }: AppProps) {
   // Состояние представлений экземпляров (PBT-049, ADR-6.4): стабильный ref —
   // виджеты сами применяют свой state, платформа не ре-рендерит панели.
@@ -1532,7 +1535,7 @@ export default function App({
           );
         })}
       </section>
-      {backupStore && <WorkspaceBackupDialog open={backupDialogOpen} onClose={() => { setBackupDialogOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} backupStore={backupStore} compatibility={backupCompatibility} prepareSnapshot={prepareBackupSnapshot} prepareForRestore={prepareForUpdate} prepareDocuments={(documents) => documentService.prepareDocumentsForRestore(documents)} />}
+      {backupStore && <WorkspaceBackupDialog open={backupDialogOpen} onClose={() => { setBackupDialogOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} backupStore={backupStore} compatibility={backupCompatibility} prepareSnapshot={prepareBackupSnapshot} prepareForRestore={prepareForUpdate} prepareDocuments={(documents) => documentService.prepareDocumentsForRestore(documents)} recoveryCoordinator={recoveryCoordinator} />}
       <ReleaseNotesDialog open={releaseNotesOpen} onClose={() => { setReleaseNotesOpen(false); requestAnimationFrame(() => settingsButtonRef.current?.focus({ preventScroll: true })); }} />
     </main>
   );

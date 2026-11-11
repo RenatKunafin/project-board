@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../app-test';
 import { storedWorkspace } from '../e2e/workspace-helper';
 
 const type = 'Счётчик (пример)';

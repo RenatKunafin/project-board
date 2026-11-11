@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { storedWorkspace } from './workspace-helper';
 
 const title = 'Обновления общего плана';

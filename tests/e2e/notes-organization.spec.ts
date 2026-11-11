@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Locator } from '@playwright/test';
+import { expect, test, type Page, type Locator } from './app-test';
 import { readFile } from 'node:fs/promises';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { storedWorkspace, persistedDocument } from './workspace-helper';
@@ -172,6 +172,7 @@ test('теги и закрепление переживают offline и чис�
   const clean = await browser.newContext();
   try {
     const target = await clean.newPage(); await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await openBackups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();

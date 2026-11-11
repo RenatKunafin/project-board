@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator } from './app-test';
 
 // Спека PBT-071: разворачивание окна на весь дашборд — overlay-перенос
 // без размонтирования, сокрытие соседей, сохранение геометрии раскладки,

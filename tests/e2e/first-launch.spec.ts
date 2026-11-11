@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { legacyChecklists, restoreSavedWorkspace } from './saved-workspace';
 import { persistedDocument, storedWorkspace } from './workspace-helper';

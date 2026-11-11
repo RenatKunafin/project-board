@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 
 const title = 'PBT-096 — прокрутка Гантта захватом';
 const plan = {

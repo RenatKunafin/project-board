@@ -1,5 +1,5 @@
 import { createDocumentWindow } from './document-ui';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 import { storedWorkspace } from './workspace-helper';
 
 test('каскад первый и выбран по умолчанию, сохранённая сетка сохраняется после reload', async ({ page }) => {

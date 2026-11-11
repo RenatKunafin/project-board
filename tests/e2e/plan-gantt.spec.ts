@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator } from './app-test';
 
 /**
  * Контрольные данные PBT-012 (small-plan): группа «Фаза 1», задачи A–E,
