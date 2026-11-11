@@ -8,9 +8,13 @@ import {
   setTaskDates,
   setTaskDuration,
   updateCalendar,
+  updateDateMarks,
   updateTask,
   type PlanCommandResult,
 } from './plan-commands';
+import { createWorkingCalendar } from './working-calendar';
+import { dependencyViolations } from './plan-dependencies';
+import { resourceConflicts } from './plan-conflicts';
 
 function buildPlan(): PlanContent {
   const plan = createPlanContent('Тестовый план');
@@ -227,6 +231,95 @@ describe('updateCalendar', () => {
     if (result.ok) {
       expect(result.plan.calendar.workingDays).toEqual([1, 2, 3, 4]);
     }
+  });
+});
+
+describe('updateDateMarks — особые даты (PBT-141)', () => {
+  it('заменяет набор меток атомарно с сортировкой по дате', () => {
+    const plan = buildPlan();
+    const next = expectOk(
+      updateDateMarks(plan, [
+        { date: '2026-10-17', color: 'coral' },
+        { date: '2026-10-14', color: 'jade' },
+        { date: '2026-10-15', color: 'coral' },
+      ]),
+    );
+    expect(next.dateMarks).toEqual([
+      { date: '2026-10-14', color: 'jade' },
+      { date: '2026-10-15', color: 'coral' },
+      { date: '2026-10-17', color: 'coral' },
+    ]);
+    expect(next.calendar).toEqual(plan.calendar);
+    expect(next.tasks).toEqual(plan.tasks);
+  });
+
+  it('пустой набор удаляет раздел', () => {
+    const plan = expectOk(
+      updateDateMarks(buildPlan(), [{ date: '2026-10-14', color: 'coral' }]),
+    );
+    const next = expectOk(updateDateMarks(plan, []));
+    expect('dateMarks' in next).toBe(false);
+  });
+
+  it('повторяющаяся дата отклоняется', () => {
+    expectError(
+      updateDateMarks(buildPlan(), [
+        { date: '2026-10-14', color: 'coral' },
+        { date: '2026-10-14', color: 'jade' },
+      ]),
+      'invalid-date-marks',
+    );
+  });
+
+  it('неизвестный цвет отклоняется', () => {
+    expectError(
+      updateDateMarks(buildPlan(), [{ date: '2026-10-14', color: 'navy' }]),
+      'invalid-date-marks',
+    );
+  });
+
+  it('не-ISO дата отклоняется', () => {
+    expectError(
+      updateDateMarks(buildPlan(), [{ date: '14.10.2026', color: 'coral' }]),
+      'invalid-date-marks',
+    );
+  });
+
+  it('applyPlanCommand исполняет updateDateMarks', () => {
+    const result = applyPlanCommand(buildPlan(), {
+      type: 'updateDateMarks',
+      marks: [{ date: '2026-10-14', color: 'plum' }],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.plan.dateMarks).toEqual([
+        { date: '2026-10-14', color: 'plum' },
+      ]);
+    }
+  });
+
+  it('метки декоративны: календарь, длительности и проверки не меняются', () => {
+    const plan = buildPlan();
+    const withMarks = expectOk(
+      updateDateMarks(plan, [
+        { date: '2026-10-14', color: 'coral' }, // рабочий день внутри задачи
+        { date: '2026-10-17', color: 'jade' },  // суббота
+        { date: '2026-10-12', color: 'ochre' }, // начало задачи
+      ]),
+    );
+
+    const calendarBefore = createWorkingCalendar(plan.calendar);
+    const calendarAfter = createWorkingCalendar(withMarks.calendar);
+    expect(calendarAfter.isWorkingDay('2026-10-14')).toBe(
+      calendarBefore.isWorkingDay('2026-10-14'),
+    );
+    expect(calendarAfter.workingDaysBetween('2026-10-12', '2026-10-16')).toBe(
+      calendarBefore.workingDaysBetween('2026-10-12', '2026-10-16'),
+    );
+
+    expect(dependencyViolations(withMarks)).toEqual(dependencyViolations(plan));
+    expect(resourceConflicts(withMarks)).toEqual(resourceConflicts(plan));
+    expect(parsePlanContent(withMarks).ok).toBe(true);
   });
 });
 

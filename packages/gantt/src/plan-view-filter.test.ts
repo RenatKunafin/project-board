@@ -38,6 +38,17 @@ function plan(): PlanContent {
 }
 
 describe('filterPlanForView — фильтр представления (PBT-049)', () => {
+  it('особые даты переносятся в отфильтрованный план (PBT-141)', () => {
+    const withMarks: PlanContent = {
+      ...plan(),
+      dateMarks: [
+        { date: '2026-10-14', color: 'coral' },
+        { date: '2026-10-17', color: 'jade' },
+      ],
+    };
+    const filtered = filterPlanForView(withMarks, { query: 'разработка' });
+    expect(filtered.dateMarks).toEqual(withMarks.dateMarks);
+  });
   it('подстрока названия без учёта регистра; группы-предки видимы', () => {
     const filtered = filterPlanForView(plan(), { query: 'разработка' });
     expect(filtered.tasks.map((task) => task.id)).toEqual(['t-dev']);
