@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 import { storedWorkspace } from './workspace-helper';
 
 const title = 'PBT-097 — вертикальная прокрутка';

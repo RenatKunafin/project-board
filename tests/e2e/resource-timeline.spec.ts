@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 /**
  * PBT-047: ресурсные дорожки из документа плана (read-only v1).

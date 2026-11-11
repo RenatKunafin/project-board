@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { readFile } from 'node:fs/promises';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
@@ -146,6 +146,7 @@ test('два окна сохраняют независимую навигаци
   const clean = await browser.newContext({ viewport: { width: 1856, height: 1269 } });
   try {
     const target = await clean.newPage(); await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
@@ -243,6 +244,7 @@ test('старые настройки заметок получают defaults, 
   const clean = await browser.newContext({ viewport: { width: 1856, height: 1269 } });
   try {
     const target = await clean.newPage(); await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: 'legacy-notes.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();

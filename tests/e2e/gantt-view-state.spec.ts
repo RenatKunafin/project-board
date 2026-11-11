@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 
 /**
  * PBT-049: фильтры и настройки представлений. Минимальный набор фильтров —

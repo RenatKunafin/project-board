@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 import { readFile } from 'node:fs/promises';
 import { createDocumentWindow } from './document-ui';
 
@@ -81,6 +81,7 @@ test('JSON переносится в чистый browser context и восст�
   try {
     const cleanPage = await cleanContext.newPage();
     await cleanPage.goto('/');
+    await cleanPage.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     await openBackups(cleanPage);
     await cleanPage.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer: await readFile(filePath!) });
     await expect(cleanPage.getByRole('heading', { name: 'Заменить текущее пространство?' })).toBeVisible();

@@ -53,6 +53,8 @@ export interface DocumentStoreLike {
 export interface PersistenceHooks {
   readonly store: DocumentStoreLike;
   readonly saveDelayMs?: number;
+  /** Вызывается после успешной записи в основную БД, не при изменении памяти. */
+  readonly onPersistedChange?: () => void;
   /** Поддержка миграций: собирается приложением из зарегистрированных типов. */
   readonly migrations?: readonly DocumentMigrationsSupport[];
 }
@@ -268,6 +270,7 @@ export function createDocumentService(
           await store.save(document, entry.lastSavedRevision);
           entry.lastSavedRevision = document.revision;
           entry.retryAttempt = 0;
+          persistence?.onPersistedChange?.();
         } catch (error) {
           if (error instanceof DocumentConflictError) {
             try {
@@ -464,6 +467,7 @@ export function createDocumentService(
           entry.pending = null;
         }
         if (store) await store.delete(documentId);
+        if (store) persistence?.onPersistedChange?.();
         queue.delete(documentId);
         documents.delete(documentId);
         saveStates.delete(documentId);
@@ -575,6 +579,7 @@ export function createDocumentService(
       // хранилище остаётся в исходном состоянии.
       if (recovered.length > 0) {
         await store.saveAll(recovered);
+        persistence?.onPersistedChange?.();
       }
 
       for (const document of all) {

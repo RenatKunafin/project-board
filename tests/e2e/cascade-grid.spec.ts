@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 const label = 'Экземпляр 3 · Список 2';
 type Area = { x: number; y: number; width: number; height: number };

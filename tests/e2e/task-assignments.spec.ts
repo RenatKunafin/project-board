@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 /**
  * PBT-042: назначение исполнителей и типов задачам через форму,

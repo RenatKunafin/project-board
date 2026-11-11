@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 /**
  * PBT-051: импорт и экспорт собственного формата в UI. Экспорт скачивает
@@ -121,6 +121,7 @@ test('экспортированный файл переносится в чис
   const otherContext = await browser.newContext();
   const otherPage = await otherContext.newPage();
   await otherPage.goto('/');
+  await otherPage.getByRole('button', { name: 'Продолжить без восстановления' }).click();
   await createPlan(otherPage, 'Чужой план');
   const otherPane = otherPage
     .getByRole('group', { name: 'План · Чужой план' })

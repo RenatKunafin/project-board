@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { zoomPxPerDay } from '../../packages/gantt/src/zoom-utils';
 
 const title = 'Общий жест';

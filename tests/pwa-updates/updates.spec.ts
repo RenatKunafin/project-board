@@ -1,6 +1,6 @@
 import { persistedDocument, storedWorkspace } from '../e2e/workspace-helper';
 import { createDocumentWindow } from '../e2e/document-ui';
-import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
+import { expect, test, type Page, type APIRequestContext } from '../app-test';
 import { readFile, readdir } from 'node:fs/promises';
 
 const releaseNotes = JSON.parse(await readFile(new URL('../../apps/project-board/src/release-notes.json', import.meta.url), 'utf8')) as {

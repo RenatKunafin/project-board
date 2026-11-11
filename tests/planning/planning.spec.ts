@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../app-test';
 import {
   createPlan, documentId, editTask, existingView, exportNative, importFile,
   maximize, paneOf, restoreSize, saveTask, storedPlan, waitWorkspace, workspace,

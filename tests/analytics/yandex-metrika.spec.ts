@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../app-test';
 
 test('release-сборка загружает один счётчик с временным Вебвизором', async ({ page, context }) => {
   const requests: string[] = [];

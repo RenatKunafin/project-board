@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 /**
  * PBT-073: масштаб шкалы «Дни/Недели» (design D3) и сохранение позиции

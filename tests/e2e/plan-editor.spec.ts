@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 /**
  * PBT-038: форма создания/редактирования задач поверх проектного Гантта.

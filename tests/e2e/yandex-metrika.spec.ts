@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 test('обычная production-сборка не отправляет визиты Метрики', async ({ page }) => {
   const requests: string[] = [];

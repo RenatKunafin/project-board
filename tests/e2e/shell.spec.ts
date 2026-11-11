@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('операция синхронизирует экземпляры 1-2 и не задевает список 2', async ({ page }) => {

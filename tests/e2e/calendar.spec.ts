@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { storedWorkspace } from './workspace-helper';
 
@@ -146,6 +146,7 @@ test('ближайшие события выбирают существующи�
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
@@ -209,6 +210,7 @@ test('серия календаря переносится общей копие
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
@@ -297,6 +299,7 @@ test('ручная отметка нерабочего дня переносит
   try {
     const target = await clean.newPage();
     await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();

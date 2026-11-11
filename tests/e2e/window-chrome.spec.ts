@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
 
 test('сворачивание прячет содержимое, разворачивание возвращает черновик', async ({

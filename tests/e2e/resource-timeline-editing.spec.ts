@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 
 /**
  * PBT-048: редактирование сроков в ресурсном виде (PBT-047 + жесты).

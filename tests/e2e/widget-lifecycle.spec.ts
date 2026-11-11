@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './app-test';
 
 async function subscriptionCount(page: import('@playwright/test').Page): Promise<number> {
   return page.evaluate(() => window.__projectBoard?.activeSubscriptionCount() ?? -1);

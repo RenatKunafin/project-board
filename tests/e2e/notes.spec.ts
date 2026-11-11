@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './app-test';
 import { readFile } from 'node:fs/promises';
 import { createDocumentWindow, openDocumentWindow } from './document-ui';
 import { persistedDocument, storedWorkspace } from './workspace-helper';
@@ -399,6 +399,7 @@ test('общий backup переносит закрытый, пустой и о�
   const clean = await browser.newContext();
   try {
     const target = await clean.newPage(); await target.goto('/');
+    await target.getByRole('button', { name: 'Продолжить без восстановления' }).click();
     const restore = await backups(target);
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();

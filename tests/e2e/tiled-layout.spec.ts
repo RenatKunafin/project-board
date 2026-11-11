@@ -1,5 +1,5 @@
 import { restoreChecklistWorkspace } from './saved-workspace';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './app-test';
 
 async function paneBox(page: Page, label: string) {
   const pane = page.getByRole('group', { name: label });

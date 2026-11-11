@@ -7,6 +7,8 @@ import {
   type WorkspaceBackup,
   type WorkspaceBackupCompatibility,
   type WorkspaceBackupCapture,
+  type RecoverySnapshotCoordinator,
+  type RecoveryProtectionStatus,
 } from '@project-board/dashboard';
 
 interface Props {
@@ -17,11 +19,12 @@ interface Props {
   readonly prepareSnapshot: () => Promise<WorkspaceBackupCapture>;
   readonly prepareForRestore: () => Promise<void>;
   readonly prepareDocuments: (documents: readonly import('@project-board/widget-sdk').ManagedDocument[]) => import('@project-board/widget-sdk').ManagedDocument[];
+  readonly recoveryCoordinator?: RecoverySnapshotCoordinator;
 }
 
 type Candidate = { backup: WorkspaceBackup; issues: readonly { severity: string; message: string }[] };
 
-export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibility, prepareSnapshot, prepareForRestore, prepareDocuments }: Props) {
+export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibility, prepareSnapshot, prepareForRestore, prepareDocuments, recoveryCoordinator }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<StoredWorkspaceBackup[]>([]);
@@ -31,6 +34,9 @@ export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibilit
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryProtectionStatus>(() => recoveryCoordinator?.getStatus() ?? { phase: 'unsupported' });
+
+  useEffect(() => recoveryCoordinator?.subscribe(setRecoveryStatus), [recoveryCoordinator]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -45,11 +51,33 @@ export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibilit
       setRows(items);
       setComposition({ documents: snapshot.documents.length, tabs: snapshot.workspace.tabs.length, windows: snapshot.workspace.instances.length });
     }).catch((caught) => setError(String(caught)));
-  }, [open, backupStore]);
+    void recoveryCoordinator?.refresh().catch((caught) => setError(caught instanceof Error ? caught.message : String(caught)));
+  }, [open, backupStore, recoveryCoordinator]);
 
   const summary = useMemo(() => rows.length ? `${rows.length} / 5 копий` : 'Копий пока нет', [rows.length]);
 
   async function refresh(): Promise<void> { setRows(await backupStore.list()); }
+
+  async function chooseRecoveryDirectory(): Promise<void> {
+    setError('');
+    try {
+      const lookup = await recoveryCoordinator?.chooseDirectory();
+      if (lookup?.status === 'unsupported') {
+        setError('Этот браузер не поддерживает выбор папки для автоматических копий.');
+      } else if (lookup) {
+        setMessage('Папка для автоматических копий выбрана.');
+      }
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === 'AbortError') return;
+      setError(caught instanceof Error ? caught.message : String(caught));
+    }
+  }
+
+  async function permitRecoveryDirectory(): Promise<void> {
+    setError('');
+    try { await recoveryCoordinator?.requestWritePermission(); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
+  }
 
   async function createManual(): Promise<void> {
     setBusy(true); setError(''); setMessage('');
@@ -119,6 +147,23 @@ export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibilit
         <label className="backup-safety"><input type="checkbox" checked={safety} disabled={busy} onChange={(event) => setSafety(event.target.checked)} /> Перед заменой создать страховочную копию текущего пространства</label>
         <div className="backup-dialog__actions"><button type="button" disabled={busy} onClick={() => setCandidate(null)}>Отмена</button><button type="button" className="backup-primary backup-danger" disabled={busy} onClick={() => void restore(candidate.backup)}>{busy ? 'Восстановление…' : 'Заменить пространство'}</button></div>
       </section> : <>
+        {recoveryCoordinator && <section className="backup-auto" aria-label="Автоматические копии">
+          <h3>Автоматические копии в папке</h3>
+          <p>{recoveryStatus.phase === 'unconfigured' ? 'Папка не выбрана; автоматические копии пока не создаются.' :
+            recoveryStatus.phase === 'unsupported' ? 'Этот браузер не поддерживает запись копий в выбранную папку.' :
+            recoveryStatus.phase === 'permission-required' ? 'Доступ к папке нужно разрешить повторно; новые копии пока не создаются.' :
+            recoveryStatus.phase === 'waiting' ? 'Новая копия появится через 30 секунд после последнего сохранённого изменения.' :
+            recoveryStatus.phase === 'saving' ? 'Создаётся новая копия…' :
+            recoveryStatus.phase === 'error' ? `Ошибка автоматической копии: ${recoveryStatus.error ?? 'неизвестная ошибка'}` :
+            'Автоматическая копия сохранена.'}</p>
+          {recoveryStatus.folderName && <p>Папка: {recoveryStatus.folderName}</p>}
+          {recoveryStatus.lastSnapshot && <p>Последняя проверенная копия: {new Date(recoveryStatus.lastSnapshot.createdAt).toLocaleString()} · {recoveryStatus.lastSnapshot.backup.documents.length} документов · {recoveryStatus.lastSnapshot.backup.workspace.instances.length} окон</p>}
+          <div className="backup-dialog__actions">
+            <button type="button" disabled={busy} onClick={() => void chooseRecoveryDirectory()}>Выбрать папку</button>
+            {recoveryStatus.phase === 'permission-required' && <button type="button" disabled={busy} onClick={() => void permitRecoveryDirectory()}>Разрешить доступ</button>}
+            {recoveryStatus.lastSnapshot && <button type="button" disabled={busy} onClick={() => setCandidate({ backup: recoveryStatus.lastSnapshot!.backup, issues: [] })}>Восстановить автоматическую копию</button>}
+          </div>
+        </section>}
         <div className="backup-summary"><span>{summary}</span><span>{composition.documents} документов · {composition.tabs} вкладок · {composition.windows} окон</span></div>
         <div className="backup-dialog__actions">
           <button type="button" className="backup-primary" disabled={busy} onClick={() => void createManual()}>{busy ? 'Сохранение…' : 'Создать копию'}</button>
@@ -131,7 +176,7 @@ export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibilit
         </li>)}</ul>}
       </>}
       {message && <p role="status" className="backup-dialog__message">{message}</p>}{error && <p role="alert" className="backup-dialog__error">{error}</p>}
-      <footer className="backup-dialog__footer">Копии хранятся в данных сайта на этом устройстве. Очистка данных сайта удалит локальную историю.</footer>
+      <footer className="backup-dialog__footer">История пяти ручных и страховочных копий хранится в данных сайта. Автоматические копии сохраняются в выбранной папке отдельно.</footer>
     </div>
   </dialog>;
 }
