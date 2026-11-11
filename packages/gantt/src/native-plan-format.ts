@@ -5,6 +5,7 @@ import {
   type PlanIssue,
 } from './plan-document';
 import { isTaskColor } from './task-colors';
+import { DATE_MARK_COLORS, isDateMarkColor } from './date-mark-colors';
 
 export const PLAN_FILE_FORMAT = 'project-board-plan';
 export const PLAN_FILE_FORMAT_VERSION = 1;
@@ -72,6 +73,50 @@ function normalizeImportedTaskColors(content: unknown): unknown {
   });
   return changed
     ? { ...(content as Record<string, unknown>), tasks }
+    : content;
+}
+
+/**
+ * PBT-141: нормализация цвета меток импортируемого файла. Неизвестный
+ * идентификатор получает случайный известный цвет (решение владельца
+ * 2026-11-11 — метка не удаляется и не блокирует импорт); одному
+ * неизвестному идентификатору соответствует один цвет в пределах
+ * разбора, чтобы диапазон дат оставался одноцветным. Повреждённые
+ * даты не смягчаются — их отвергает валидация.
+ */
+function normalizeImportedDateMarks(content: unknown): unknown {
+  const marks = (content as { dateMarks?: unknown })?.dateMarks;
+  if (!Array.isArray(marks)) {
+    return content;
+  }
+  const randomAssignments = new Map<string, string>();
+  const pickColor = (unknownId: string): string => {
+    const assigned = randomAssignments.get(unknownId);
+    if (assigned !== undefined) {
+      return assigned;
+    }
+    const picked =
+      DATE_MARK_COLORS[Math.floor(Math.random() * DATE_MARK_COLORS.length)].id;
+    randomAssignments.set(unknownId, picked);
+    return picked;
+  };
+  let changed = false;
+  const dateMarks = marks.map((mark) => {
+    if (
+      typeof mark === 'object' &&
+      mark !== null &&
+      'color' in mark &&
+      !isDateMarkColor((mark as { color?: unknown }).color)
+    ) {
+      changed = true;
+      const copy = { ...mark } as Record<string, unknown>;
+      copy.color = pickColor(String(copy.color));
+      return copy;
+    }
+    return mark;
+  });
+  return changed
+    ? { ...(content as Record<string, unknown>), dateMarks }
     : content;
 }
 
@@ -203,8 +248,11 @@ export function deserializePlanFile(text: string): PlanFileDeserialize {
 
   // PBT-084: неизвестный палитре идентификатор цвета нормализуется
   // в «Авто» до валидации (решение владельца: цвет не блокирует
-  // импорт остального содержания); прочие проверки без смягчения.
-  const normalizedContent = normalizeImportedTaskColors(content);
+  // импорт остального содержания); PBT-141: неизвестный цвет метки
+  // получает случайный известный цвет; прочие проверки без смягчения.
+  const normalizedContent = normalizeImportedDateMarks(
+    normalizeImportedTaskColors(content),
+  );
   const validation = parsePlanContent(normalizedContent);
   if (!validation.ok) {
     return reject([

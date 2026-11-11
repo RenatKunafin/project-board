@@ -347,6 +347,57 @@ describe('round-trip', () => {
     const reserialized = serializePlanFile(payload);
     expect(reserialized.json).toContain('customNote');
   });
+
+  it('особые даты сохраняются в round-trip; план без меток — без раздела (PBT-141)', () => {
+    const withMarks = {
+      ...fullPlan(),
+      dateMarks: [
+        { date: '2026-10-14', color: 'coral' },
+        { date: '2026-10-17', color: 'jade' },
+      ],
+    };
+    const payload = expectAccepted(
+      deserializePlanFile(serializePlanFile({ title: 'План', content: withMarks }).json),
+    );
+    expect(payload.content.dateMarks).toEqual(withMarks.dateMarks);
+
+    const withoutMarks = expectAccepted(
+      deserializePlanFile(serializePlanFile({ title: 'План', content: fullPlan() }).json),
+    );
+    expect('dateMarks' in withoutMarks.content).toBe(false);
+  });
+
+  it('неизвестный цвет метки получает случайный известный, одинаковый для идентификатора (PBT-141)', () => {
+    const future = {
+      ...fullPlan(),
+      dateMarks: [
+        { date: '2026-10-13', color: 'future-cyan' },
+        { date: '2026-10-14', color: 'future-cyan' },
+        { date: '2026-10-15', color: 'future-pink' },
+        { date: '2026-10-16', color: 'coral' },
+      ],
+    };
+    const payload = expectAccepted(deserializePlanFile(envelopeWith(future)));
+    const marks = payload.content.dateMarks ?? [];
+    expect(marks).toHaveLength(4);
+    const known = new Set(['coral', 'pumpkin', 'ochre', 'jade', 'sapphire', 'plum']);
+    for (const mark of marks) {
+      expect(known.has(mark.color)).toBe(true);
+    }
+    // Один неизвестный идентификатор — один цвет в пределах разбора;
+    // случайность между идентификаторами не ограничена.
+    expect(marks[0].color).toBe(marks[1].color);
+    expect(marks[3].color).toBe('coral'); // известный цвет не меняется
+  });
+
+  it('повреждённая дата метки отклоняет файл (PBT-141)', () => {
+    const broken = {
+      ...fullPlan(),
+      dateMarks: [{ date: '17.10.2026', color: 'coral' }],
+    };
+    const issues = expectRejected(deserializePlanFile(envelopeWith(broken)));
+    expect(issues[0].code).toBe('plan-invalid');
+  });
 });
 
 describe('политика идентификаторов — импорты независимы', () => {
