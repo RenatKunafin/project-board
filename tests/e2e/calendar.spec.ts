@@ -215,7 +215,16 @@ test('серия календаря переносится общей копие
     await restore.locator('input[type="file"]').setInputFiles({ name: file.suggestedFilename(), mimeType: 'application/json', buffer });
     await restore.getByLabel('Перед заменой создать страховочную копию текущего пространства').uncheck();
     await restore.getByRole('button', { name: 'Заменить пространство', exact: true }).click();
-    await expect.poll(async () => (await storedWorkspace(target)).documents.find((document) => document.title === 'Backup календарь')?.content)
+    // После replace приложение перезагружает страницу: evaluate может попасть
+    // в навигацию («Execution context was destroyed») — это «ещё не готово»,
+    // а не отказ; итоговое утверждение то же (PBT-144).
+    await expect.poll(async () => {
+      try {
+        return (await storedWorkspace(target)).documents.find((document) => document.title === 'Backup календарь')?.content;
+      } catch {
+        return undefined;
+      }
+    })
       .toMatchObject({ events: [{ title: 'Backup серия', repeat: 'monthly', until: '2030-12-31' }] });
     await target.waitForFunction(() => navigator.serviceWorker.controller !== null);
     await clean.setOffline(true);

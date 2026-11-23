@@ -129,7 +129,10 @@ export function WorkspaceBackupDialog({ open, onClose, backupStore, compatibilit
     anchor.href = url;
     anchor.download = `pb-workspace-${row.createdAt.replace(/[:]/g, '-').replace(/\.\d{3}Z$/, 'Z')}.json`;
     anchor.click();
-    URL.revokeObjectURL(url);
+    // Отзыв отложен: браузер разыменовывает blob-URL асинхронно, синхронный
+    // отзыв обгонял чтение — скачивание молча срывалось (PBT-144); прецедент
+    // отложенного отзыва — экспорт PlantUML в PlanGanttWidget.
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     setMessage('Файл передан браузеру для скачивания.');
   }
 
