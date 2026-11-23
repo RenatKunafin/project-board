@@ -52,7 +52,7 @@ export function dateMarkColorInfo(value?: string): DateMarkColorInfo | undefined
 
 /**
  * Плотность заливки особых дат: проценты базового hex в смешении
- * с поверхностью. Плотнее праздника (15% --warning), притушеннее
+ * с чёрным. Плотнее праздника (15% --warning), притушеннее
  * насыщенных полос задач — метки заметны, но не конфликтуют с задачами
  * (решение владельца 2026-11-11; значение выверяется живым осмотром).
  */
@@ -64,7 +64,11 @@ export function dateMarkFill(colorId: string): string {
   if (info === undefined) {
     return 'transparent';
   }
-  return `color-mix(in oklch, ${info.hex} ${DATE_MARK_FILL_PERCENT}%, var(--surface))`;
+  // Смешение с чёрным, а не с поверхностью: интерполяция оттенка в oklch
+  // к холодной surface 250° уводила тёплые цвета в лиловый (тыква ≈303°) —
+  // тот же дефект полос задач PBT-084; mix с чёрным сохраняет оттенок,
+  // светота результата совпадает со светотой поверхности тёмной темы.
+  return `color-mix(in oklch, ${info.hex} ${DATE_MARK_FILL_PERCENT}%, #000)`;
 }
 
 /**
