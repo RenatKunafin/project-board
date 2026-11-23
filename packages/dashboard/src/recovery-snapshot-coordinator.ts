@@ -136,7 +136,7 @@ export class RecoverySnapshotCoordinator {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const permission = /доступ к папке|разреш/i.test(message);
-      this.blockedCorrupt = /оба файла копий повреждены/i.test(message);
+      this.blockedCorrupt = /все файлы копий повреждены/i.test(message);
       this.publish({ ...this.status, phase: permission ? 'permission-required' : 'error', error: message });
     } finally {
       this.writing = false;
