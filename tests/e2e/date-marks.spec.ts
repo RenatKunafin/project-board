@@ -141,6 +141,7 @@ test('дневной масштаб: заливка ячеек цветом ме
   );
   const pane = page.locator(`[data-document-id="${documentId}"]`).nth(0);
   const dialog = await openSettings(page, 'Дневной режим');
+  await dialog.locator('[data-calendar-mark-color="pumpkin"]').check();
   await dialog.locator('[data-calendar-mark-from]').fill('2026-10-14');
   await dialog.locator('[data-calendar-add-mark]').click();
   await dialog.locator('[data-catalog-save]').click();
@@ -152,16 +153,39 @@ test('дневной масштаб: заливка ячеек цветом ме
     const cells = root
       ? [...root.querySelectorAll('[class*="gantt-date-mark-"]')]
       : [];
+    const hue = (background: string) => {
+      const oklch = /^oklch\([^)]*\s([\d.]+)(?:deg)?\s*[/)]/.exec(background);
+      if (oklch) return Number(oklch[1]);
+      const srgb = /^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(background);
+      const rgb = /rgba?\((\d+), (\d+), (\d+)/.exec(background);
+      if (!srgb && !rgb) return null;
+      const channels = srgb
+        ? [Number(srgb[1]), Number(srgb[2]), Number(srgb[3])]
+        : [Number(rgb![1]) / 255, Number(rgb![2]) / 255, Number(rgb![3]) / 255];
+      const max = Math.max(...channels);
+      const min = Math.min(...channels);
+      const delta = max - min;
+      if (delta === 0) return 0;
+      const [r, g, b] = channels;
+      const sector = max === r ? ((g - b) / delta) % 6 : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+      return (sector * 60 + 360) % 360;
+    };
     return {
       count: cells.length,
       firstBackground: cells[0]
         ? getComputedStyle(cells[0]).backgroundColor
         : 'none',
+      firstHue: cells[0] ? hue(getComputedStyle(cells[0]).backgroundColor) : null,
     };
   }, `[data-document-id="${documentId}"]`);
   expect(painted.count).toBeGreaterThan(0);
   expect(painted.firstBackground).not.toBe('rgba(0, 0, 0, 0)');
   expect(painted.firstBackground).not.toBe('transparent');
+  // PBT-143: тыква остаётся тёплой; смешение с холодной поверхностью
+  // уводило оттенок к лиловому (~300°).
+  expect(painted.firstHue).not.toBeNull();
+  expect(painted.firstHue as number).toBeGreaterThanOrEqual(15);
+  expect(painted.firstHue as number).toBeLessThanOrEqual(70);
 });
 
 test('второй экземпляр обновляется по ревизии; перезапуск сохраняет метки', async ({

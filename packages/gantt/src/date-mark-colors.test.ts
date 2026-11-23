@@ -3,6 +3,7 @@ import {
   DATE_MARK_COLORS,
   dateMarkColorRules,
   dateMarkFill,
+  dateMarkSwatchColor,
   isDateMarkColor,
   PLANTUML_MARK_MIX_PERCENT,
   plantUmlDateMarkColor,
@@ -33,23 +34,37 @@ describe('палитра меток дат (PBT-141)', () => {
     expect(isDateMarkColor(undefined)).toBe(false);
   });
 
-  it('заливка — смешение базового hex с поверхностью (притушенная)', () => {
+  it('заливка шкалы — смешение базового hex с чёрным, свотч — полный цвет', () => {
     expect(dateMarkFill('coral')).toBe(
-      'color-mix(in oklch, #F05653 32%, var(--surface))',
+      'color-mix(in oklch, #F05653 55%, #000)',
     );
     expect(dateMarkFill('неизвестный')).toBe('transparent');
+    expect(dateMarkSwatchColor('pumpkin')).toBe('#F3821D');
+    expect(dateMarkSwatchColor('неизвестный')).toBe('transparent');
   });
 
   it('правила классов: по классу на цвет палитры меток', () => {
     const lines = dateMarkColorRules().split('\n');
     expect(lines).toHaveLength(6);
     expect(lines[0]).toBe(
-      '.plan-gantt .gantt-date-mark-coral{background:color-mix(in oklch, #F05653 32%, var(--surface))}',
+      '.plan-gantt .gantt-date-mark-coral{background:color-mix(in oklch, #F05653 55%, #000)}',
     );
     for (const line of lines) {
       expect(line).toMatch(
         /^\.plan-gantt \.gantt-date-mark-[a-z]+\{background:color-mix/,
       );
+    }
+  });
+
+  it('заливка не смешивается с поверхностью темы (регрессия оттенка PBT-143)', () => {
+    // Mix с холодной surface 250° в oklch уводил тёплые цвета в лиловый
+    // (тыква ≈303°) — тот же дефект полос задач PBT-084.
+    for (const color of DATE_MARK_COLORS) {
+      expect(dateMarkFill(color.id)).not.toContain('var(--surface)');
+      expect(dateMarkFill(color.id)).toContain('#000)');
+    }
+    for (const line of dateMarkColorRules().split('\n')) {
+      expect(line).not.toContain('var(--surface)');
     }
   });
 

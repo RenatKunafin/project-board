@@ -65,7 +65,7 @@ export function RecoveryStartup({ initialLookup, coordinator, backupStore, empty
         <p>Возраст копии: {formatAge(lookup.snapshot.createdAt)}</p>
         <p>{lookup.snapshot.backup.documents.length} документов · {lookup.snapshot.backup.workspace.tabs.length} вкладок · {lookup.snapshot.backup.workspace.instances.length} окон</p>
         <p>Папка: {lookup.snapshot.folderName}</p>
-        {lookup.damagedSlot && <p role="alert">Один из двух файлов повреждён; доступна предыдущая годная копия.</p>}
+        {lookup.damagedSlot && <p role="alert">Часть файлов копий повреждена; доступна самая свежая годная копия.</p>}
         {!lookup.writable && <p role="status">Для новых автоматических копий нужно снова разрешить запись в папку.</p>}
       </div>}
       {lookup.status === 'empty' && <p role="status">В папке «{lookup.folderName}» копий пока нет.</p>}

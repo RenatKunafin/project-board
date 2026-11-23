@@ -159,6 +159,53 @@ test('отказ не удаляет файл и восстановление о
   await expect(page.getByRole('group', { name: 'Чек-лист · Сохранён после отказа' })).toBeVisible();
 });
 
+test('ротация хранит до десяти файлов и перезаписывает старейшие копии', async ({ page, context }) => {
+  await context.addInitScript(() => {
+    Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => navigator.storage.getDirectory() });
+  });
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Продолжить без восстановления' }).click();
+  const { pane } = await createDocumentWindow(page, 'Чек-лист', 'Ротация копий');
+  await page.getByRole('button', { name: 'Настройки' }).click();
+  await page.getByRole('button', { name: 'Резервные копии' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Резервные копии' });
+  await dialog.getByRole('button', { name: 'Выбрать папку' }).click();
+  await expect(dialog.getByRole('status').filter({ hasText: 'Папка для автоматических копий выбрана.' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Закрыть' }).click();
+
+  const readGenerations = () => page.evaluate(async () => {
+    const generations: Record<string, number> = {};
+    for await (const [name, handle] of (await navigator.storage.getDirectory()).entries()) {
+      if (!name.startsWith('project-board-recovery-')) continue;
+      generations[name] = (JSON.parse(await (await (handle as FileSystemFileHandle).getFile()).text()) as { generation: number }).generation;
+    }
+    return generations;
+  });
+  const maxGeneration = async () => Math.max(0, ...Object.values(await readGenerations()));
+
+  let previous = await maxGeneration();
+  for (let round = 1; round <= 16 && previous < 12; round += 1) {
+    await pane.getByPlaceholder('Новая задача…').fill(`Пункт ${round}`);
+    await pane.getByRole('button', { name: 'Добавить', exact: true }).click();
+    await page.clock.fastForward(30_001);
+    await expect.poll(maxGeneration).toBeGreaterThan(previous);
+    previous = await maxGeneration();
+  }
+
+  const generations = await readGenerations();
+  expect(Object.keys(generations).sort()).toEqual([
+    'project-board-recovery-a.json', 'project-board-recovery-b.json', 'project-board-recovery-c.json',
+    'project-board-recovery-d.json', 'project-board-recovery-e.json', 'project-board-recovery-f.json',
+    'project-board-recovery-g.json', 'project-board-recovery-h.json', 'project-board-recovery-i.json',
+    'project-board-recovery-j.json',
+  ]);
+  const values = Object.values(generations).sort((a, b) => a - b);
+  expect(new Set(values).size).toBe(10);
+  expect(values[9] - values[0]).toBe(9);
+  expect(values[9]).toBeGreaterThanOrEqual(12);
+});
+
 test('повреждённый файл не применяется и не удаляется молча', async ({ page, context }) => {
   await context.addInitScript(() => {
     Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => navigator.storage.getDirectory() });
