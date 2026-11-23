@@ -8,7 +8,7 @@
 ## 2. Тесты
 
 - [x] 2.1 e2e: в дневном масштабе метка «тыква» — вычисленный оттенок заливки ячейки в тёплом диапазоне 15–70°.
-- [ ] 2.2 Прогон затронутых наборов, затем полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
+- [x] 2.2 Прогон затронутых наборов, затем полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
 
 ## 3. Спецификация и проверки
 
