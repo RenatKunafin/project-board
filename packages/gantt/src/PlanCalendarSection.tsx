@@ -6,7 +6,7 @@ import { addCalendarDays } from './working-calendar';
 import {
   DATE_MARK_COLORS,
   dateMarkColorInfo,
-  dateMarkFill,
+  dateMarkSwatchColor,
   isDateMarkColor,
 } from './date-mark-colors';
 
@@ -330,7 +330,7 @@ export default function PlanCalendarSection({
             <li key={mark.date} className="catalog__row">
               <span
                 className="plan-settings__mark-swatch"
-                style={{ background: dateMarkFill(mark.color) }}
+                style={{ background: dateMarkSwatchColor(mark.color) }}
                 aria-hidden="true"
               />
               <span className="catalog__title">{mark.date}</span>
@@ -399,7 +399,7 @@ export default function PlanCalendarSection({
               />
               <span
                 className="plan-settings__mark-swatch"
-                style={{ background: dateMarkFill(color.id) }}
+                style={{ background: dateMarkSwatchColor(color.id) }}
                 aria-hidden="true"
               />
             </label>

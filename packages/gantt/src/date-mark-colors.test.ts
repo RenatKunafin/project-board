@@ -3,6 +3,7 @@ import {
   DATE_MARK_COLORS,
   dateMarkColorRules,
   dateMarkFill,
+  dateMarkSwatchColor,
   isDateMarkColor,
   PLANTUML_MARK_MIX_PERCENT,
   plantUmlDateMarkColor,
@@ -33,18 +34,20 @@ describe('палитра меток дат (PBT-141)', () => {
     expect(isDateMarkColor(undefined)).toBe(false);
   });
 
-  it('заливка — смешение базового hex с чёрным (оттенок сохраняется)', () => {
+  it('заливка шкалы — смешение базового hex с чёрным, свотч — полный цвет', () => {
     expect(dateMarkFill('coral')).toBe(
-      'color-mix(in oklch, #F05653 32%, #000)',
+      'color-mix(in oklch, #F05653 55%, #000)',
     );
     expect(dateMarkFill('неизвестный')).toBe('transparent');
+    expect(dateMarkSwatchColor('pumpkin')).toBe('#F3821D');
+    expect(dateMarkSwatchColor('неизвестный')).toBe('transparent');
   });
 
   it('правила классов: по классу на цвет палитры меток', () => {
     const lines = dateMarkColorRules().split('\n');
     expect(lines).toHaveLength(6);
     expect(lines[0]).toBe(
-      '.plan-gantt .gantt-date-mark-coral{background:color-mix(in oklch, #F05653 32%, #000)}',
+      '.plan-gantt .gantt-date-mark-coral{background:color-mix(in oklch, #F05653 55%, #000)}',
     );
     for (const line of lines) {
       expect(line).toMatch(
