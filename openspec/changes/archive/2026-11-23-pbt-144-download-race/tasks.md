@@ -8,7 +8,7 @@
 ## 2. Тесты
 
 - [x] 2.1 Регресс: calendar-тест «серия календаря переносится общей копией…» `--repeat-each=8` — зелёный (до фикса скачивания 1/8 красный, после отложенного отзыва вскрылась тестовая гонка 2/8, после стабилизации — 8/8).
-- [ ] 2.2 Прогон `workspace-backups.spec.ts` и calendar-спеки целиком; затем полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
+- [x] 2.2 Прогон `workspace-backups.spec.ts` и calendar-спеки целиком; затем полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
 
 ## 3. Спецификация и проверки
 
