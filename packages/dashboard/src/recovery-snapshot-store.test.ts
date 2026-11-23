@@ -60,16 +60,16 @@ function snapshot(id: string): WorkspaceBackupPayload {
 }
 
 describe('файловые аварийные копии', () => {
-  it('сохраняет два полных файла, выбирает новейший и откатывается к прежнему при порче', async () => {
+  it('сохраняет полные файлы в свободные слоты, выбирает новейший и откатывается к прежнему при порче', async () => {
     const store = createStore();
     await store.chooseDirectory();
     await store.save(snapshot('one'));
     await store.save(snapshot('two'));
     const third = await store.save(snapshot('three'));
     expect(third.generation).toBe(3);
-    expect(directory.files.size).toBe(2);
+    expect(directory.files.size).toBe(3);
     expect((await store.readLatest()).status).toBe('ready');
-    directory.files.set('project-board-recovery-a.json', '{broken');
+    directory.files.set('project-board-recovery-c.json', '{broken');
     const recovered = await store.readLatest();
     expect(recovered.status).toBe('ready');
     if (recovered.status === 'ready') {
@@ -79,6 +79,36 @@ describe('файловые аварийные копии', () => {
     await store.save(snapshot('four'));
     const latest = await store.readLatest();
     expect(latest.status === 'ready' && latest.snapshot.backup.workspace.activeTabId).toBe('four');
+    store.close();
+  });
+
+  it('заполняет десять слотов и затем перезаписывает копии по очереди, старейшую первой', async () => {
+    const store = createStore();
+    await store.chooseDirectory();
+    for (let round = 1; round <= 12; round += 1) await store.save(snapshot(`round-${round}`));
+    expect(directory.files.size).toBe(10);
+    const generation = (name: string) => (JSON.parse(directory.files.get(name) ?? 'null') as { generation?: number }).generation;
+    expect(generation('project-board-recovery-a.json')).toBe(11);
+    expect(generation('project-board-recovery-b.json')).toBe(12);
+    expect(generation('project-board-recovery-c.json')).toBe(3);
+    expect(generation('project-board-recovery-j.json')).toBe(10);
+    const latest = await store.readLatest();
+    expect(latest.status === 'ready' && latest.snapshot.generation).toBe(12);
+    store.close();
+  });
+
+  it('продолжает нумерацию двух существующих файлов без их удаления', async () => {
+    const store = createStore();
+    await store.chooseDirectory();
+    await store.save(snapshot('legacy-1'));
+    await store.save(snapshot('legacy-2'));
+    const third = await store.save(snapshot('fresh-3'));
+    expect(third.generation).toBe(3);
+    expect([...directory.files.keys()].sort()).toEqual([
+      'project-board-recovery-a.json', 'project-board-recovery-b.json', 'project-board-recovery-c.json',
+    ]);
+    const first = JSON.parse(directory.files.get('project-board-recovery-a.json')!) as { generation: number };
+    expect(first.generation).toBe(1);
     store.close();
   });
 
@@ -116,7 +146,7 @@ describe('файловые аварийные копии', () => {
     store.close();
   });
 
-  it('не перезаписывает два повреждённых файла', async () => {
+  it('не перезаписывает файлы, когда годных копий нет', async () => {
     directory.files.set('project-board-recovery-a.json', 'broken');
     directory.files.set('project-board-recovery-b.json', 'broken');
     const store = createStore();

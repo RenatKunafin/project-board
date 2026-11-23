@@ -7,7 +7,12 @@ import {
   type WorkspaceBackupPayload,
 } from './workspace-backup';
 
-const FILES = ['project-board-recovery-a.json', 'project-board-recovery-b.json'] as const;
+const FILES = [
+  'project-board-recovery-a.json', 'project-board-recovery-b.json', 'project-board-recovery-c.json',
+  'project-board-recovery-d.json', 'project-board-recovery-e.json', 'project-board-recovery-f.json',
+  'project-board-recovery-g.json', 'project-board-recovery-h.json', 'project-board-recovery-i.json',
+  'project-board-recovery-j.json',
+] as const;
 const FORMAT = 'project-board-recovery';
 const LOCK = 'project-board-recovery-files';
 
@@ -128,7 +133,7 @@ export class RecoverySnapshotStore {
     };
   }
 
-  /** Публикует новый файл в старшем свободном или устаревшем слоте. */
+  /** Публикует новый файл в первый свободный слот, а при их отсутствии — вместо самой старой копии. */
   async save(payload: WorkspaceBackupPayload): Promise<RecoverySnapshot> {
     const handle = await this.directory();
     if (!handle) throw new Error('Папка для автоматических копий не выбрана.');
@@ -140,11 +145,11 @@ export class RecoverySnapshotStore {
       const slots = await Promise.all(FILES.map((name) => this.readSlot(handle, name)));
       const valid = slots.filter((slot): slot is Extract<Slot, { state: 'valid' }> => slot.state === 'valid');
       if (valid.length === 0 && slots.some((slot) => slot.state === 'invalid')) {
-        throw new Error('Оба файла копий повреждены или неизвестного формата. Выберите другую папку; файлы не изменены.');
+        throw new Error('Все файлы копий повреждены или неизвестного формата. Выберите другую папку; файлы не изменены.');
       }
       const generation = Math.max(0, ...valid.map((slot) => slot.envelope.generation)) + 1;
-      const target = slots.findIndex((slot) => slot.state !== 'valid');
-      const index = target >= 0 ? target : slots[0].state === 'valid' && slots[1].state === 'valid' && slots[0].envelope.generation <= slots[1].envelope.generation ? 0 : 1;
+      const free = slots.findIndex((slot) => slot.state !== 'valid');
+      const index = free >= 0 ? free : Math.max(0, oldestSlotIndex(slots));
       const createdAt = new Date().toISOString();
       const serialized = serializeWorkspaceBackup(payload, createdAt);
       if (!serialized.ok) throw new Error(serialized.issues.map((issue) => issue.message).join(' '));
@@ -223,6 +228,19 @@ function isEnvelope(value: unknown): value is Envelope {
     Number.isSafeInteger(item.length) && (item.length as number) >= 0 &&
     typeof item.sha256 === 'string' && /^[0-9a-f]{64}$/.test(item.sha256) &&
     typeof item.backupJson === 'string';
+}
+
+/** Индекс годного слота с наименьшей генерацией: перезапись идёт по очереди, старейшая копия первая. */
+function oldestSlotIndex(slots: readonly Slot[]): number {
+  let oldest = -1;
+  let generation = Number.POSITIVE_INFINITY;
+  for (let position = 0; position < slots.length; position += 1) {
+    const slot = slots[position];
+    if (slot.state !== 'valid' || slot.envelope.generation >= generation) continue;
+    generation = slot.envelope.generation;
+    oldest = position;
+  }
+  return oldest;
 }
 
 async function digest(bytes: Uint8Array): Promise<string> {
