@@ -14,5 +14,5 @@
 ## 3. Спецификация и проверки
 
 - [x] 3.1 Delta spec `recovery-snapshots` (ADDED «Глубина ротации копий») соответствует реализации; `openspec validate pbt-142-recovery-rotation --strict`.
-- [ ] 3.2 Полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
+- [x] 3.2 Полный набор по testing.md: verify:repository, lint, typecheck, test, build, test:browser, openspec validate --all --strict.
 - [ ] 3.3 Живой контроль владельца реальной папкой; PR в develop; реестр и карточка DoD.
